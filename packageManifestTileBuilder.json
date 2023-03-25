@@ -1,0 +1,49 @@
+{
+  "packageName": "Tile Builder",
+  "author": "Gary J. Milne",
+  "version": "1.0.0",
+  "minimumHEVersion": "0.0",
+  "dateReleased": "2023-03-25",
+  "apps": [
+    {
+      "id": "82c4cdaf-cadc-48b0-afc9-624d53543498",
+      "name": "",
+      "namespace": "",
+      "location": "https://raw.githubusercontent.com/GaryMilne/Hubitat-TileBuilder/main/Tile_Builder_Parent.groovy",
+      "required": false,
+      "oauth": false,
+      "primary": false,
+      "version": "1.0.0"
+    },
+    {
+      "id": "ad995bcd-c6a8-4c48-b683-4f280aeff4f6",
+      "name": "Tile Builder - Activity Monitor",
+      "namespace": "garyjmilne",
+      "location": "https://raw.githubusercontent.com/GaryMilne/Hubitat-TileBuilder/main/Activity_Monitor.groovy",
+      "required": false,
+      "oauth": false,
+      "primary": false,
+      "version": "1.0.0"
+    },
+    {
+      "id": "b47eb226-2696-4b78-9c62-3a87545cdefc",
+      "name": "Tile Builder - Attribute Monitor",
+      "namespace": "garyjmilne",
+      "location": "https://raw.githubusercontent.com/GaryMilne/Hubitat-TileBuilder/main/Attribute_Monitor.groovy",
+      "required": false,
+      "oauth": false,
+      "primary": false,
+      "version": "1.0.0"
+    }
+  ],
+  "drivers": [
+    {
+      "id": "870676ea-a060-40f2-b1b8-e300ed7fe143",
+      "name": "Tile Builder Storage Driver",
+      "namespace": "garyjmilne",
+      "location": "https://raw.githubusercontent.com/GaryMilne/Hubitat-TileBuilder/main/Tile_Builder_Storage_Driver.groovy",
+      "required": true,
+      "version": "1.0.0"
+    }
+  ]
+}
