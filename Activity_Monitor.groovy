@@ -423,7 +423,7 @@ def mainPage() {
             if ( state.HTMLsizes.Final < 1024) {
                 if (moduleName == "Activity Monitor") input (name:"publishInterval", title: "<b>Table Refresh Interval</b>", type: "enum", options: parent.refreshInterval(), required:false, submitOnChange:true, width:2, defaultValue: 1)
                 if (moduleName == "Activity Monitor") input (name: "publish", type: "button", title: "Publish Table", backgroundColor: "#27ae61", textColor: "white", submitOnChange: true, width: 12)
-                if (moduleName == "Atttribute Monitor") input (name: "publishSubscribe", type: "button", title: "Publish and Subscribe", backgroundColor: "#27ae61", textColor: "white", submitOnChange: true, width: 12)
+                if (moduleName == "Attribute Monitor") input (name: "publishSubscribe", type: "button", title: "Publish and Subscribe", backgroundColor: "#27ae61", textColor: "white", submitOnChange: true, width: 12)
                 if (moduleName == "Attribute Monitor") input (name: "unsubscribe", type: "button", title: "Delete Subscription", backgroundColor: "#27ae61", textColor: "white", submitOnChange: true, width: 12)
                 }
             else input (name: "cannotPublish", type: "button", title: "Publish and Subscribe", backgroundColor: "#D3D3D3", textColor: "black", submitOnChange: true, width: 12)
