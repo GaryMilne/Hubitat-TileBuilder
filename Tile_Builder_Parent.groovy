@@ -1,6 +1,6 @@
 /**
 *  Tile Builder Parent App
-*  Version: v1.0.0
+*  Version: v1.0.1
 *  Download: See importUrl in definition
 *  Description: Used in conjunction with child apps to generate tabular reports on device data and publishes them to a dashboard.
 *
@@ -11,7 +11,7 @@
 *  Original posting on Hubitat Community forum.  
 *
 *  Tile Builder Parent App - ChangeLog
-*  Version 1.0.0 - Initial Release
+*  Version 1.0.1 - Initial Release
 *  Gary Milne - March, 2023
 *
 **/
@@ -44,13 +44,14 @@ definition(
     author: 'Gary Milne',
     description: 'This is the Tile Builder Parent App',
     category: 'Dashboards',
+	importUrl: "https://raw.githubusercontent.com/GaryMilne/Hubitat-TileBuilder/main/Tile_Builder_Parent.groovy",
     iconUrl: '',
     iconX2Url: '',
     iconX3Url: '',
     singleThreaded: true,
     installOnOpen: true
     )
-
+	
 preferences {
     page name: 'mainPage', title: '', install: true, uninstall: true // ,submitOnChange: true
 }
@@ -712,21 +713,21 @@ def getSampleOverridesList() {
 }
 
 def generalNotes() {
-    myText = 'Generally you should leave the table width and height at the default values and change the border padding (if border is enabled) or change the row text and header text padding if the border is not enabled.<br>'
-    myText +=  'A <b>comment adds 11 bytes</b> plus the comment text. Comments are saved within the HTML but are not visible.<br>'
+    myText = 'Generally you should leave the table width and height at the default values (W=100%, H=Auto) and change the border padding (if border is enabled) or change the row text and header text padding if the border is not enabled.<br>'
     myText += '<b>Base Font Size</b> is the reference point for all other text sizes which use % values. Changing this value allows you to match the tile preview with the published Dashboard version and make the design process more accurate. '
-    myText += "The default value of 18px provides a visual match for the Dashboard default 'Font Size' of 12 unknown units. "
+    myText += "The default value of 18px provides a visual match for the Dashboard default 'Font Size' of 12 unknown units.<br>"
     myText += '<b>Font Family</b> allows you to choose an alternate font but you must check whether your Dashboard devices can render the font you specify. The default font is <b>Roboto. </b>'
     myText += 'You can use overrides to specify an alternate font not included in the menu system, for example: <b>#tff#:Helvetica or #tff#:Blackadder ITC</b> are examples of overrides to specify an alternate device font.<br>'
     myText +=  'A <b>frame adds about 65 bytes</b> plus any other settings that may be added via overrides. '
-    myText += 'If your frame shows as top and bottom stripes it means you have a background color applied to the table, but a table width of 100%. Reduce the table width for proper border appearance.'
+    myText += 'If your frame shows as top and bottom stripes it means you have a background color applied to the table, but a table width of 100%. Reduce the table width for proper border appearance.</br>'
+    myText +=  'A <b>comment adds 11 bytes</b> plus the comment text. Comments are saved within the HTML but are not visible.<br>'
     return myText
 }
 
 def titleNotes() {
     myText = 'You can add HTML tags to text fields using square brackets such as [b][u]<b><u>My Title</u></b>[/u][/b].<br>'
-    myText += "You can use %day%, %time% or %units% in any text field and it will be replaced by the day\\time the tile was last published or the units being used when applicable (%units% do not apply to Activity Monitor). Using '[b]My Title[/b][br][small]%day% %time%[/small]' spreads the title "
-    myText += "and time across two lines and provides a more attractive display. This option let's you avoid the overhead of a footer when space is tight. You can use the same technique in the footer field.<br>"
+    myText += "You can use %day%, %time% or %units% in any text field and it will be replaced by the day\\time the tile was last published or the units being used when applicable (%units% do not apply to Activity Monitor). Using '[b]My Title[/b][br][font size=2]%day% %time%[/font]' spreads the title "
+    myText += "and time across two lines and provides a more attractive display. This option let's you avoid the overhead of a footer when space is tight. You can use the same technique in the footer field or header fields.<br>"
     myText += 'Enabling <b>a title adds 112 bytes</b> to the HTML size plus the title text. Enabling <b>a title shadow adds 35 bytes</b> to the HTML size.'
     return myText
 }
@@ -734,7 +735,6 @@ def titleNotes() {
 def headerNotes() {
     myText = 'Enabling column <b>headers adds about 45 bytes</b> plus the header text.<br>'
     myText += 'Header padding values are ignored when a Border is enabled and Border padding > 0.<br>'
-    myText +='In <b>Activity Monitor</b> the column two title is controlled automatically depending on the intervals found and is not editable.'
     return myText
 }
 
@@ -758,51 +758,51 @@ def footerNotes() {
 }
 
 def highlightNotes() {
-    myText = 'Highlights can be applied to Keywords and numeric values that meet certain conditions to make them stand out. Available options are changing font color, font size and text substitution. /n'
-    myText += '<b>Keywords:</b> With Keywords a matching string value can be enhanced with color, size or completely replaced. For example, rather than display the word closed, a ✔️ mark could be displayed instead or '
-    myText += 'the phrase 'not present' could be replaced with 'Away' or 'Out' if preferred. Each active <b>highlight style adds 35 bytes plus 11 bytes per affected row</b> to the HTML size. This may be partially offset by replacing longer phrases like 'not present' with 'Away'. /n'
-    myText += '<b>Thresholds:</b> These allow numeric values that meet >=, ==, or <= conditions to be highlighted. These use the same highlight controls as Keywords and have the same impact on HTML size. You can use replacement values for numeric data./n'
-    myText += "Note1: By applying a highlight color that matches the background color you can make certain values invisible, effectively making it a lowlight for 'normal' conditions such as a dry moisture sensor. "
-    myText = '<b>Note2: Highlights are only available in Attribute Monitor</b>/n'
+    myText = "<b>Keywords:</b> These are used match a string value and can be enhanced with color, size or completely replaced. For example, rather than display the word 'closed', a ✔️ mark could be displayed instead or "
+    myText += "the phrase 'not present' could be replaced with 'Away' or 'Out' if preferred. You can use HTML tags as part of the replacement string, for example replace 'closed' with '[b]OK[/b]' will make the result show as bolded.<br>"
+    myText += "Each active <b>highlight style adds 35 bytes plus 11 bytes per affected row</b> to the HTML size. This may be partially offset by replacing longer phrases like 'not present' with 'Away'. <br>"
+    myText += "<b>Thresholds:</b> These allow numeric values that meet >=, ==, or <= conditions to be highlighted. These use the same highlight controls as Keywords and have the same impact on HTML size. You can use replacement values for numeric data, "
+    myText += "On a battery monitoring tile you change the display for all batteries <= 50 to 'Replace' and highlight it in red.<br>"
+    myText += "<b>Note:</b> By applying a highlight color that matches the background color you can make certain values invisible, effectively making it a lowlight for 'normal' conditions such as a dry moisture sensor."
     return myText
 }
 
 def styleNotes() {
-    myText = 'Styles are a collection of settings for quickly and consistently modifying how data is displayed. Here you can save new styles that you create or retrieve styles that you have created previously and apply them to the current table. '
+    myText = 'Styles are a collection of settings for quickly and consistently modifying how data is displayed. Here you can apply built-in styles, create new styles or retrieve styles that you have created previously and apply them to the current table. '
     myText += 'Styles are stored in the parent app so a style created here will be available in other field compatible child apps. The same holds true of deletions.<br>'
-    myText += "<b>Style Names:</b> Style names are <u>automatically</u> pre-fixed with 'Style-AM '. A style with a leading * is a built-in style that will always sort to the top of the list. You can delete any Built-In styles but they will be restored if the Tile Builder parent app is re-installed.<br>"
+    myText += "<b>Style Names:</b> Style names are <u>automatically</u> pre-fixed with 'Style-AM '. A style with a leading * is a built-in style that will always sort to the top of the list. You can delete Built-In styles but they will be restored if the Tile Builder parent app is re-installed.<br>"
     myText += "<b>Important:</b> When saving a new style you must hit enter or tab to leave the 'Save as Style' field and save that value. Then you can click the 'Save Current Style' button.<br>"
-    myText += '<b>Import\\Export</b> allows you to easily share styles that you create with other Hubitat users by simply cutting and pasting to\\from Hubitat community forums.'
-    return myText
-}
-
-def overrideNotes() {
-    myText = "<b>Overrides</b> allow any value to be overridden using the field code and the replacement value. Field replacement overrides are entered in the form #fc1#=XXX | #fc2#=XXY etc. for field replacements where 'fc?' is the field code and 'XX?' is the value. "
-    myText += 'Field codes are an abbreviated version of the field name, for example #tt# is the title text, #fc# is the footer color, #rta# is the row text alignment. You can find a full list of the field codes via the documentation link. '
-    myText += 'Enable the Title and try this --> <mark>#ta#=Left | #tc#=#00FF00 | #ts#=80</mark> <-- '
-    myText += "The Title text should move to the left and change it's color and size.<br>"
-    myText += 'Why use field codes? Basically they allow you to get outcomes not achievable via the GUI controls. For example using <mark>#tff#=Arial Rounded MT</mark> allows the user to specify a font that is not an option in the menu system.'
-    myText += 'This approach also allows you to take an existing style, modify it in a few small ways without creating a whole new style. Using overrides keeps the variances from the base style obvious.<br>'
-    myText += "<b>Style Enhancements:</b> These are very powerful enhancements that allow the user to extend the properties of different elements such as 'Table', 'Border', 'Title' etc in very powerful ways such as adding animations, shadows, gradients and transformations. "
-    myText += "You can see examples of these in the 'Overrides Helper' examples. A full discussion of the properties can be found in the documentation.<br>"
-    myText += "<b>Show Overrides Helper:</b> Overrides can be very powerful, but not very intuitive. To reduce the learning curve the 'Overrides Helper' provides 40 examples to perform all kinds of operations on different components of the table."
-    myText += "The best thing to do is just try them out. Simply pick a <u>Sample Override</u> to try out, click the 'Copy to Overrides' and then click 'Refresh Table' to apply them. Most efects will be visible right away, some might only be visible during a browser refresh."
-    myText += 'In some cases an effect may not be visible at all. For example setting the table background to a gradient will only be visible if the table rows and\\or the table header have an opacity less than 1.<br>'
-    myText += 'Documentation will be forthcoming but these examples should help you get started. There are multiple web resources for building these CSS strings but here is one to help you get started: https://webcode.tools/generators/css/background-gradient'
+    myText += '<b>Import\\Export</b> allows you to easily share styles that you create with other Hubitat users by simply cutting and pasting the displayed strings to\\from Hubitat community forums.'
     return myText
 }
 
 def advancedNotes() {
-    myText = '<b>Scrubbing</b> removes unneccessary content and shrinks the final HTML size. Leave on unless your Tile Preview does not render correctly.<br>'
-    myText += "<b>Enable Overrides</b> turns on\\off the processing of the contents of the '<u>Settings Overrides</u>' field. Using overrides you can achieve many styles and effects not available through the 'Customize Table' interface.<br>"
-    myText += '<b>Show Effective settings</b> shows the merged result of the basic settings with the overrides applied. It is primarily a diagnostic tool and will normally be left off.<br>'
-    myText += "<b>Show Pseudo HTML</b> shows the HTML generated with any '<' or '>' tags replaced with '[' and ']'. This can be helpful in visualizing the HTML for the purposes of optimization. Normally this will be turned off.<br>"
+    myText = '<b>Scrubbing:</b> Removes unneccessary content and shrinks the final HTML size by about 20%. Leave on unless your Tile Preview does not render correctly.<br>'
+    myText += "<b>Enable Overrides:</b> Turns on\\off the processing of the contents of the '<u>Settings Overrides</u>' field. Using overrides you can achieve many styles and effects not available through the 'Customize Table' interface.<br>"
+    myText += '<b>Show Effective settings:</b> Displays the merged result of the basic settings with the overrides applied. It is primarily a diagnostic tool and will normally be left off.<br>'
+    myText += "<b>Show Pseudo HTML:</b> Displays the HTML generated with any '<' or '>' tags replaced with '[' and ']'. This can be helpful in visualizing the HTML for the purposes of optimization. Normally this will be turned off.<br>"
+    return myText
+}
+
+def overrideNotes() {
+    myText = "<b>Overrides</b> allow any value to be overridden using the field code and the replacement value. Field replacement overrides are entered in the form #fc1#=XX1 | #fc2#=XX1 etc. for field replacements where 'fc?' is the field code and 'XX?' is the value. "
+    myText += 'Field codes are an abbreviated version of the field name, for example #tt# is the title text, #fc# is the footer color, #rta# is the row text alignment. You can find a full list of the field codes in the documentation. '
+    myText += 'Enable the Title and try this --> <mark>#ta#=Left | #tc#=#00FF00 | #ts#=80</mark> <-- '
+    myText += "The Title text should move to the left and change it's color and size.<br>"
+    myText += 'Why use field codes? Basically they allow you to get outcomes not achievable via the GUI controls. For example using <mark>#tff#=Arial Rounded MT</mark> allows the user to specify a font that is not an option in the menu system.'
+    myText += 'This approach also allows you to take an existing style, modify it in a few small ways without creating a whole new style. Using overrides keeps the variances from the base style obvious.<br>'
+    myText += "<b>Style Enhancements:</b> These are very powerful enhancements that allow the user to extend the properties of different elements such as 'Table', 'Border', 'Title' to add ways such as adding animations, shadows, gradients and transformations. "
+    myText += "You can see examples of these in the <b>'Overrides Helper'</b> examples. A full discussion of the properties can be found in the documentation.<br>"
+    myText += "<b>Show Overrides Helper:</b> Overrides are very powerful, but not intuitive. To reduce the learning curve the <b>Overrides Helper</b> provides 40 examples to perform all kinds of operations on different components of the table."
+    myText += "The best thing to do is just try them out. Simply pick a <u>Sample Override</u> to try out, click the <b>Copy to Overrides</b> and then click <b>Refresh Table</b> to apply them. Most efects will be visible right away, some might only be visible during a browser refresh."
+    myText += 'In some cases an effect may not be visible at all. For example setting the table background to a gradient will only be visible if the table rows and\\or the table header have an opacity less than 1.<br>'
+    myText += 'Documentation will be coming shortly but these examples should help you get started. There are multiple web resources for building these CSS strings but here is one to help you get started: https://webcode.tools/generators/css/background-gradient'
     return myText
 }
 
 def displayTips() {
     myText =  'This is a <b>close approximation</b> of how the table will display within a dashboard tile. Once the table is published to a tile you can quickly make changes and publish them to see exactly how they look. If the tile does not immediately '
-    myText += "display after you have placed a new Tile Builder tile Hubitat Dashboard but instead says, 'Please Configure an Attribute' then do a browser refresh and that should correct it.<br>"
+    myText += "display after you have placed a new Tile Builder tile Hubitat Dashboard but instead says, 'Please Configure an Attribute' then reload the dashboard and that should correct it.<br>"
     myText += '<b>Adjusting Height and Width:</b> The final dimensions of the table are affected by many factors, especially the height. The number of rows of data, border size, border padding, text size, base font size, font face, frame, title, title padding etc all impact the height. '
     myText += 'To start with adjust the padding, then the text sizes and finally the table height and width.<br>'
     myText += '<b>Hubitat Dashboard:</b> Because Tile Builder tiles hold data from multiple devices you will likely use 1x2 or 2x2 tiles vs the default 1x1 Hubitat Dashboard. The tile background color and opacity shown here are for visualization only. The Hubitat Dashboard settings '
