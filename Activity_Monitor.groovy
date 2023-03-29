@@ -11,9 +11,9 @@
 *  Original posting on Hubitat Community forum.  
 *
 *  ACTIVITY MONITOR for DASHBOARD - CHANGELOG
-*  Version 1.0.0 - Initial Release
+*  Version 1.0.1 - Initial Release
 *
-*  Gary Milne - November, 2022
+*  Gary Milne - March 28th, 2023
 *
 **/
 
@@ -23,7 +23,7 @@ definition(
     author: "Gary J. Milne",
     description: "Monitors a list of devices to look for those that are inactive\\overactive and may need attention. Publishes an HTML table of results for a quick and attractive display in the Hubitat Dashboard environment.",
 	category: "Utilities",
-    importUrl: "https://raw.githubusercontent.com/GaryMilne/Hubitat-Tasmota/main/Broadcaster.groovy",
+    importUrl: "https://raw.githubusercontent.com/GaryMilne/Hubitat-TileBuilder/main/Activity_Monitor.groovy",
 	iconUrl: "",
 	iconX2Url: "",
     iconX3Url: "",
@@ -64,8 +64,6 @@ def mainPage() {
             if (useList == "7" ) input "devices7", "capability.temperatureMeasurement", title: "Temperature Sensors to be monitored" , multiple: true, required: false, defaultValue: null, width: 6
             if (isLogInfo) log.info ("devicePage: useList is:*${useList}*")
     
-			
-            
             //href "devicePage", title: "Populate Device Lists", width:6,  description: "Devices Selected?", 
             paragraph line(2)
             
@@ -115,7 +113,8 @@ def mainPage() {
 				paragraph "<style>#buttons {font-family: Arial, Helvetica, sans-serif;width: 90%;text-align:'Center'} #buttons td,tr {background:#00a2ed;color:#FFFFFF;text-align:Center;opacity:0.75;padding: 8px} #buttons td:hover {background-color: #27ae61;opacity:1}</style>"
 				part1 = "<table id='buttons'><td>"  + buttonLink ('General', 'General', 1) + "</td><td>" + buttonLink ('Title', 'Title', 2) + "</td><td>" + buttonLink ('Headers', 'Headers', 3) + "</td>"
 				part2 = "<td>" + buttonLink ('Borders', 'Borders', 4) + "</td><td>" + buttonLink ('Rows', 'Rows', 5) + "</td><td>"  + buttonLink ('Footer', 'Footer', 6) + "</td>"
-				part3 = "<td>" + buttonLink ('Highlights', 'Highlights', 7) + "</td><td>" + buttonLink ('Styles', 'Styles', 8) + "</td>" + "</td><td>" + buttonLink ('Advanced', 'Advanced', 9) + "</td>"
+				if (moduleName == "Attribute Monitor") part3 = "<td>" + buttonLink ('Highlights', 'Highlights', 7) + "</td><td>" + buttonLink ('Styles', 'Styles', 8) + "</td>" + "</td><td>" + buttonLink ('Advanced', 'Advanced', 9) + "</td>"
+                if (moduleName == "Activity Monitor") part3 = "<td>" + buttonLink ('Styles', 'Styles', 8) + "</td>" + "</td><td>" + buttonLink ('Advanced', 'Advanced', 9) + "</td>"
                 if (parent.isAdvancedLicenseSelected() == "true") table = part1 + part2 + part3 + "</table>"
                 else table = part1 + part2 + "</table>"
 				paragraph table
@@ -184,11 +183,9 @@ def mainPage() {
 						input (name: "hp", type: "enum", title: bold("Text Padding"), options: parent.elementSize(), required: false, defaultValue: "0",  submitOnChange: true, width: 2)
 						input (name: "hbc", type: "color", title: bold2("Background Color", hbc), required: false, defaultValue: "#90C226", submitOnChange: true, width: 3)
 						input (name: "hbo", type: "enum", title: bold("Background Opacity"), options: parent.opacity(), required: false, defaultValue: "1",  submitOnChange: true, width: 2)
-						
-						paragraph line(1)
-						myText = parent.headerNotes()
-						paragraph summary("Header Notes", myText)
-					}
+                        }
+					paragraph line(1)
+					paragraph summary("Header Notes", parent.headerNotes() )
 				}
 
 				//Border Properties
@@ -202,9 +199,9 @@ def mainPage() {
 						input (name: "bo", type: "enum", title: bold("Opacity"), options: parent.opacity(), required: false, defaultValue: "1", submitOnChange: true, width: 2)
 						input (name: "br", type: "enum", title: bold("Radius"), options: parent.borderRadius(), required: false, defaultValue: "0", submitOnChange: true, width: 2)
 						input (name: "bp", type: "enum", title: bold("Padding"), options: parent.elementSize(), required: false, defaultValue: "0",  submitOnChange: true, width: 2)
-						paragraph line(1)
-						paragraph summary("Border Notes", parent.borderNotes() )
-					}
+                    }
+					paragraph line(1)
+				    paragraph summary("Border Notes", parent.borderNotes() )
 				}
 
 				//Row Properties
@@ -274,9 +271,8 @@ def mainPage() {
                             input (name: "tcv2", type: "number", title: bold("Comparison Value #2"), required: false, displayDuringSetup: true, defaultValue: 1, submitOnChange: true, width: 2)
                             input (name: "ttr2", type: "text", title: bold("Replacement Text #2"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2)
                         }
-                    paragraph line(1)
-                    if (moduleName == "Attribute Monitor" ) paragraph summary("Highlight Notes", parent.highlightNotes() )	
-					if (moduleName == "Activity Monitor" ) paragraph note("", "Keywords and Highlights are disabled in Activity Monitor.")
+                        paragraph line(1)
+                        paragraph summary("Highlight Notes", parent.highlightNotes() )	
                     }
                 }
 				
@@ -412,7 +408,7 @@ def mainPage() {
         section {	//Configure Data Refresh
             paragraph titleise("Configure Data Refresh Interval and Publish")
 			paragraph body("Here you will configure how where the table will be stored and how often it will be refreshed.<br>The HTML data must be less than 1024 bytes in order to be published.")
-			input (name: "myTile", title: "<b>Which Tile Attribute will store the table?</b>", type: "enum", options: parent.allTileList(), required:false, submitOnChange:false, width:3, defaultValue: 1, newLine:false)
+			input (name: "myTile", title: "<b>Which Tile Attribute will store the table?</b>", type: "enum", options: parent.allTileList(), required:false, submitOnChange:false, width:3, defaultValue: 0, newLine:false)
 			input (name:"myTileName", type:"text", title: "<b>Name this Tile</b>", submitOnChange: true, width:3, newLine:false, required: true)
 			input (name: "tilesAlreadyInUse", type: "enum", title: bold("For Reference Only: Tiles already in Use"), options: parent.getTileList(), required: false, defaultValue: "Tile List", submitOnChange: false, width: 3, newLineAfter:true)
 			if(myTileName) app.updateLabel(myTileName)
@@ -807,12 +803,7 @@ void refreshTable(){
     if (isLogTrace) log.trace("refreshTable: Entering refreshTable")
 	//Create the template for the data
     def data = ["#A01#":"A01","#B01#":"B01","#A02#":"A02","#B02#":"B02","#A03#":"A03","#B03#":"B03","#A04#":"A04","#B04#":"B04","#A05#":"A05","#B05#":"B05", "#A06#":"A06","#B06#":"B06","#A07#":"A07","#B07#":"B07","#A08#":"A08","#B08#":"B08","#A09#":"A09","#B09#":"B09","#A10#":"A10","#B10#":"B10","#A11#":"A11","#B11#":"B11","#A12#":"A12","#B12#":"B12","#A13#":"A13","#B13#":"B13","#A14#":"A14","#B14#":"B14","#A15#":"A15","#B15#":"B15","#A16#":"A16","#B16#":"B16","#A17#":"A17","#B17#":"B17","#A18#":"A18","#B18#":"B18","#A19#":"A19","#B19#":"B19","#A20#":"A20","#B20#":"B20"]
-	
-	//Force the Colum 2 Heading to the appropriate interval in Activity Monitor
-    if (moduleName == "Activity Monitor"){
-    if (inactivityThreshold.toInteger() >= 24 ) app.updateSetting("B0", "Inactive Days")
-        else app.updateSetting("B0", "Inactive Hours")
-    }
+
 	if (moduleName == "Activity Monitor") sortedMap = getDeviceMapActMon()
 	if (moduleName == "Attribute Monitor") sortedMap = getDeviceMapAttrMon()
 	if (isLogDebug) log.debug("refreshTable: sortedMap is: ${sortedMap}")
@@ -1590,7 +1581,7 @@ def initialize(){
 	app.updateSetting("overrides", "?")
 	
 	//Other
-	app.updateSetting("myTile", 1)
+	//app.updateSetting("myTile", 1)
 	app.updateSetting("mySelectedTile", "")
     app.updateSetting("myReplacementText", "?")
     

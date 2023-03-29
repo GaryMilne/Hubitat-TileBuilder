@@ -12,18 +12,25 @@
 *
 *  Tile Builder Storage Driver - ChangeLog
 *  Version 1.0.0 - Initial Release
-*  Gary Milne - March, 2023
+*  Gary Milne - March 29th, 2023
 *
 **/
 
-metadata {
-
-    definition (name: "Tile Builder Storage Driver", namespace: "garyjmilne", author: "garymilne") {
-        //capability "Variable"
+definition{
+    name: 'Tile Builder Storage Driver',
+    namespace: 'garyjmilne',
+    author: 'Gary Milne',
+    description: 'This is the Tile Builder Storage Driver',
+    category: 'Dashboards',
+	importUrl: "https://raw.githubusercontent.com/GaryMilne/Hubitat-TileBuilder/main/Tile_Builder_Storage_Driver.groovy",
+    iconUrl: '',
+    iconX2Url: '',
+    iconX3Url: '',
+    singleThreaded: true
     }
     
-	capability "Refresh"
-	attribute "test", "string"
+    capability "Refresh"
+    attribute "test", "string"
     attribute "tile1", "string"
     attribute "tile2", "string"
     attribute "tile3", "string"
@@ -50,10 +57,10 @@ metadata {
     attribute "tile24", "string"
     attribute "tile25", "string"
     
-	command "test"
+    command "test"
     command "initialize"
     //command "getUnusedTiles"
-	//command "getUsedTiles"
+    //command "getUsedTiles"
     //command "getTileListByActivity"
     command "createTile", [ [name:"The tile number.*" , type: "NUMBER" , description: "Valid entries are '1 - 25'", range: 1..25], [name:"The tile content.*" , type: "STRING", description: "Usually HTML created by Tile Builder" ], [name:"Tile Description." , type: "STRING" , description: "i.e. 'Battery Activity'"] ]
     command "deleteTile", [ [name:"The tile number.*", type: "NUMBER", description: "Valid entries are '1 - 25'", range: 1..25] ]
@@ -64,8 +71,8 @@ metadata {
         input name: "ClassIDDigit", type: "enum", title: "First Digit of Class ID's assigned by this device (Default is A). If you have more than one Tile Builder Storage Device they must use a different digit.", description: "A single digit in the range A - C.",
         options: ["A","B","C"], defaultValue: "A"
         //input name: "logging_level", type: "number", title: bold("Level of detail displayed in log"), description: italic("Enter log level 0-3. (Default is 0.)"), defaultValue: "0", required:true, displayDuringSetup: false            
-	    //input name: "loggingEnhancements", type: "enum", title: bold("Logging Enhancements."), description: italic("Allows log entries for this device to be enhanced with HTML tags for increased increased readability. (Default - All enhancements.)"),
-          //  options: [ [0:" No enhancements."],[1:" Prepend log events with device name."],[2:" Enable HTML tags on logged events for this device."],[3:" Prepend log events with device name and enable HTML tags." ] ], defaultValue: 3, required:true	
+        //input name: "loggingEnhancements", type: "enum", title: bold("Logging Enhancements."), description: italic("Allows log entries for this device to be enhanced with HTML tags for increased increased readability. (Default - All enhancements.)"),
+        //  options: [ [0:" No enhancements."],[1:" Prepend log events with device name."],[2:" Enable HTML tags on logged events for this device."],[3:" Prepend log events with device name and enable HTML tags." ] ], defaultValue: 3, required:true	
         } 
 
 void installed() {
@@ -87,7 +94,7 @@ def getClassIDinUse(){
 
 //Creates a tile
 void createTile(tileNumber, HTML, description) {
-	log.info ("publishing tile: $tileNumber - $description")
+    log.info ("publishing tile: $tileNumber - $description")
     tileName = "tile" + tileNumber.toString()
     if (state.tileDescriptions == null) state.tileDescriptions = [:]
     
