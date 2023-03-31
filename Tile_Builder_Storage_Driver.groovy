@@ -16,18 +16,7 @@
 *
 **/
 
-definition{
-    name: 'Tile Builder Storage Driver',
-    namespace: 'garyjmilne',
-    author: 'Gary Milne',
-    description: 'This is the Tile Builder Storage Driver',
-    category: 'Dashboards',
-	importUrl: "https://raw.githubusercontent.com/GaryMilne/Hubitat-TileBuilder/main/Tile_Builder_Storage_Driver.groovy",
-    iconUrl: '',
-    iconX2Url: '',
-    iconX3Url: '',
-    singleThreaded: true
-    }
+definition( name: "Tile Builder - Activity Monitor", namespace: "garyjmilne", author: "Gary J. Milne", importUrl: "https://raw.githubusercontent.com/GaryMilne/Hubitat-TileBuilder/main/Activity_Monitor.groovy",singleThreaded: true )
     
     capability "Refresh"
     attribute "test", "string"
