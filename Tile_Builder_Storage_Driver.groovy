@@ -16,7 +16,9 @@
 *
 **/
 
-definition( name: "Tile Builder - Activity Monitor", namespace: "garyjmilne", author: "Gary J. Milne", importUrl: "https://raw.githubusercontent.com/GaryMilne/Hubitat-TileBuilder/main/Activity_Monitor.groovy",singleThreaded: true )
+metadata {
+	definition( name: "Tile Builder - Activity Monitor", namespace: "garyjmilne", author: "Gary J. Milne", importUrl: "https://raw.githubusercontent.com/GaryMilne/Hubitat-TileBuilder/main/Activity_Monitor.groovy",singleThreaded: true ){
+	}
     
     capability "Refresh"
     attribute "test", "string"
