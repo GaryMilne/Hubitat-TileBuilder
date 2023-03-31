@@ -1,6 +1,6 @@
 /**
 *  Tile Builder Parent App
-*  Version: v1.0.1
+*  Version: v1.0.2
 *  Download: See importUrl in definition
 *  Description: Used in conjunction with child apps to generate tabular reports on device data and publishes them to a dashboard.
 *
@@ -11,11 +11,10 @@
 *  Original posting on Hubitat Community forum.  
 *
 *  Tile Builder Parent App - ChangeLog
-*  Version 1.0.1 - Initial Release
+*  Version 1.0.2 - Initial Release
 *  Gary Milne - March, 2023
 *
 **/
-
 
 //These are the data for the pickers used on the child forms.
 def elementSize() { return ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20'] }
@@ -761,7 +760,7 @@ def highlightNotes() {
     myText = "<b>Keywords:</b> These are used match a string value and can be enhanced with color, size or completely replaced. For example, rather than display the word 'closed', a ✔️ mark could be displayed instead or "
     myText += "the phrase 'not present' could be replaced with 'Away' or 'Out' if preferred. You can use HTML tags as part of the replacement string, for example replace 'closed' with '[b]OK[/b]' will make the result show as bolded.<br>"
     myText += "Each active <b>highlight style adds 35 bytes plus 11 bytes per affected row</b> to the HTML size. This may be partially offset by replacing longer phrases like 'not present' with 'Away'. <br>"
-    myText += "<b>Thresholds:</b> These allow numeric values that meet >=, ==, or <= conditions to be highlighted. These use the same highlight controls as Keywords and have the same impact on HTML size. You can use replacement values for numeric data, "
+    myText += "<b>Thresholds:</b> These allow numeric values that meet >=, ==, or <= conditions to be highlighted. These use the same highlight controls as Keywords and have the same impact on HTML size. You can use replacement values for numeric data. "
     myText += "On a battery monitoring tile you change the display for all batteries <= 50 to 'Replace' and highlight it in red.<br>"
     myText += "<b>Note:</b> By applying a highlight color that matches the background color you can make certain values invisible, effectively making it a lowlight for 'normal' conditions such as a dry moisture sensor."
     return myText

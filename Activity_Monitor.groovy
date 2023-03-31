@@ -1,6 +1,6 @@
 /**
 *  Activity Monitor (Tile Builder Child)
-*  Version: v1.0.0
+*  Version: v1.0.2
 *  Download: See importUrl in definition
 *  Description: An app that generates tabular reports on device activity and publishes them to a dashboard.
 *
@@ -11,9 +11,9 @@
 *  Original posting on Hubitat Community forum.  
 *
 *  ACTIVITY MONITOR for DASHBOARD - CHANGELOG
-*  Version 1.0.1 - Initial Release
+*  Version 1.0.2 - Initial Release
 *
-*  Gary Milne - March 28th, 2023
+*  Gary Milne - March 29th, 2023
 *
 **/
 
