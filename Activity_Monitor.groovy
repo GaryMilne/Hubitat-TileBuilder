@@ -1,19 +1,25 @@
 /**
 *  Activity Monitor (Tile Builder Child)
-*  Version: v1.0.2
+*  Version: v1.0.4
 *  Download: See importUrl in definition
 *  Description: An app that generates tabular reports on device activity and publishes them to a dashboard.
 *
 *  Copyright 2022 Gary J. Milne  
 *
 *  Authors Notes:
-*  For more information on the Activity Monitor - Lite check out the community forum:
-*  Original posting on Hubitat Community forum.  
+*  For more information on the Activity Monitor check out the community forum:
+*  Original posting on Hubitat Community forum.
+*  Tile Builder Standard Documentation: https://github.com/GaryMilne/Hubitat-TileBuilder/blob/main/Tile%20Builder%20Standard%20Help.pdf
+*  Tile Builder Advanced Documentation: https://github.com/GaryMilne/Hubitat-TileBuilder/blob/main/Tile%20Builder%20Advanced%20Help.pdf
 *
 *  ACTIVITY MONITOR for DASHBOARD - CHANGELOG
-*  Version 1.0.2 - Initial Release
+*  Version 1.0.0 - Internal
+*  Version 1.0.1 - Cleaned up some UI pieces. Removed tile1 as the default when publishing so that it is a conscious choice to avoid overrides.
+*  Version 1.0.2 - Fixed bug with 'No Selection' in UI. Changed logic to handle 0 rows in table. 
+*  Version 1.0.3 - Allows 'Tables' with only a title for use as a placeholder on the Dashboard. 
+*  Version 1.0.4 - Added logic to hide\show publishing buttons based on required fields.
 *
-*  Gary Milne - March 29th, 2023
+*  Gary Milne - April 2nd, 2023
 *
 **/
 
@@ -32,8 +38,18 @@ definition(
     installOnOpen: true
 )
 
-import groovy.transform.Field						
+import groovy.transform.Field
+@Field static final unitsMap = ["None", "°F", "_°F", "°C", "_°C", "%", "_%", "A", "_A", "V", "_V", "W", "_W", "kWh", "_kWH", "K", "_K", "ppm", "_ppm", "lx", "_lx"]
+@Field static final comparators = ["<=", "==", ">="]
+
+//These are supported capabilities. Layout is "device.selector":"attribute".  Keeping them in 3 seperate maps makes it easier to identify the sort criteria.
+@Field static final capabilitiesInteger = ["airQuality":"airQualityIndex", "battery":"battery", "colorTemperature":"colorTemperature","illuminanceMeasurement":"illuminance","signalStrength":"rssi"]
+@Field static final capabilitiesString = ["carbonDioxideDetector":"carbonMonoxide", "contactSensor":"contact", "lock":"lock", "motionSensor":"motion", "presenceSensor":"presence", "smokeDetector":"smoke", "switch":"switch", "windowBlind":"windowBlind"]
+@Field static final capabilitiesFloat = ["currentMeter": "amperage", "energyMeter":"energy", "powerMeter":"power", "relativeHumidityMeasurement":"humidity", "temperatureMeasurement":"temperature","voltageMeasurement":"voltage"]
+//These are unknown as to whether they report integer or float values.
+//capabilitiesUnknown = [" "carbonDioxideMeasurement":"carbonDioxide","pressureMeasurement":"pressure","relativeHumidityMeasurement":"humidity", "ultravioletIndex":"ultravioletIndex"]
 @Field static final moduleName = "Activity Monitor"
+
 preferences {
 	page(name: "mainPage")
     page (name: "devicePage")
@@ -44,6 +60,8 @@ def mainPage() {
     if (state.initialized == null ) initialize()
     //initialize()
 	
+																														  
+						   
 	refreshTable()
 	refreshUIbefore()
 	dynamicPage(name: "mainPage", title: titleise("<center><h2>" + moduleName + "</h2></center>"), uninstall: true, install: true, singleThreaded:true) {
@@ -53,6 +71,7 @@ def mainPage() {
 		    paragraph titleise("Select the Devices to be Monitored.")
             paragraph "<div style='color:#17202A;text-align:left; margin-top:0em; font-size:16px'><b>You can choose a list to make it easier to select devices. You only need to populate the list you plan to use as only one list will be active at a time.</b><br></div>"  //Line with Description of the selected command.
 																							
+																							
             input (name: "useList", title: "<b>Use List</b>", type: "enum", options: [1:"All Devices", 2:"Battery Devices", 3:"Motion Devices", 4:"Presence Sensors", 5:"Switches", 6:"Contact Sensors", 7:"Temperature Sensors"], required:true, state: selectOk?.devicePage ? "complete" : null, submitOnChange:true, width:2, defaultValue: 1)
             
             if (useList == "1" ) input "devices1", "capability.*", title: "All Devices to be monitored" , multiple: true, required: false, defaultValue: null, width: 6
@@ -61,12 +80,13 @@ def mainPage() {
             if (useList == "4" ) input "devices4", "capability.presenceSensor", title: "Presence Sensors to be Monitored" , multiple: true, required: false, defaultValue: null, width: 6
             if (useList == "5" ) input "devices5", "capability.switch", title: "Switches to be Monitored" , multiple: true, required: false, defaultValue: null, width: 6
             if (useList == "6" ) input "devices6", "capability.contactSensor", title: "Contacts to be monitored" , multiple: true, required: false, defaultValue: null, width: 6
+   
             if (useList == "7" ) input "devices7", "capability.temperatureMeasurement", title: "Temperature Sensors to be monitored" , multiple: true, required: false, defaultValue: null, width: 6
             if (isLogInfo) log.info ("devicePage: useList is:*${useList}*")
     
             //href "devicePage", title: "Populate Device Lists", width:6,  description: "Devices Selected?", 
             paragraph line(2)
-            
+			
 			//************************************************************************************************************************************************************************************************************************
 			//************************************************************************************************************************************************************************************************************************
 			//************************************************************************************************************************************************************************************************************************
@@ -81,7 +101,7 @@ def mainPage() {
 			
 			paragraph titleise("Select Report Options.")  
             if (moduleName == "Activity Monitor") input (name: "inactivityThreshold", title: "<b>Inactivity threshold</b>", type: "enum", options: parent.inactivityTime(), submitOnChange:true, width:2, defaultValue: 24)
-            input (name: "myDeviceLimit", title: "<b>Device Limit threshold</b>", type: "enum", options: parent.deviceLimit(), submitOnChange:true, width:2, defaultValue: 5)
+            input (name: "myDeviceLimit", title: "<b>Device Limit Threshold</b>", type: "enum", options: parent.deviceLimit(), submitOnChange:true, width:2, defaultValue: 5)
             input (name: "myTruncateLength", title: "<b>Truncate Device Name</b>", type: "enum", options: parent.truncateLength(), submitOnChange:true, width:2, defaultValue: 20)
 			input (name: "mySortOrder", title: "<b>Sort Order</b>", type: "enum", options: sortOrder(), submitOnChange:true, width:3, defaultValue: 1 )  //Sort alphabetically by device name
 			if (moduleName == "Attribute Monitor") input (name: "myDecimalPlaces", title: "<b>Decimal Places</b>", type: "enum", options: [0,1,2], submitOnChange:true, width:2, defaultValue: 1)
@@ -408,7 +428,7 @@ def mainPage() {
         section {	//Configure Data Refresh
             paragraph titleise("Configure Data Refresh Interval and Publish")
 			paragraph body("Here you will configure how where the table will be stored and how often it will be refreshed.<br>The HTML data must be less than 1024 bytes in order to be published.")
-			input (name: "myTile", title: "<b>Which Tile Attribute will store the table?</b>", type: "enum", options: parent.allTileList(), required:false, submitOnChange:false, width:3, defaultValue: 0, newLine:false)
+			input (name: "myTile", title: "<b>Which Tile Attribute will store the table?</b>", type: "enum", options: parent.allTileList(), required:true, submitOnChange:true, width:3, defaultValue: 0, newLine:false)
 			input (name:"myTileName", type:"text", title: "<b>Name this Tile</b>", submitOnChange: true, width:3, newLine:false, required: true)
 			input (name: "tilesAlreadyInUse", type: "enum", title: bold("For Reference Only: Tiles already in Use"), options: parent.getTileList(), required: false, defaultValue: "Tile List", submitOnChange: false, width: 3, newLineAfter:true)
 			if(myTileName) app.updateLabel(myTileName)
@@ -416,13 +436,17 @@ def mainPage() {
             
             paragraph line(1)
             
-            if ( state.HTMLsizes.Final < 1024) {
-                if (moduleName == "Activity Monitor") input (name:"publishInterval", title: "<b>Table Refresh Interval</b>", type: "enum", options: parent.refreshInterval(), required:false, submitOnChange:true, width:2, defaultValue: 1)
-                if (moduleName == "Activity Monitor") input (name: "publish", type: "button", title: "Publish Table", backgroundColor: "#27ae61", textColor: "white", submitOnChange: true, width: 12)
-                if (moduleName == "Attribute Monitor") input (name: "publishSubscribe", type: "button", title: "Publish and Subscribe", backgroundColor: "#27ae61", textColor: "white", submitOnChange: true, width: 12)
-                if (moduleName == "Attribute Monitor") input (name: "unsubscribe", type: "button", title: "Delete Subscription", backgroundColor: "#27ae61", textColor: "white", submitOnChange: true, width: 12)
-                }
-            else input (name: "cannotPublish", type: "button", title: "Publish and Subscribe", backgroundColor: "#D3D3D3", textColor: "black", submitOnChange: true, width: 12)
+            if ( state.HTMLsizes.Final < 1024 && settings.myTile != null && myTileName != null ) {
+				if (moduleName == "Activity Monitor") {
+					input (name:"publishInterval", title: "<b>Table Refresh Interval</b>", type: "enum", options: parent.refreshInterval(), required:false, submitOnChange:true, width:2, defaultValue: 1)
+                    input (name: "publish", type: "button", title: "Publish Table", backgroundColor: "#27ae61", textColor: "white", submitOnChange: true, width: 12)
+					}
+				if (moduleName == "Attribute Monitor") {
+					input (name: "publishSubscribe", type: "button", title: "Publish and Subscribe", backgroundColor: "#27ae61", textColor: "white", submitOnChange: true, width: 12)
+                    input (name: "unsubscribe", type: "button", title: "Delete Subscription", backgroundColor: "#27ae61", textColor: "white", submitOnChange: true, width: 12)
+					}
+				}
+            else input (name: "cannotPublish", type: "button", title: "Publish", backgroundColor: "#D3D3D3", textColor: "black", submitOnChange: false, width: 12)
             paragraph line(2)
                         
             input (name:"isMore", type: "bool", title: "More Options", required: false, multiple: false, defaultValue: false, submitOnChange: true, width: 2)
@@ -810,6 +834,8 @@ void refreshTable(){
 	
     //Iterate through the sortedMap and take the number of entries corresponding to the number set by the deviceLimit
 	recordCount = sortedMap.size()
+	//Make myDeviceLimit = 0 if the they choose 'No Selection' from the drop down or have not selected anything into the devicelist.
+	if ( myDeviceLimit == null || myDeviceList == null) myDeviceLimit = 0
 	sortedMap.eachWithIndex{ key, value, i -> 
 		if (i + 1 <= myDeviceLimit.toInteger() ){ 
 			
@@ -887,9 +913,9 @@ void makeHTML(data, int myRows){
 	if (isTitle == false) { HTMLTITLESTYLE = "" ; HTMLTITLE = "" }
     if (isHeaders == false) { HTMLHEADERSTYLE = "" ; HTMLR0 = "" }
 		
-	//Nullify the non-populated 
-	if (myRows <= 19) HTMLR20 = "" ; if (myRows <= 18) HTMLR19 = ""; if (myRows <= 17) HTMLR18 = ""; if (myRows <= 16) HTMLR17 = ""; if (myRows <= 15) HTMLR16 = ""; if (myRows <= 14) HTMLR15 = ""; if (myRows <= 13) HTMLR14 = ""; if (myRows <= 12) HTMLR13 = ""; if (myRows <= 11) HTMLR12 = ""
-	if (myRows <= 10) HTMLR11 = ""; if (myRows <= 9) HTMLR10 = ""; if (myRows <= 8) HTMLR9 = ""; if (myRows <= 7) HTMLR8 = ""; if (myRows <= 6) HTMLR7 = ""; if (myRows <= 5) HTMLR6 = ""; if (myRows <= 4) HTMLR5 = ""; if (myRows <= 3) HTMLR4 = ""; if (myRows <= 2) HTMLR3 = ""; if (myRows <= 1) HTMLR2 = ""
+	//Nullify the non-populated. We allow it to go to zero rows so that by turning off headers we can have just a Title field for a decorative tile.
+	if (myRows <= 19) HTMLR20 = "" ; if (myRows <= 18) HTMLR19 = ""; if (myRows <= 17) HTMLR18 = ""; if (myRows <= 16) HTMLR17 = ""; if (myRows <= 15) HTMLR16 = ""; if (myRows <= 14) HTMLR15 = ""; if (myRows <= 13) HTMLR14 = ""; if (myRows <= 12) HTMLR13 = ""; if (myRows <= 11) HTMLR12 = ""; if (myRows <= 10) HTMLR11 = "";
+	if (myRows <= 9) HTMLR10 = ""; if (myRows <= 8) HTMLR9 = ""; if (myRows <= 7) HTMLR8 = ""; if (myRows <= 6) HTMLR7 = ""; if (myRows <= 5) HTMLR6 = ""; if (myRows <= 4) HTMLR5 = ""; if (myRows <= 3) HTMLR4 = ""; if (myRows <= 2) HTMLR3 = ""; if (myRows <= 1) HTMLR2 = ""; if (myRows <= 0) HTMLR1 = ""
     
     //Now build the final HTML TEMPLATE string
     def interimHTML = HTMLCOMMENT + HTMLSTYLE1 + HTMLSTYLE2 + HTMLDIVSTYLE + HTMLBORDERSTYLE + HTMLTITLESTYLE + HTMLHEADERSTYLE + HTMLARSTYLE  + HTMLHIGHLIGHT1STYLE + HTMLHIGHLIGHT2STYLE + HTMLDIVSTART + HTMLTITLE + HTMLTABLESTART + HTMLR0 + HTMLTBODY 
@@ -1120,7 +1146,7 @@ void publishSubscribe(){
 	capabilities = capabilitiesInteger.clone() + capabilitiesFloat.clone() + capabilitiesString.clone()
 	deviceType = capabilities.get(myCapability)
 	
-	subscribe(myDeviceList, deviceType.toLowerCase(), handler)
+	if (myDeviceLimit >= 1 && myDeviceList != null ) subscribe(myDeviceList, deviceType.toLowerCase(), handler)
 	//Populate the Initial Table based on the present state.
 	publishTable()
 }

@@ -1,6 +1,6 @@
 /**
 *  Tile Builder Parent App
-*  Version: v1.0.2
+*  Version: v1.0.4
 *  Download: See importUrl in definition
 *  Description: Used in conjunction with child apps to generate tabular reports on device data and publishes them to a dashboard.
 *
@@ -11,8 +11,10 @@
 *  Original posting on Hubitat Community forum.  
 *
 *  Tile Builder Parent App - ChangeLog
-*  Version 1.0.2 - Initial Release
-*  Gary Milne - March, 2023
+*  Version 1.0.3 - Internal Only
+*  Version 1.0.4 - Cleaned up Styles. Cleaned up message text. Small bug fixes.
+*
+*  Gary Milne - April 2nd, 2023
 *
 **/
 
@@ -27,7 +29,7 @@ def textAlignment() { return ['Left', 'Center', 'Right', 'Justify'] }
 def tableSize() { return ['Auto', '50', '55', '60', '65', '70', '75', '80', '85', '90', '95', '100'] }
 def opacity() { return ['1', '0.9', '0.8', '0.7', '0.6', '0.5', '0.4', '0.3', '0.2', '0.1', '0'] }
 def inactivityTime() { return [0:'0 hours', 1:'1 hour', 2:'2 hours', 4:'4 Hours', 8:'8 hours', 12:'12 hours', 24:'1 day', 48:'2 days', 72:'3 days', 168:'1 week', 336:'2 weeks', 730:'1 month', 2190:'3 months', 4380:'6 months', 8760:'1 year'] }
-def deviceLimit() { return [1:'1 device', 2:'2 devices', 3:'3 devices', 4:'4 devices', 5:'5 devices', 6:'6 devices', 7:'7 devices', 8:'8 devices', 9:'9 devices', 10:'10 devices', 11:'11 device', 12:'12 devices', 13:'13 devices', 14:'14 devices', 15:'15 devices', 16:'16 devices', 17:'17 devices', 18:'18 devices', 19:'19 devices', 20:'20 devices'] }
+def deviceLimit() { return [0:'0 devices', 1:'1 device', 2:'2 devices', 3:'3 devices', 4:'4 devices', 5:'5 devices', 6:'6 devices', 7:'7 devices', 8:'8 devices', 9:'9 devices', 10:'10 devices', 11:'11 device', 12:'12 devices', 13:'13 devices', 14:'14 devices', 15:'15 devices', 16:'16 devices', 17:'17 devices', 18:'18 devices', 19:'19 devices', 20:'20 devices'] }
 def truncateLength() { return [99:'No truncation.', 98:'First Space', 97:'Second Space', 96:'Third Space', 10:'10 characters.', 12:'12 characters.', 15:'15 characters.', 18:'18 characters.', 20:'20 characters.', 22:'22 characters.', 25:'25 characters.', 30:'30 characters.'] }
 def refreshInterval() { return [0:'Never', 1:'1 minute', 2:'2 minutes', 5:'5 minutes', 10:'10 minutes', 15:'15 minutes', 30:'30 minutes', 60:'1 hour', 120:'2 hours', 240:'4 hours', 480:'8 hours', 720:'12 hours', 1440:'24 hours'] }
 def pixels() { return ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '-1', '-2', '-3', '-4', '-5', '-6', '-7', '-8', '-9', '-10', '-11', '-12', '-13', '-14', '-15', '-16', '-17', '-18', '-19', '-20'] }
@@ -73,11 +75,11 @@ def mainPage() {
             //Intro
             if (state.showIntro == true ) {
                 input(name: 'btnShowIntro', type: 'button', title: 'Introduction ▼', backgroundColor: 'DodgerBlue', textColor: 'white', submitOnChange: true, width: 2)  //▼ ◀ ▶ ▲
-                paragraph body('Tile Builder allows you to create custom tiles with a broad range of information that can be published to the Dashboard.')
-                part1 = "<ol><li style='font-size:120%'>Attribute Monitor tiles can display a single attribute from multiple devices. For example, a tile might show the temperature in 8 different rooms.</li>"
-                part2 = "<li style='font-size:120%'>Activity Monitor tiles can show the level of activity\\inactivity for a group of devices. For example, a tile might list battery devices that have not reported in 24 hours.</li>"
+                paragraph body('<b>Tile Builder</b> allows you to create custom tiles with a broad range of information that can be published to a <b>Hubitat Dashboard</b>.')
+                part1 = "<ul><li style='font-size:120%'><b>Attribute Monitor</b> tiles can display a single attribute from multiple devices. For example, a tile might show the temperature in 8 different rooms.</li>"
+                part2 = "<li style='font-size:120%'><b>Activity Monitor</b> tiles can show the level of activity\\inactivity for a group of devices. For example, a tile might list battery devices that have not reported in 24 hours.</li>"
                 //part3 = ' ' // "<li style='font-size:120%'>A single tile can display multiple attributes from a single tile. A tile could list temperature, humidity, pressure and battery status.</li>"
-                part4 = "<li style='font-size:120%'>Tiles are endlessly customizeable in an easy to use interface that can generate a very attractive addition to your Hubitat dashboard. For example:</li></ol>"
+                part4 = "<li style='font-size:120%'>Tiles are endlessly customizeable in an easy to use interface that can generate a very attractive addition to your Hubitat dashboard. For example:</li></ul>"
                 paragraph(part1 + part2 + part4)
 
                 //Get some static HTML for a sample table
@@ -91,12 +93,13 @@ def mainPage() {
 
             //Licensing
             input(name: 'btnShowLicense', type: 'button', title: 'License ▼', backgroundColor: 'DodgerBlue', textColor: 'white', submitOnChange: true, width: 2, newLineBefore: true, newLineAfter: false)  //▼ ◀ ▶ ▲
-            myString = 'The basic version of Tile Builder is free to use and provides a highly functional addition to the basic Dashboard capabilities. <br>'
-            myString = myString + "The advanced version gives access to the Highlights, Styles and Advanced tabs which adds some powerful customizations including icon's, threshold and all kinds of animations. See documentation for details.<br>"
-            myString = myString + 'Licensing is done on the honor system. A license to the Advanced features of Tile Builder is granted by a donation of any size via PayPal using this link: '
-            myString = myString + "<a href='https://www.paypal.com/donate/?business=YEAFRPFHJCTFA&no_recurring=1&item_name=Any+size+of+donation+grants+a+license+to+all+advanced+features+of+Tile+Builder.&currency_code=USD'>Donate to Tile Builder Development.</a><br>"
+            myString = 'The standard version of <b>Tile Builder</b> is free to use and provides a highly efunctional addition to the basic Hubitat Dashboard capabilities. '
+            myString = myString + "The <b>Advanced</b> version gives access to the Highlights, Styles and Advanced tabs which adds some powerful customizations including icon's, threshold and all kinds of animations. See documentation for details @ https://github.com/GaryMilne/Hubitat-TileBuilder.<br><br>"
+            myString = myString + 'Licensing is done on the honor system. A license for <b>Tile Builder Advanced</b> is granted by a donation of any size via PayPal using this link: '
+            myString = myString + "<a href='https://www.paypal.com/donate/?business=YEAFRPFHJCTFA&no_recurring=1&item_name=Any+size+of+donation+grants+a+license+to+Tile+Builder+Advanced.+Please+leave+your+Hubitat+Community+ID.&currency_code=USD'>Donate to Tile Builder Development.</a> "
+			myString = myString + "When donating, please include your <b>Hubitat Community ID</b> or send me a message on Hubitat. '<b>Registered</b>' users will get priority support and exclusive access to new <b>Tile Builder</b> modules as they are released. "
+			myString = myString + "This is partly an experiment to see whether the <b>Hubitat Community</b> is willing to support efforts to create high quality solutions for the platform. Without community support, the incentive to create high quality, fully documented solutions is very low."
             paragraph note('', myString)
-            //input (name: "licenseType", type: "enum", title: bold("Select the appropriate license type."), options: [1:"Standard Mode (I have not donated)",2:"Advanced Mode (I have donated)"] , required: false, defaultValue: "Standard Mode (I have not donated)", submitOnChange: true, width: 3, newLineAfter:true)
             input (name: "isAdvancedLicense", type: "enum", title: bold("Select the appropriate license type."), options: [false:"Standard Mode (I have not donated)",true:"Advanced Mode (I have donated)"] , required: false, defaultValue: false, submitOnChange: true, width: 3, newLineAfter:true)
             paragraph line(2)
 
@@ -107,8 +110,8 @@ def mainPage() {
                 if (state.isStorageConnected == false ) {
                     paragraph red('❌ - A Tile Builder Storage Device is not connected.')
                     myString = "You do not have a 'Tile Builder Storage Device' connected. Click the button below to create\\connect one. <br>"
-                    myString = myString + "<b>Important: </b>If you remove the Tile Builder App the Tile Builder Storage Device will become orphaned and unusable. <br>"
-                    myString = myString + "<b>Note: </b>It is possible to install multiple instances of Tile Builder. In such a scenario each instance should be connected to a unique Tile Builder Storage Device."
+                    myString = myString + "<b>Important: </b>If you remove the <b>Tile Builder</b> App the Tile Builder Storage Device will become orphaned and unusable. <br>"
+                    myString = myString + "<b>Note: </b>It is possible to install multiple instances of <b>Tile Builder</b>. In such a scenario each instance should be connected to a unique Tile Builder Storage Device."
                     
                     input(name: 'selectedDevice', type: 'enum', title: bold('Select a Tile Builder Storage Device'), options: storageDevices(), required: false, defaultValue: 'Tile Builder Storage Device 1', submitOnChange: true, width: 3, newLineAfter:true)
                     input(name: 'createDevice', type: 'button', title: 'Create Device', backgroundColor: 'MediumSeaGreen', textColor: 'white', submitOnChange: true, width: 2)
@@ -131,8 +134,8 @@ def mainPage() {
             if (state.showCreate == true ) {
                 //if (true ){
                 input(name: 'btnShowCreate', type: 'button', title: 'Create Tiles ▼', backgroundColor: 'DodgerBlue', textColor: 'white', submitOnChange: true, width: 2, newLineBefore: true, newLineAfter: false)  //▼ ◀ ▶ ▲
-                myString = 'There are two types of tile available in this version of Tile Builder. <b>Activity Monitor</b> tiles allow you to monitor a group of devices for activity\\inactivity using the lastActivityAt attribute. These tiles are refreshed at routine intervals. ' + \
-                               '<b>Device Tiles</b> allow you to configure a tile that aggregates multiple devices\\multiple attributes into a single tile. For example, all your room temperatures could be in a single tile. These tiles subscribe to their assigned devices so updates are realtime. Have fun!<br>'
+                myString = 'This version of <b>Tile Builder</b> has two types of tile available. <b>Activity Monitor</b> tiles allow you to monitor a group of devices for activity\\inactivity using the <b>lastActivityAt</b> attribute. These tiles are refreshed at routine intervals. ' + \
+                               '<b>Attribute Monitor</b> allow you to configure a tile that aggregates multiple devices\\multiple attributes into a single tile. For example, all your room temperatures could be in a single tile. These tiles subscribe to their assigned devices so updates are realtime. Have fun!<br>'
                 paragraph note('', myString)
                 app(name: 'TBPA', appName: 'Tile Builder - Activity Monitor', namespace: 'garyjmilne', title: 'Add New Activity Monitor', multiple: true)
                 app(name: 'TBPA', appName: 'Tile Builder - Attribute Monitor', namespace: 'garyjmilne', title: 'Add New Attribute Monitor', multiple: true)
@@ -146,7 +149,7 @@ def mainPage() {
             if (state.showManage == true ) {
                 input(name: 'btnShowManage', type: 'button', title: 'Manage Tiles ▼', backgroundColor: 'DodgerBlue', textColor: 'white', submitOnChange: true, width: 2, newLineBefore: true, newLineAfter: false)  //▼ ◀ ▶ ▲
                 myString = 'Here you can view information about the tiles on this storage device which are in use, as well as the last time those tiles were updated.<br>'
-                myString += 'In the Tile Builder Storage Device you can preview the tiles, add descriptions and delete tiles as neccessary.'
+                myString += 'In the <b>Tile Builder Storage Device</b> you can preview the tiles, add descriptions and delete tiles as neccessary.'
                 paragraph note('', myString)
                 input name: 'tilesInUse', type: 'enum', title: bold('View Tiles in Use'), options: getTileList(), required: false, defaultValue: 'Tile List', submitOnChange: true, width: 4, newLineAfter:false
                 input name: 'tilesInUseByActivity', type: 'enum', title: bold('View Tiles in Use By Activity'), options: getTileListByActivity(), required: false, defaultValue: 'Tile List By Activity', submitOnChange: true, width: 4, newLineAfter:true
@@ -388,75 +391,81 @@ def makeDefaultStyles() {
     if (isLogTrace) log.trace ('makeDefaultStyles: Entering makeDefaultStyles')
 
     styleA = convertStyleStringToMap('#tbc#=#ffffff, #tilePreview#=5, #isFrame#=true, #fbc#=#000000, #tc#=#f6cd00, #isKeyword1#=false, #isKeyword2#=false, #bp#=3, #isHeaders#=true, #hp#=0, #hta#=Center, #ts#=140, #shcolor#=#f6cd00, #fc#=#000000, #to#=1, #rabc#=#dff8aa, #hbc#=#f6cd00, #shblur#=2, #hts#=100, #bm#:Collapse, #rtc#=#000000, #hbo#=1, #iFrameColor#=#fffada, #shver#=2, #tff#=Comic Sans MS, #istitleShadow#=false, #rp#=0, #comment#=?, #tp#=3, #th#=Auto, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.8, #shhor#=2, #htc#=#000000, #rbc#=#fbed94, #fa#=Center, #rts#=80, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=1, #fs#=60, #rta#=Center, #isFooter#=false, #tw#=90, #bfs#=18, #bc#=#000000, #ratc#=#000000, #bw#=2, #bs#=Solid')
-    styleB = ['#overrides#':'#Class#=@keyframes A{0%{transform:rotate(-360deg)}100% {transform:rotate(0)}}|#Row#=animation:A 2s ease 0s 1 normal forwards| #title#=font-weight:900']
+    styleB = ['overrides':'#Class#=@keyframes A{0%{transform:rotate(-360deg)}100% {transform:rotate(0)}}|#Row#=animation:A 2s ease 0s 1 normal forwards| #title#=font-weight:900']
     style = styleA + styleB
     state.'*Style-AM Banana' = style
 
-    styleA = convertStyleStringToMap('#tbc#=#ffffff, #tilePreview#=5, isFrame#=false, #fbc#=#000000, #bo#=1, #isKeyword1#=false, #isKeyword2#=false, #bs#=Solid, #isHeaders#=true, #hp#=0, #fc#=#000000, #hta#=Center, #ts#=140, #shcolor#=#d7dce0, #bc#=#1e1e20, #fs#=80, #rabc#=#b71a3b, #hbc#=#0063b1, #shblur#=2, #hts#=100, #br#=30, #ta#=Center, #rtc#=#050505, #tp#=5, #hbo#=1, #iFrameColor#=#908989, #shver#=2, #tff#=Arial Black, #istitleShadow#=false, #rp#=0, #comment#=?, #th#=85, #isAlternateRows#=false, #bw#=5, #isTitle#=true, #isComment#=false, #bm#=Seperate, #rbo#=0.6, #fa#=Left, #shhor#=2, #htc#=#cbcbc8, #rbc#=#7fb2e7, #rts#=80, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #tc#=#050505, #rta#=Center, #bp#=10, #isFooter#=false, #tw#=auto, #bfs#=18, #ratc#=#ffffff')
-    styleB = ['#overrides#':'#Title#=text-shadow: 1px 1px 2px LightSkyBlue, 0 0 25px DodgerBlue, 0 0 5px darkblue | #Class#=td:hover {background-color: #27ae61;opacity:1;transform: scale(1.2);color:yellow}']
-    style = styleA + styleB
-    state.'*Style-AM Blue Buttons' = style
-
-    styleA = convertStyleStringToMap('#tbc#=#ffffff, #tilePreview#=5, #isFrame#=false, #fbc#=#000000, #isKeyword1#=false, #isKeyword2#=false, #bs#=Solid, #bm#=Collapse, #ft#=%time%, #isHeaders#=true, #hp#=0, #fc#=#000000, #hta#=Center, #ts#=140, #shcolor#=#bfe373, #bc#=#000000, #fs#=80, #rabc#=#E9F5CF, #hbc#=#90c226, #shblur#=4, #hts#=100, #br#=0, #ta#=Center, #rtc#=#000000, #tp#=0, #hbo#=1, #iFrameColor#=#908989, #shver#=0, #tff#=Verdana, #istitleShadow#=true, #rp#=0, #comment#=?, #th#=Auto, #isAlternateRows#=true, #bw#=2, #isTitle#=true, #isComment#=false, #fa#=Center, #shhor#=0, #htc#=#000000, #rbc#=#BFE373, #rts#=90, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=false, #tc#=#000000, #rta#=Center, #bp#=10, #isFooter#=true, #tw#=100, #bfs#=18, #ratc#=#000000')
-    styleB = ['#overrides#':'?']
-    style = styleA + styleB
-    state.'*Style-AM Greens' = style
-
-    styleA = convertStyleStringToMap('#tbc#=#ffffff, #tilePreview#=2, #tc#=#000000, #isKeyword1#=false, #isKeyword2#=false, #bp#=5, #isHeaders#=true, #hp#=0, #hta#=Center, #ts#=150, #shcolor#=#ea900e, #fc#=#000000, #to#=1, #rabc#=#edd212, #hbc#=#e45e22, #shblur#=2, #hts#=100, #bm#=Collapse, #rtc#=#000000, #hbo#=0.4, #iFrameColor#=#8d8686, #shver#=2, #tff#=Arial Sans Serif, #istitleShadow#=true, #rp#=0, #comment#=?, #tp#=5, #th#=85, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.8, #isFrame#=false, #shhor#=2, #htc#=#000000, #rbc#=#f69612, #fa#=Center, #rts#=80, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=1, #fs#=80, #fbc#=#000000, #rta#=Center, #isFooter#=false, #tw#=100, #bfs#=18, #bc#=#050505, #ratc#=#000000, #bw#=2, #bs#=Solid')
-    styleB = ['#overrides#':'#Table#=background-image:repeating-conic-gradient(black 10%, orange 20%) | #Row#=font-weight:bold']
-    style = styleA + styleB
-    state.'*Style-AM Pyramid' = style
-
-    styleA = convertStyleStringToMap('#tbc#=#ffffff, #tilePreview#=4, #isKeyword1#=false, #isKeyword2#=false, #bs#=Dotted, #rbo#=1, #to#=1, #bm#=Seperate, #ft#=%time%, #isHeaders#=true, #hp#=0, #fc#=#000000, #hta#=Center, #ts#=120, #shcolor#=#f6cd00, #bc#=#000000, #fs#=80, #rabc#=#a8c171, #hbc#=#f9e66c, #shblur#=2, #hts#=85, #br#=10, #ta#=Center, #rtc#=#000000, #tp#=0, #hbo#=1, #iFrameColor#=#000000, #shver#=2, #tff#=Comic Sans MS, #istitleShadow#=false, #rp#=0, #comment#=?, #th#=Auto, #isAlternateRows#=false, #bw#=10, #isTitle#=false, #isComment#=false, #fa#=Left, #shhor#=2, #htc#=#000000, #rbc#=#d1dd2c, #rts#=70, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #tc#=#000000, #rta#=Center, #bp#=0, #isFooter#=true, #tw#=100, #bfs#=18, #ratc#=#000000')
-    styleB = ['#overrides#':'#Table#=transform: rotate(5deg) translate(0px,8px)']
-    style = styleA + styleB
-    state.'*Style-AM Spiral Bound' = style
-
-    styleA = convertStyleStringToMap('#tbc#=#ffffff, #tc#=#000000, #isKeyword1#=false, #isKeyword2#=false, #bp#=10, #isHeaders#=false, #hp#=0, #hta#=Center, #ts#=150, #shcolor#=#7a7a7a, #fc#=#000000, #to#=1, #rabc#=#dff8aa, #hbc#=#000000, #shblur#=10, #hts#=100, #bm#=Collapse, #rtc#=#ffffff, #hbo#=1, #iFrameColor#=#fcfcfc, #shver#=2, #tff#=Comic Sans MS, #istitleShadow#=true, #rp#=0, #comment#=?, #tp#=3, #th#=Auto, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.3, #isFrame#=false, #shhor#=2, #htc#=#000000, #rbc#=#292929, #tilePreview#=5, #fa#=Center, #rts#=110, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=1, #fs#=90, #fbc#=#000000, #rta#=Center, #isFooter#=true, #tw#=90, #bfs#=18, #bc#=#ffffff, #ratc#=#000000, #bs#=Solid')
+	styleA = convertStyleStringToMap('#tbc#=#ffffff, #tc#=#000000, #isKeyword1#=false, #isKeyword2#=false, #bp#=10, #isHeaders#=false, #hp#=0, #hta#=Center, #ts#=150, #shcolor#=#7a7a7a, #fc#=#000000, #to#=1, #rabc#=#dff8aa, #hbc#=#000000, #shblur#=10, #hts#=100, #bm#=Collapse, #rtc#=#ffffff, #hbo#=1, #iFrameColor#=#fcfcfc, #shver#=2, #tff#=Comic Sans MS, #istitleShadow#=true, #rp#=0, #comment#=?, #tp#=3, #th#=Auto, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.3, #isFrame#=false, #shhor#=2, #htc#=#000000, #rbc#=#292929, #tilePreview#=5, #fa#=Center, #rts#=110, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=1, #fs#=90, #fbc#=#000000, #rta#=Center, #isFooter#=true, #tw#=90, #bfs#=18, #bc#=#ffffff, #ratc#=#000000, #bs#=Solid')
     styleB = ['overrides':'#Data#=transform: rotateX(10deg) rotateY(15deg);background: linear-gradient(45deg, #fff 0%, #000 50%,#fff 100%);']
     style = styleA + styleB
     state.'*Style-AM Black and White' = style
 
-    styleA = convertStyleStringToMap('#tbc#=#ffffff, #tc#=#d6ae7b, #isKeyword1#=false, #isKeyword2#=false, #bp#=6, #isHeaders#=false, #hp#=0, #hta#=Center, #ts#=200, #shcolor#=#000000, #fc#=#d6ae7b, #to#=1, #rabc#=#dff8aa, #hbc#=#9ec1eb, #shblur#=10, #hts#=100, #bm#=Collapse, #rtc#=#d6ae7b, #hbo#=1, #iFrameColor#=#000000, #shver#=2, #tff#=Brush Script MT, #istitleShadow#=true, #rp#=0, #comment#=?, #tp#=3, #th#=Auto, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.6, #isFrame#=true, #shhor#=2, #htc#=#000000, #rbc#=#ba8c63, #tilePreview#=5, #fa#=Center, #rts#=150, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=1, #fs#=90, #fbc#=#560b0b, #rta#=Center, #isFooter#=true, #tw#=90, #bfs#=18, #bc#=#d6ae7b, #ratc#=#000000, #bw#=2, #bs#=Solid')
-    styleB = ['#overrides#':'#Row#=text-shadow:3px 3px 8px #000000']
+    styleA = convertStyleStringToMap('#tbc#=#ffffff, #tilePreview#=5, isFrame#=false, #fbc#=#000000, #bo#=1, #isKeyword1#=false, #isKeyword2#=false, #bs#=Solid, #isHeaders#=true, #hp#=0, #fc#=#000000, #hta#=Center, #ts#=140, #shcolor#=#d7dce0, #bc#=#1e1e20, #fs#=80, #rabc#=#b71a3b, #hbc#=#0063b1, #shblur#=2, #hts#=100, #br#=30, #ta#=Center, #rtc#=#050505, #tp#=5, #hbo#=1, #iFrameColor#=#908989, #shver#=2, #tff#=Arial Black, #istitleShadow#=false, #rp#=0, #comment#=?, #th#=85, #isAlternateRows#=false, #bw#=5, #isTitle#=true, #isComment#=false, #bm#=Seperate, #rbo#=0.6, #fa#=Left, #shhor#=2, #htc#=#cbcbc8, #rbc#=#7fb2e7, #rts#=80, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #tc#=#050505, #rta#=Center, #bp#=10, #isFooter#=false, #tw#=auto, #bfs#=18, #ratc#=#ffffff')
+    styleB = ['overrides':'#Title#=text-shadow: 1px 1px 2px LightSkyBlue, 0 0 25px DodgerBlue, 0 0 5px darkblue | #Class#=td:hover {background-color: #27ae61;opacity:1;transform: scale(1.2);color:yellow}']
     style = styleA + styleB
-    state.'*Style-AM Wood' = style
-
-    styleA = convertStyleStringToMap('#tbc#=#ffffff, #tc#=#000000, #isKeyword1#=false, #isKeyword2#=false, #bp#=10, #isHeaders#=false, #hp#=0, #hta#=Center, #ts#=150, #shcolor#=#7a7a7a, #fc#=#000000, #to#=1, #rabc#=#dff8aa, #hbc#=#000000, #shblur#=10, #hts#=100, #bm#=Collapse, #rtc#=#ffffff, #hbo#=1, #iFrameColor#=#fcfcfc, #shver#=2, #tff#=Comic Sans MS, #istitleShadow#=true, #rp#=0, #comment#=?, #tp#=3, #th#=Auto, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.3, #isFrame#=false, #shhor#=2, #htc#=#000000, #rbc#=#292929, #tilePreview#=5, #fa#=Center, #rts#=110, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=1, #fs#=90, #fbc#=#000000, #rta#=Center, #isFooter#=true, #tw#=90, #bfs#=18, #bc#=#ffffff, #ratc#=#000000, #bw#=2, #bs#=Solid')
-    styleB = ['overrides':'#Data#=transform: rotateX(10deg) rotateY(15deg);background: linear-gradient(45deg, #fff 0%, #000 50%,#fff 100%)']
-    style = styleA + styleB
-    state.'*Style-AM Black and White' = style
-
+    state.'*Style-AM Blue Buttons' = style
+	
     styleA = convertStyleStringToMap('#tbc#=#ffffff, #tc#=#000000, #isKeyword1#=false, #isKeyword2#=false,#bp#=5, #isHeaders#=false, #hp#=0, #hta#=Center, #ts#=150, #shcolor#=#000000, #fc#=#000000, #to#=1, #rabc#=#dff8aa, #hbc#=#ffffff, #shblur#=5, #hts#=100, #bm#=Seperate, #rtc#=#000000, #hbo#=1, #iFrameColor#=#bbbbbb, #shver#=0, #tff#=Roboto, #istitleShadow#=false, #rp#=0, #comment#=?, #tp#=5, #th#=Auto, #isAlternateRows#=false, #isTitle#=false, #br#=0, #ta#=Center, #isComment#=false, #rbo#=1, #isFrame#=false, #shhor#=0, #htc#=#000000, #rbc#=#e7e4e4, #tilePreview#=2, #fa#=Center, #rts#=100, #isBorder#=false, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=false, #bo#=1, #fs#=80, #fbc#=#000000, #rta#=Left, #isFooter#=false, #tw#=100, #bfs#=18, #bc#=#050505, #ratc#=#000000, #bw#=2, #bs#=Solid')
     styleB = ['overrides':'?']
     style = styleA + styleB
     state.'*Style-AM Everything Off' = style
 
+    styleA = convertStyleStringToMap('#tbc#=#ffffff, #tilePreview#=5, #isFrame#=false, #fbc#=#000000, #isKeyword1#=false, #isKeyword2#=false, #bs#=Solid, #bm#=Collapse, #ft#=%time%, #isHeaders#=true, #hp#=0, #fc#=#000000, #hta#=Center, #ts#=140, #shcolor#=#bfe373, #bc#=#000000, #fs#=80, #rabc#=#E9F5CF, #hbc#=#90c226, #shblur#=4, #hts#=100, #br#=0, #ta#=Center, #rtc#=#000000, #tp#=0, #hbo#=1, #iFrameColor#=#908989, #shver#=0, #tff#=Verdana, #istitleShadow#=true, #rp#=0, #comment#=?, #th#=Auto, #isAlternateRows#=true, #bw#=2, #isTitle#=true, #isComment#=false, #fa#=Center, #shhor#=0, #htc#=#000000, #rbc#=#BFE373, #rts#=90, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=false, #tc#=#000000, #rta#=Center, #bp#=10, #isFooter#=true, #tw#=100, #bfs#=18, #ratc#=#000000')
+    styleB = ['overrides':'?']
+    style = styleA + styleB
+    state.'*Style-AM Greens' = style
+
+	    styleA = convertStyleStringToMap('#tbc#=#ffffff, #tc#=#de5b00, #isKeyword1#=false, #isKeyword2#=false, #bp#=10, #isHeaders#=true, #hp#=10, #hta#=Center, #ts#=200, #shcolor#=#ff1d00, #fc#=#000000, #to#=1, #rabc#=#f69612, #hbc#=#c64a10, #shblur#=2, #hts#=100, #bm#=Seperate, #rtc#=#ffff00, #hbo#=1, #iFrameColor#=#8d8686, #shver#=2, #tff#=Comic Sans MS, #istitleShadow#=false, #rp#=6, #comment#=?, #tp#=5, #th#=Auto, #isAlternateRows#=true, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.7, #isFrame#=true, #shhor#=2, #htc#=#000000, #rbc#=#f69612, #tilePreview#=5, #fa#=Center, #rts#=100, #isBorder#=false, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=0.7, #fs#=80, #fbc#=#000000, #rta#=Center, #isFooter#=false, #tw#=Auto, #bfs#=18, #bc#=#050505, #ratc#=#000000, #bw#=2, #bs#=Solid')
+    styleB = ['overrides':'#Table#=box-shadow: #FFF 0 -1px 4px, #ff0 0 -2px 10px, #ff8000 0 -10px 20px, red 0 -18px 40px, 5px 5px 15px 5px rgba(0,0,0,0)']
+    style = styleA + styleB
+    state.'*Style-AM Halloween' = style
+	
+	styleA = convertStyleStringToMap('#tc#=#b2e0de, #isKeyword1#=false, #bp#=10, #ktr2#=?, #isHeaders#=false, #hp#=5, #hta#=Center, #ts#=200, #shcolor#=#000000, #tbc#=#ffffff, #fc#=#000000, #hc2#=#CA6F1E, #ttr1#=?, #to#=1, #rabc#=#dff8aa, #hbc#=#9ec1eb, #shblur#=3, #hts#=100, #bm#=Collapse, #rtc#=#282828, #k1#=?, #hbo#=1, #iFrameColor#=#282828, #shver#=0, #tff#=Comic Sans MS, #isThreshold1#=false, #ttr2#=?, #isTitleShadow#=true, #rp#=10, #top1#=[1], #comment#=?, #tp#=15, #hts2#=125, #th#=Auto, #tcv1#=70, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=1, #k2#=?, #isFrame#=true, #isThreshold2#=false, #shhor#=0, #htc#=#000000, #rbc#=#282828, #top2#=[3], #fa#=Center, #rts#=90, #isBorder#=false, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #tcv2#=30, #hts1#=125, #isKeyword2#=false, #bo#=1, #fs#=60, #fbc#=#282828, #rta#=Center, #isFooter#=false, #ktr1#=?, , #tw#=90, #bfs#=18, #hc1#=#008000, #bc#=#000000, #ratc#=#000000, #bw#=2, #bs#=Solid')
+    styleB = ['overrides' : '#Title#=margin-top: 0px; font-size: 70px; font-weight: bold; color: #CFC547; text-align: center; letter-spacing: 5px; text-shadow: 16px 22px 11px rgba(168,158,32,0.8)']
+    style = styleA + styleB
+    state.'*Style-AM Menu Bar' = style
+	
+	styleA = convertStyleStringToMap('#tc#=#412f86, #isKeyword1#=false, #bp#=5, #ktr2#=?, #isHeaders#=true, #hp#=0, #hta#=Center, #ts#=175, #shcolor#=#ffc62f, #tbc#=#e3b994, #fc#=#000000, #hc2#=#ca6f1e, #ttr1#=?, #to#=1, #rabc#=#f7c104, #hbc#=#4c247e, #shblur#=4, #hts#=140, #bm#=Collapse, #rtc#=#f7f7f7, #k1#=open, #hbo#=0.9, #iFrameColor#=#dbc0a9, #shver#=0, #tff#=Brush Script MT, #isThreshold1#=false, #ttr2#=?, #isTitleShadow#=true, #rp#=0, #top1#=[1], #comment#=?, #tp#=3, #hts2#=125, #th#=Auto, #tcv1#=70, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.7, #k2#=?, #isFrame#=false, #isThreshold2#=false, #shhor#=0, #htc#=#f7c104, #rbc#=#4d2081, #top2#=[3], #fa#=Center, #rts#=110, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=false, #tcv2#=30, #hts1#=125, #isKeyword2#=false, #bo#=0.6, #fs#=90, #fbc#=#000000, #rta#=Center, #isFooter#=false, #ktr1#=[div class=cl99]Open[/div], #tw#=90, #bfs#=18, #hc1#=#008000, #bc#=#f7c104, #ratc#=#000000, #bw#=2, #bs#=Solid')
+    styleB = ['overrides':'?']
+    style = styleA + styleB
+    state.'*Style-AM Minnesota Vikings' = style
+
+	styleA = convertStyleStringToMap('#tc#=#66cbe0, #isKeyword1#=false, #bp#=5, #ktr2#=?, #isHeaders#=true, #hp#=0, #hta#=Center, #ts#=150, #shcolor#=#7a7a7a, #tbc#=#ffffff, #fc#=#66cbe0, #hc2#=#CA6F1E, #ttr1#=?, #to#=1, #rabc#=#dff8aa, #hbc#=#66cbe0, #shblur#=10, #hts#=140, #bm#=Collapse, #rtc#=#eb822e, #k1#=?, #hbo#=0.8, #iFrameColor#=#696969, #shver#=2, #tff#=Comic Sans MS, #isThreshold1#=false, #ttr2#=?, #isTitleShadow#=false, #rp#=0, #top1#=[1], #comment#=?, #tp#=3, #hts2#=125, #th#=Auto, #tcv1#=70, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=1, #k2#=?, #isFrame#=false, #isThreshold2#=false, #shhor#=2, #htc#=#eb822e, #rbc#=#d9ddc6, #top2#=[3], #fa#=Center, #rts#=110, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=false, #tcv2#=30, #hts1#=125, #isKeyword2#=false, #bo#=1, #fs#=100, #fbc#=#000000, #rta#=Center, #isFooter#=false, #ktr1#=?, #tw#=90, #bfs#=18, #hc1#=#008000, #bc#=#eb822e, #ratc#=#000000, #bw#=2, #bs#=Solid')
+    styleB = ['overrides':'?']
+    style = styleA + styleB
+    state.'*Style-AM Palm Springs' = style
+	
+	styleA = convertStyleStringToMap('#tbc#=#ffffff, #tc#=#000000, #isKeyword1#=false, #isKeyword2#=false, #bp#=10, #isHeaders#=true, #hp#=0, #hta#=Center, #ts#=140, #shcolor#=#bfe373, #fc#=#000000, #to#=1, #rabc#=#e9f5cf, #hbc#=#9bdbe8, #shblur#=4, #hts#=100, #bm#=Collapse, #rtc#=#fe7868, #hbo#=0.5, #iFrameColor#=#908989, #shver#=0, #tff#=Verdana, #istitleShadow#=false, #rp#=0, #comment#=?, #tp#=0, #th#=Auto, #isAlternateRows#=false, #isTitle#=false, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.5, #isFrame#=false, #shhor#=0, #htc#=#650606, #rbc#=#ffffa0, #tilePreview#=5, #fa#=Center, #rts#=90, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=1, #fs#=80, #fbc#=#000000, #rta#=Center, #isFooter#=true, #tw#=100, #bfs#=18, #bc#=#000000, #ratc#=#000000, #bw#=2, #bs#=Solid')
+    styleB = ['overrides':'#Table#=background-image: repeating-radial-gradient(#0000 0% 6%,#c39f76 7% 13% ); background-size:40px 40px | #Row#=font-weight:bold']
+    style = styleA + styleB
+    state.'*Style-AM Pastel Swirl' = style
+	
+    styleA = convertStyleStringToMap('#tbc#=#ffffff, #tilePreview#=2, #tc#=#000000, #isKeyword1#=false, #isKeyword2#=false, #bp#=5, #isHeaders#=true, #hp#=0, #hta#=Center, #ts#=150, #shcolor#=#ea900e, #fc#=#000000, #to#=1, #rabc#=#edd212, #hbc#=#e45e22, #shblur#=2, #hts#=100, #bm#=Collapse, #rtc#=#000000, #hbo#=0.4, #iFrameColor#=#8d8686, #shver#=2, #tff#=Arial Sans Serif, #istitleShadow#=true, #rp#=0, #comment#=?, #tp#=5, #th#=85, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.8, #isFrame#=false, #shhor#=2, #htc#=#000000, #rbc#=#f69612, #fa#=Center, #rts#=80, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=1, #fs#=80, #fbc#=#000000, #rta#=Center, #isFooter#=false, #tw#=100, #bfs#=18, #bc#=#050505, #ratc#=#000000, #bw#=2, #bs#=Solid')
+    styleB = ['overrides':'#Table#=background-image:repeating-conic-gradient(black 10%, orange 20%) | #Row#=font-weight:bold']
+    style = styleA + styleB
+    state.'*Style-AM Pyramid' = style
+
     styleA = convertStyleStringToMap('#tbc#=#ffffff, #tc#=#b2e0de, #isKeyword1#=false, #isKeyword2#=false, #bp#=10, #isHeaders#=false, #hp#=5, #hta#=Center, #ts#=140, #shcolor#=#000000, #fc#=#000000, #to#=1, #rabc#=#dff8aa, #hbc#=#9ec1eb, #shblur#=3, #hts#=100, #bm#=Seperate, #rtc#=#000000, #hbo#=1, #iFrameColor#=#888686, #shver#=0, #tff#=Comic Sans MS, #istitleShadow#=false, #rp#=10, #comment#=?, #tp#=15, #th#=Auto, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=1, #isFrame#=true, #shhor#=0, #htc#=#000000, #rbc#=#b2e0de, #tilePreview#=5, #fa#=Center, #rts#=90, #isBorder#=false, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=1, #fs#=60, #fbc#=#624141, #rta#=Center, #isFooter#=false, #tw#=90, #bfs#=18, #bc#=#000000, #ratc#=#000000, #bw#=2, #bs#=Solid')
     styleB = ['overrides':'#Class#=@keyframes me {0% {opacity: 1;box-shadow: 0px 0px 1px 1px #624141}100% {opacity: 1;box-shadow: 0px 0px 10px 10px #f3a183}} | #Table#=animation: me 10s linear 0s infinite alternate-reverse']
     style = styleA + styleB
     state.'*Style-AM Sea Foam Glow' = style
+	
+    styleA = convertStyleStringToMap('#tbc#=#ffffff, #tilePreview#=4, #isKeyword1#=false, #isKeyword2#=false, #bs#=Dotted, #rbo#=1, #to#=1, #bm#=Seperate, #ft#=%time%, #isHeaders#=true, #hp#=0, #fc#=#000000, #hta#=Center, #ts#=120, #shcolor#=#f6cd00, #bc#=#000000, #fs#=80, #rabc#=#a8c171, #hbc#=#f9e66c, #shblur#=2, #hts#=85, #br#=10, #ta#=Center, #rtc#=#000000, #tp#=0, #hbo#=1, #iFrameColor#=#000000, #shver#=2, #tff#=Comic Sans MS, #istitleShadow#=false, #rp#=0, #comment#=?, #th#=Auto, #isAlternateRows#=false, #bw#=10, #isTitle#=false, #isComment#=false, #fa#=Left, #shhor#=2, #htc#=#000000, #rbc#=#d1dd2c, #rts#=70, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #tc#=#000000, #rta#=Center, #bp#=0, #isFooter#=true, #tw#=100, #bfs#=18, #ratc#=#000000')
+    styleB = ['overrides':'#Table#=transform: rotate(5deg) translate(0px,8px)']
+    style = styleA + styleB
+    state.'*Style-AM Spiral Bound' = style
 
     styleA = convertStyleStringToMap('#tbc#=#ffffff, #tc#=#000000, #isKeyword1#=false, #isKeyword2#=false, #bp#=0, #isHeaders#=true, #hp#=6, #hta#=Center, #ts#=150, #shcolor#=#7a7a7a, #fc#=#3be800, #to#=1, #rabc#=#dff8aa, #hbc#=#000000, #shblur#=10, #hts#=60, #bm#=Collapse, #rtc#=#41ff00, #hbo#=1, #iFrameColor#=#929090, #shver#=2, #tff#=Lucida, #istitleShadow#=false, #rp#=6, #comment#=?, #tp#=3, #th#=Auto, #isAlternateRows#=false, #isTitle#=false, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.5, #isFrame#=false, #shhor#=2, #htc#=#41ff00, #rbc#=#000000, #tilePreview#=1, #fa#=Center, #rts#=50, #isBorder#=false, #isScrubHTML#=true, #rto#=0.7, #hto#=1, #isOverrides#=true, #bo#=0, #fs#=50, #fbc#=#000000, #rta#=Center, #isFooter#=true, #tw#=100, #bfs#=18, #bc#=#ffffff, #ratc#=#000000, #bw#=5, #bs#=Solid')
     styleB = ['overrides':'#Table#=background: linear-gradient(180deg, #060606 0%, #11610B 100%)']
     style = styleA + styleB
     state.'*Style-AM Terminal' = style
-
-    styleA = convertStyleStringToMap('#tbc#=#ffffff, #tc#=#de5b00, #isKeyword1#=false, #isKeyword2#=false, #bp#=10, #isHeaders#=true, #hp#=10, #hta#=Center, #ts#=200, #shcolor#=#ff1d00, #fc#=#000000, #to#=1, #rabc#=#f69612, #hbc#=#c64a10, #shblur#=2, #hts#=100, #bm#=Seperate, #rtc#=#ffff00, #hbo#=1, #iFrameColor#=#8d8686, #shver#=2, #tff#=Comic Sans MS, #istitleShadow#=false, #rp#=6, #comment#=?, #tp#=5, #th#=Auto, #isAlternateRows#=true, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.7, #isFrame#=true, #shhor#=2, #htc#=#000000, #rbc#=#f69612, #tilePreview#=5, #fa#=Center, #rts#=100, #isBorder#=false, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=0.7, #fs#=80, #fbc#=#000000, #rta#=Center, #isFooter#=false, #tw#=Auto, #bfs#=18, #bc#=#050505, #ratc#=#000000, #bw#=2, #bs#=Solid')
-    styleB = ['overrides':'#Table#=box-shadow: #FFF 0 -1px 4px, #ff0 0 -2px 10px, #ff8000 0 -10px 20px, red 0 -18px 40px, 5px 5px 15px 5px rgba(0,0,0,0)']
+    
+    styleA = convertStyleStringToMap('#tc#=#d6ae7b, #isKeyword1#=false, #bp#=6, #ktr2#=?, #isHeaders#=false, #hp#=0, #hta#=Center, #ts#=200, #shcolor#=#000000, #tbc#=#ffffff, #fc#=#d6ae7b, #hc2#=#CA6F1E, #ttr1#=?, #to#=1, #rabc#=#dff8aa, #hbc#=#9ec1eb, #shblur#=10, #hts#=100, #bm#=Collapse, #rtc#=#786854, #k1#=?, #hbo#=1, #iFrameColor#=#000000, #shver#=2, #tff#=Brush Script MT, #isThreshold1#=false, #ttr2#=?, #isTitleShadow#=true, #rp#=0, #top1#=[1], #comment#=?, #tp#=3, #hts2#=125, #th#=Auto, #tcv1#=70, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.6, #k2#=?, #isFrame#=true, #isThreshold2#=false, #shhor#=2, #htc#=#000000, #rbc#=#ba8c63, #top2#=[3], #fa#=Center, #rts#=150, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #tcv2#=30, #hts1#=125, #isKeyword2#=false, #bo#=1, #fs#=90, #fbc#=#560b0b, #rta#=Center, #isFooter#=true, #ktr1#=?, #tw#=90, #bfs#=18, #hc1#=#008000, #bc#=#786854, #ratc#=#000000, #bw#=2, #bs#=Solid')
+    styleB = ['overrides':'#Row#=text-shadow:3px 3px 8px #660000']
     style = styleA + styleB
-    state.'*Style-AM Halloween' = style
+    state.'*Style-AM Wood' = style
 
-    styleA = convertStyleStringToMap('#tbc#=#ffffff, #tc#=#000000, #isKeyword1#=false, #isKeyword2#=false, #bp#=10, #isHeaders#=true, #hp#=0, #hta#=Center, #ts#=140, #shcolor#=#bfe373, #fc#=#000000, #to#=1, #rabc#=#e9f5cf, #hbc#=#9bdbe8, #shblur#=4, #hts#=100, #bm#=Collapse, #rtc#=#fe7868, #hbo#=0.5, #iFrameColor#=#908989, #shver#=0, #tff#=Verdana, #istitleShadow#=false, #rp#=0, #comment#=?, #tp#=0, #th#=Auto, #isAlternateRows#=false, #isTitle#=false, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.5, #isFrame#=false, #shhor#=0, #htc#=#650606, #rbc#=#ffffa0, #tilePreview#=5, #fa#=Center, #rts#=90, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=1, #fs#=80, #fbc#=#000000, #rta#=Center, #isFooter#=true, #tw#=100, #bfs#=18, #bc#=#000000, #ratc#=#000000, #bw#=2, #bs#=Solid')
-    styleB = ['overrides':'#Table#=background-image: repeating-radial-gradient(#0000 0% 6%,#c39f76 7% 13% ); background-size:40px 40px | #Row#=font-weight:bold']
-    style = styleA + styleB
-    state.'*Style-AM-Pastel Swirl' = style
-
-    styleA = convertStyleStringToMap('#tc#=#000000, #isKeyword1#=false, #bp#=5, #isHeaders#=false, #hp#=0, #hta#=Center, #ts#=150, #shcolor#=#000000, #tbc#=#62aca0, #fc#=#000000, #hc2#=#CA6F1E, #ttr1#=?, #to#=1, #rabc#=#dff8aa, #hbc#=#ffffff, #shblur#=5, #hts#=100, #bm#=Seperate, #rtc#=#000000, #k1#=?, #hbo#=1, #iFrameColor#=#bbbbbb, #shver#=0, #tff#=Roboto, #isThreshold1#=false, #ttr2#=?, #isTitleShadow#=false, #rp#=0, #top1#=[1], #comment#=?, #tp#=5, #hts2#=125, #th#=Auto, #tcv1#=70, #isAlternateRows#=false, #isTitle#=false, #br#=0, #ta#=Center, #isComment#=false, #rbo#=1, #k2#=?, #isFrame#=false, #isThreshold2#=false, #shhor#=0, #htc#=#000000, #rbc#=#e7e4e4, #top2#=[3], #fa#=Center, #rts#=100, #isBorder#=false, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #tcv2#=30, #hts1#=125, #isKeyword2#=false, #bo#=1, #fs#=80, #fbc#=#000000, #rta#=Left, #isFooter#=false, #tw#=90, #bfs#=14, #hc1#=#008000, #bc#=#050505, #ratc#=#000000, #bw#=2, #bs#=Solid')
-    styleB = ['overrides':'#Table#=box-shadow: 0px 0px 10px 10px #E8DD95']
-    style = styleA + styleB
-    state.'*Style-AM-Small For Lots of Data' = style
-    return
+	return
 }
 
 //Converts an built-in internal Style in string form into a Map for storage
@@ -689,8 +698,13 @@ def getSampleOverridesList() {
     'Border Radius: Sets the radius of a border corner. If only one value is specified it applies to all corners' : '#Row#=border-radius:30px;',
     'Border Effect1: Eliminate outside edges of a grid for a tic-tac-toe appearance.' : '#Table#=border-collapse: collapse; border-style: hidden;',
     'Box Shadow: Sets a diffuse color box around the edge of an object.' : '#Table#=box-shadow: 0px 0px 10px 10px #E8DD95;',
+	'Class Example 1: Rotate an element 540 degrees when activated. Called with #element#=animation etc.' : '#Class#=@keyframes myAnim {0% {opacity: 0;transform: rotate(-540deg) scale(0);}100% {opacity: 1;transform: rotate(0) scale(1);} } | #Row#=animation: myAnim 2s ease 0s 1 normal forwards;',
+    'Class Example 2: Blink an element twice when activated. Called with #element#=animation etc.' : '#Class#=@keyframes myAnim {0%,50%,100% {opacity: 1;}25%,75% {opacity: 0;} } | #Title#=animation: myAnim 2s ease 0s 1 normal forwards;',
+	'Class Example 3: Change background color to red when activated. Called with [div class=cl99]My Value[/div] in highlights.' : '#Class#=.cl99{background-color: #ff0000;} ',
+	'Class Example 4: Add box chadow to element when activated. Called with [div class=cl99]My Value[/div] in highlights.' : '#Class#=.cl99{box-shadow: 0px 0px 10px 10px #E8DD95;} ',
+	'Class Example 5: Move element back and forth continuously when activated. Called with [div class=cl99]█[/div] in highlights.' : '#Class#=.cl99{animation: myAnim 1s linear 0s infinite alternate-reverse;} @keyframes myAnim {0% {transform: translateX(-20px);}100% {transform: translateX(20px);} }',
+	'Class Example 6: Spin an element continuously when activated. Called with [div class=cl99]❌[/div] in highlights.' : '#Class#=.cl99{animation: myAnim 1s linear 0s infinite normal forwards;} @keyframes myAnim {0% {transform: rotate(0deg);}100% {transform: rotate(360deg);} }',	
     'Color: Sets the color of an object.' : '#Header#=color: #5049EA;',
-    'Highlight Cell: Highlight a particular cell in a table.' : '#Class#=tbody tr:nth-child(1) td:nth-child(1) { background-color:ffb88c!important;}',
     'Hover: Sets the mouse cursor shape when hovering over an object. Applies to all tiles on a dashboard.' : '#Row#=cursor: se-resize;',
     'Hover: Changes the text color and size of data [td] cells when it is hovered over. Applies to all tiles on a dashboard.' : '#Class#=td:hover {color:green;transform:scale(1.2)}',
     'Hover: Sets a linear repeating gradient on an object when it is hovered over. Applies to all tiles on a dashboard.' : '#Class#=td:hover{background-image: repeating-linear-gradient(45deg, red 0px, red 10px, red 10px, yellow 10px, yellow 20px)!important;opacity:0.5}',
@@ -801,10 +815,10 @@ def overrideNotes() {
 
 def displayTips() {
     myText =  'This is a <b>close approximation</b> of how the table will display within a dashboard tile. Once the table is published to a tile you can quickly make changes and publish them to see exactly how they look. If the tile does not immediately '
-    myText += "display after you have placed a new Tile Builder tile Hubitat Dashboard but instead says, 'Please Configure an Attribute' then reload the dashboard and that should correct it.<br>"
+    myText += "display after you have placed a new <b>Tile Builder</b> tile Hubitat Dashboard but instead says, 'Please Configure an Attribute' then reload the dashboard and that should correct it.<br>"
     myText += '<b>Adjusting Height and Width:</b> The final dimensions of the table are affected by many factors, especially the height. The number of rows of data, border size, border padding, text size, base font size, font face, frame, title, title padding etc all impact the height. '
     myText += 'To start with adjust the padding, then the text sizes and finally the table height and width.<br>'
-    myText += '<b>Hubitat Dashboard:</b> Because Tile Builder tiles hold data from multiple devices you will likely use 1x2 or 2x2 tiles vs the default 1x1 Hubitat Dashboard. The tile background color and opacity shown here are for visualization only. The Hubitat Dashboard settings '
+    myText += '<b>Hubitat Dashboard:</b> Because <b>Tile Builder</b> tiles hold data from multiple devices you will likely use 1x2 or 2x2 tiles vs the default 1x1 Hubitat Dashboard. The tile background color and opacity shown here are for visualization only. The Hubitat Dashboard settings '
     myText += "will determine these settings when the tiles are published.<br>To make the tile background transparent you can add a line like this to your Hubitat Dashboard CSS <i>'#tile-XX {background-color: rgba(128,128,128,0.0) !important;}'</i> where XX is your <b>Hubitat Dashboard tile number.</b>"
     myText += ' (This is not the same as the tile number you assigned during publishing.)<br>'
     myText += '<b>Dashboard Background:</b> You can use the dropper tool within the Dashboard Color dialog to get an exact match for your dashboard background to make selecting your color palette easier. Once placed on a dashboard the <b>tiles will automatically be centered vertically</b>. '
