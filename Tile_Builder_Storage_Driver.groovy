@@ -8,7 +8,9 @@
 *
 *  Authors Notes:
 *  For more information on the Tile Builder see the Hubitat Community Forum.
-*  Original posting on Hubitat Community forum.  
+*  Original posting on Hubitat Community forum.
+*  Tile Builder Standard Documentation: https://github.com/GaryMilne/Hubitat-TileBuilder/blob/main/Tile%20Builder%20Standard%20Help.pdf
+*  Tile Builder Advanced Documentation: https://github.com/GaryMilne/Hubitat-TileBuilder/blob/main/Tile%20Builder%20Advanced%20Help.pdf  
 *
 *  Tile Builder Storage Driver - ChangeLog
 *  Version 1.0.0 - Initial Release
@@ -17,7 +19,7 @@
 **/
 
 metadata {
-	definition( name: "Tile Builder - Activity Monitor", namespace: "garyjmilne", author: "Gary J. Milne", importUrl: "https://raw.githubusercontent.com/GaryMilne/Hubitat-TileBuilder/main/Activity_Monitor.groovy",singleThreaded: true ){
+	definition( name: "Tile Builder Storage Driver", namespace: "garyjmilne", author: "Gary J. Milne", importUrl: "https://raw.githubusercontent.com/GaryMilne/Hubitat-TileBuilder/main/Tile_Builder_Storage_Device.groovy",singleThreaded: true ){
 	}
     
     capability "Refresh"
