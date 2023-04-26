@@ -1,35 +1,82 @@
 /**
-*  Activity Monitor (Tile Builder Child)
-*  Version: v1.0.4
+*  Activity Monitor & Attribute Monitor (Tile Builder Child)
+*  Version: See ChangeLog
 *  Download: See importUrl in definition
-*  Description: An app that generates tabular reports on device activity and publishes them to a dashboard.
+*  Description: Apps that generates tabular HTML\CSS reports on device attributes and publishes them to a dashboard.
 *
 *  Copyright 2022 Gary J. Milne  
+*  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed
+*  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
+*  for the specific language governing permissions and limitations under the License.
+
+*  License:
+*  You are free to use this software in an un-modified form. Software cannot be modified or redistributed.
+*  You may use the code for educational purposes or for use within other applications as long as they are unrelated to the 
+*  production of tabular data in HTML form, unless you have the prior consent of the author.
+*  You are granted a license to use Tile Builder in its standard configuration without limits.
+*  Use of Tile Builder in it's Advanced requires a license key that must be issued to you by the original developer. TileBuilderApp@gmail.com
 *
+*  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the
+*  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+
 *  Authors Notes:
-*  For more information on the Activity Monitor check out the community forum:
-*  Original posting on Hubitat Community forum.
-*  Tile Builder Standard Documentation: https://github.com/GaryMilne/Hubitat-TileBuilder/blob/main/Tile%20Builder%20Standard%20Help.pdf
-*  Tile Builder Advanced Documentation: https://github.com/GaryMilne/Hubitat-TileBuilder/blob/main/Tile%20Builder%20Advanced%20Help.pdf
+*  For more information on Activity Monitor & Attribute Monitor check out these resources.
+*  Original posting on Hubitat Community forum: TBD
+*  Tile Builder Documentation: https://github.com/GaryMilne/Hubitat-TileBuilder/blob/main/Tile%20Builder%20Help.pdf
 *
-*  ACTIVITY MONITOR for DASHBOARD - CHANGELOG
+*  CHANGELOG
 *  Version 1.0.0 - Internal
 *  Version 1.0.1 - Cleaned up some UI pieces. Removed tile1 as the default when publishing so that it is a conscious choice to avoid overrides.
 *  Version 1.0.2 - Fixed bug with 'No Selection' in UI. Changed logic to handle 0 rows in table. 
 *  Version 1.0.3 - Allows 'Tables' with only a title for use as a placeholder on the Dashboard. 
 *  Version 1.0.4 - Added logic to hide\show publishing buttons based on required fields.
+*  Version 1.0.5 - Consolidate Attribute Monitor and Activity Monitor into unified code.
+*  Version 1.0.6 - Added removal of all items with opacity=0 from the final HTML.
+*  Version 1.0.7 - Added custom size option for preview window.
+*  Version 1.0.8 - Added append option on overrides. Added extra options to sample overrides. 
+*  Version 1.0.9 - Fixed issue with importing of overrides string.
+*  Version 1.1.0 - Added %count% as a macro for number of displayed records. Useful for scrolling windows or null results.
+*  Version 1.1.1 - Added tags for #high1# and #high2# for modifying highlight classes. Provides an alternate method of formatting a result vs using a class.
+*  Version 1.1.2 - Added filtering ability for integer and float values. Made filtering an advanced feature.
+*  Version 1.1.3 - Added ability to merge Column header fields.								
+*  Version 1.1.4 - Fixed bug with display of floating point numbers when filtering is enabled.
+*  Version 1.2.0 - Cleaned up a variety of message text. Version revved to match other components and Help file for first public release.
 *
-*  Gary Milne - April 2nd, 2023
+*  Gary Milne - April 26th, 2023
+*
+*  This code is Activity Monitor and Attribute Monitor combined.
+*  The personality is dictated by @Field static moduleName a few lines ahead of this.
+*  You must comment out the moduleName line that does not apply.
+*  You must also comment out the 3 lines in the definition that do not apply.
+*  That is all that needs to be done.
 *
 **/
 
+import groovy.transform.Field
+@Field static final moduleName = "Activity Monitor"
+//@Field static final moduleName = "Attribute Monitor"
+
+@Field static final unitsMap = ["None", "°F", "_°F", "°C", "_°C", "%", "_%", "A", "_A", "V", "_V", "W", "_W", "kWh", "_kWH", "K", "_K", "ppm", "_ppm", "lx", "_lx"]
+@Field static final comparators = ["<=", "==", ">="]
+
+//These are supported capabilities. Layout is "device.selector":"attribute".  Keeping them in 3 seperate maps makes it easier to identify the sort criteria.
+@Field static final capabilitiesInteger = ["airQuality":"airQualityIndex", "battery":"battery", "colorTemperature":"colorTemperature","illuminanceMeasurement":"illuminance","signalStrength":"rssi"]
+@Field static final capabilitiesString = ["carbonDioxideDetector":"carbonMonoxide", "contactSensor":"contact", "lock":"lock", "motionSensor":"motion", "presenceSensor":"presence", "smokeDetector":"smoke", "switch":"switch", "waterSensor":"water", "windowBlind":"windowBlind"]
+@Field static final capabilitiesFloat = ["currentMeter": "amperage", "energyMeter":"energy", "powerMeter":"power", "relativeHumidityMeasurement":"humidity", "temperatureMeasurement":"temperature","voltageMeasurement":"voltage"]
+//These are unknown as to whether they report integer or float values.
+//capabilitiesUnknown = [" "carbonDioxideMeasurement":"carbonDioxide","pressureMeasurement":"pressure","relativeHumidityMeasurement":"humidity", "ultravioletIndex":"ultravioletIndex"]
+
+
 definition(
 	name: "Tile Builder - Activity Monitor",
-    namespace: "garyjmilne",
-    author: "Gary J. Milne",
     description: "Monitors a list of devices to look for those that are inactive\\overactive and may need attention. Publishes an HTML table of results for a quick and attractive display in the Hubitat Dashboard environment.",
-	category: "Utilities",
-    importUrl: "https://raw.githubusercontent.com/GaryMilne/Hubitat-TileBuilder/main/Activity_Monitor.groovy",
+	importUrl: "https://raw.githubusercontent.com/GaryMilne/Hubitat-TileBuilder/main/Activity_Monitor.groovy",
+	//name: "Tile Builder - Attribute Monitor",
+	//description: "Monitors a single attribute for a list of devices. Publishes an HTML table of results for a quick and attractive display in the Hubitat Dashboard environment.",
+	//importUrl: "https://raw.githubusercontent.com/GaryMilne/Hubitat-TileBuilder/main/Attribute_Monitor.groovy",
+	namespace: "garyjmilne",
+    author: "Gary J. Milne",
+    category: "Utilities",
 	iconUrl: "",
 	iconX2Url: "",
     iconX3Url: "",
@@ -38,21 +85,9 @@ definition(
     installOnOpen: true
 )
 
-import groovy.transform.Field
-@Field static final unitsMap = ["None", "°F", "_°F", "°C", "_°C", "%", "_%", "A", "_A", "V", "_V", "W", "_W", "kWh", "_kWH", "K", "_K", "ppm", "_ppm", "lx", "_lx"]
-@Field static final comparators = ["<=", "==", ">="]
-
-//These are supported capabilities. Layout is "device.selector":"attribute".  Keeping them in 3 seperate maps makes it easier to identify the sort criteria.
-@Field static final capabilitiesInteger = ["airQuality":"airQualityIndex", "battery":"battery", "colorTemperature":"colorTemperature","illuminanceMeasurement":"illuminance","signalStrength":"rssi"]
-@Field static final capabilitiesString = ["carbonDioxideDetector":"carbonMonoxide", "contactSensor":"contact", "lock":"lock", "motionSensor":"motion", "presenceSensor":"presence", "smokeDetector":"smoke", "switch":"switch", "windowBlind":"windowBlind"]
-@Field static final capabilitiesFloat = ["currentMeter": "amperage", "energyMeter":"energy", "powerMeter":"power", "relativeHumidityMeasurement":"humidity", "temperatureMeasurement":"temperature","voltageMeasurement":"voltage"]
-//These are unknown as to whether they report integer or float values.
-//capabilitiesUnknown = [" "carbonDioxideMeasurement":"carbonDioxide","pressureMeasurement":"pressure","relativeHumidityMeasurement":"humidity", "ultravioletIndex":"ultravioletIndex"]
-@Field static final moduleName = "Activity Monitor"
-
 preferences {
 	page(name: "mainPage")
-    page (name: "devicePage")
+	if (moduleName == "Activity Monitor") page (name: "devicePage")
 }
 
 def mainPage() {
@@ -60,69 +95,84 @@ def mainPage() {
     if (state.initialized == null ) initialize()
     //initialize()
 	
-																														  
-						   
+    if (moduleName == "Attribute Monitor") {
+		//See if the user has selected a different capability. If so a flag is set and the device list is cleared on the refresh.
+		isMyCapabilityChanged()
+		}
 	refreshTable()
 	refreshUIbefore()
 	dynamicPage(name: "mainPage", title: titleise("<center><h2>" + moduleName + "</h2></center>"), uninstall: true, install: true, singleThreaded:true) {
 		
         section{
 			//paragraph buttonLink ("test", "test", 0)
-		    paragraph titleise("Select the Devices to be Monitored.")
-            paragraph "<div style='color:#17202A;text-align:left; margin-top:0em; font-size:16px'><b>You can choose a list to make it easier to select devices. You only need to populate the list you plan to use as only one list will be active at a time.</b><br></div>"  //Line with Description of the selected command.
-																							
-																							
-            input (name: "useList", title: "<b>Use List</b>", type: "enum", options: [1:"All Devices", 2:"Battery Devices", 3:"Motion Devices", 4:"Presence Sensors", 5:"Switches", 6:"Contact Sensors", 7:"Temperature Sensors"], required:true, state: selectOk?.devicePage ? "complete" : null, submitOnChange:true, width:2, defaultValue: 1)
-            
-            if (useList == "1" ) input "devices1", "capability.*", title: "All Devices to be monitored" , multiple: true, required: false, defaultValue: null, width: 6
-            if (useList == "2" ) input "devices2", "capability.battery", title: "Battery Devices to be Monitored" , multiple: true, required: false, defaultValue: null, width: 6
-            if (useList == "3" ) input "devices3", "capability.motionSensor", title: "Motion Detectors to be Monitored" , multiple: true, required: false, defaultValue: null, width: 6
-            if (useList == "4" ) input "devices4", "capability.presenceSensor", title: "Presence Sensors to be Monitored" , multiple: true, required: false, defaultValue: null, width: 6
-            if (useList == "5" ) input "devices5", "capability.switch", title: "Switches to be Monitored" , multiple: true, required: false, defaultValue: null, width: 6
-            if (useList == "6" ) input "devices6", "capability.contactSensor", title: "Contacts to be monitored" , multiple: true, required: false, defaultValue: null, width: 6
-   
-            if (useList == "7" ) input "devices7", "capability.temperatureMeasurement", title: "Temperature Sensors to be monitored" , multiple: true, required: false, defaultValue: null, width: 6
-            if (isLogInfo) log.info ("devicePage: useList is:*${useList}*")
-    
-            //href "devicePage", title: "Populate Device Lists", width:6,  description: "Devices Selected?", 
-            paragraph line(2)
+			if (moduleName == "Attribute Monitor"){
+				paragraph titleise("Select the Attribute and Devices to be monitored.")
+				capabilities = capabilitiesInteger.clone() + capabilitiesString.clone() + capabilitiesFloat.clone()
 			
-			//************************************************************************************************************************************************************************************************************************
-			//************************************************************************************************************************************************************************************************************************
-			//************************************************************************************************************************************************************************************************************************
-			//**************
-			//**************  Below this seperator everything is identical between Activity Monitor and Attribute Monitor
-			//**************  It is kept that way by use of 'if (moduleName == "???????")' type of logic.
-			//**************  Not all functions below are used in both modules but it is easier to maintain if the majority of the file is identical.
-			//**************
-			//************************************************************************************************************************************************************************************************************************
-			//************************************************************************************************************************************************************************************************************************
-			//************************************************************************************************************************************************************************************************************************
+				//This input device list the items by attribute name but actually returns the capability.
+				input (name: "myCapability", title: "<b>Select the Attribute to Monitor</b>", type: "enum", options: capabilities.sort{it.value} , submitOnChange:true, width:3, defaultValue: 1)
+				//Retreive the attribute type and save it to state.
+				state.myAttribute = capabilities.get(myCapability)
+				//If the capability is found in list1 it must be numeric. We use the flag for logic control later when Thresholds are implemented.
+				if (isLogInfo) log.info ("myCapability is: $myCapability and state.myAttribute is: $state.myAttribute")
+				if (capabilitiesInteger.get(myCapability) != null) state.attributeType = "Integer"
+				if (capabilitiesFloat.get(myCapability) != null) state.attributeType = "Float"
+				if (capabilitiesString.get(myCapability) != null) state.attributeType = "String"
+                input "myDeviceList", "capability.$myCapability", title: "<b>Select Devices to Monitor</b>" , multiple: true, required: false, submitOnChange: true, width: 6
+			}
+			
+			if (moduleName == "Activity Monitor"){
+				paragraph titleise("Select the Devices to be Monitored.")
+				paragraph "<div style='color:#17202A;text-align:left; margin-top:0em; font-size:16px'><b>You can choose a list to make it easier to select devices. You only need to populate the list you plan to use as only one list will be active at a time.</b><br></div>"  //Line with Description of the selected command.																			
+																							
+				input (name: "useList", title: "<b>Use List</b>", type: "enum", options: [1:"All Devices", 2:"Battery Devices", 3:"Motion Devices", 4:"Presence Sensors", 5:"Switches", 6:"Contact Sensors", 7:"Temperature Sensors"], required:true, state: selectOk?.devicePage ? "complete" : null, submitOnChange:true, width:2, defaultValue: 1)
+				if (useList == "1" ) input "devices1", "capability.*", title: "All Devices to be monitored" , multiple: true, required: false, defaultValue: null, width: 6
+				if (useList == "2" ) input "devices2", "capability.battery", title: "Battery Devices to be Monitored" , multiple: true, required: false, defaultValue: null, width: 6
+				if (useList == "3" ) input "devices3", "capability.motionSensor", title: "Motion Detectors to be Monitored" , multiple: true, required: false, defaultValue: null, width: 6
+				if (useList == "4" ) input "devices4", "capability.presenceSensor", title: "Presence Sensors to be Monitored" , multiple: true, required: false, defaultValue: null, width: 6
+				if (useList == "5" ) input "devices5", "capability.switch", title: "Switches to be Monitored" , multiple: true, required: false, defaultValue: null, width: 6
+				if (useList == "6" ) input "devices6", "capability.contactSensor", title: "Contacts to be monitored" , multiple: true, required: false, defaultValue: null, width: 6
+				if (useList == "7" ) input "devices7", "capability.temperatureMeasurement", title: "Temperature Sensors to be monitored" , multiple: true, required: false, defaultValue: null, width: 6
+				if (isLogInfo) log.info ("devicePage: useList is:*${useList}*")
+			}																																															   
+			
+			paragraph line(2)
 			
 			paragraph titleise("Select Report Options.")  
             if (moduleName == "Activity Monitor") input (name: "inactivityThreshold", title: "<b>Inactivity threshold</b>", type: "enum", options: parent.inactivityTime(), submitOnChange:true, width:2, defaultValue: 24)
             input (name: "myDeviceLimit", title: "<b>Device Limit Threshold</b>", type: "enum", options: parent.deviceLimit(), submitOnChange:true, width:2, defaultValue: 5)
             input (name: "myTruncateLength", title: "<b>Truncate Device Name</b>", type: "enum", options: parent.truncateLength(), submitOnChange:true, width:2, defaultValue: 20)
-			input (name: "mySortOrder", title: "<b>Sort Order</b>", type: "enum", options: sortOrder(), submitOnChange:true, width:3, defaultValue: 1 )  //Sort alphabetically by device name
+			input (name: "mySortOrder", title: "<b>Sort Order</b>", type: "enum", options: sortOrder(), submitOnChange:true, width:2, defaultValue: 1 )  //Sort alphabetically by device name
 			if (moduleName == "Attribute Monitor") input (name: "myDecimalPlaces", title: "<b>Decimal Places</b>", type: "enum", options: [0,1,2], submitOnChange:true, width:2, defaultValue: 1)
-			if (moduleName == "Attribute Monitor") input (name: "myUnits", title: "<b>Units</b>", type: "enum", options: unitsMap , submitOnChange:true, width:1, defaultValue: "None")																																				
-            input (name: "myReplacementText", title: "<b>Strip Device Text</b>", type: "string", submitOnChange:true, width:2, defaultValue: 1)
-            input (name: "isAbbreviations", type: "bool", title: "Use Abbreviations in Device Names", required: false, multiple: false, defaultValue: false, submitOnChange: true, width: 4, newLine:true )    
-            paragraph line(1)
-            
+			if (moduleName == "Attribute Monitor") input (name: "myUnits", title: "<b>Units</b>", type: "enum", options: unitsMap , submitOnChange:true, width:2, defaultValue: "None")																																				
+            input (name: "myReplacementText1", title: "<b>Strip Device Text #1</b>", type: "string", submitOnChange:true, width:2, defaultValue: "?", newLine:true)
+			input (name: "myReplacementText2", title: "<b>Strip Device Text #2</b>", type: "string", submitOnChange:true, width:2, defaultValue: "?")
+            input (name: "isAbbreviations", type: "bool", title: "<b>Use Abbreviations in Device Names</b>", required: false, multiple: false, defaultValue: false, submitOnChange: true, width: 4 )    
+	        
 			if (moduleName == "Activity Monitor") myText = "<b>Inactivity Threshold:</b> Only devices without activity since the threshold are eligible to be reported on. Using an inactivity time of 0 can be used to generate a most recently active list.<br>"
-			if (moduleName == "Attribute Monitor") mtText = ""
-			myText += "<b>Device Threshold Limit:</b> This limits the maximum number of devices that can appear in the table. The actual number of devices may be less depending on other parameters. Lowering the number of devices is one way to reduce the size of the table but usually less effective " +\
-                        "than eliminating some of the formatting elements available in the table customization options.<br>"
-            myText += "<b>Truncate Device Name:</b> This can shorten the name of the device to improve table formatting as well as reduce the size of the overall data.<br>"
-            myText += "<b>Sort Order:</b> Changes the sort order of the results allowing the creation of reports that show most active devices as well as least active. Longest inactivity would be good for detecting down devices, perhaps with failed batteries. Shortest inactivity would be useful " +\
-                        "activity monitoring such as contacts, motion sensors or switches.<br>"
-            myText += "<b>Strip Device Text:</b> Allows you to strip unwanted strings from the device name, such as ' on Office' for meshed hubs or a ' -' after truncating at the second space for a hyphenated name."
+			if (moduleName == "Attribute Monitor") myText = ""
+						myText += "<b>Device Threshold Limit:</b> This limits the maximum number of devices that can appear in the table. The actual number of devices may be less depending on other parameters. Lowering the number of devices is one way to reduce the size of the table but usually less effective " +\
+                        	"than eliminating some of the formatting elements available in the table customization options.<br>"
+            			myText += "<b>Truncate Device Name:</b> This can shorten the name of the device to improve table formatting as well as reduce the size of the overall data.<br>"
+            			myText += "<b>Sort Order:</b> Changes the sort order of the results allowing the creation of reports that show most active devices as well as least active. Longest inactivity would be good for detecting down devices, perhaps with failed batteries. Shortest inactivity would be useful " +\
+                        	"activity monitoring such as contacts, motion sensors or switches.<br>"
+						myText += "<b>Decimal Places:</b> Allows you to format floating point data. Saves space and has neater presentation. This value does not affect any of the comparisons performed in filtering or highlighting.<br>"
+						myText += "<b>Units:</b> You can append units to the data in the table. Unit options with a leading '_' places a space between the numeric value and the unit.<br>"
+            			myText += "<b>Strip Device Text:</b> Allows you to strip unwanted strings from the device name, such as ' on Office' for meshed hubs or a ' -' after truncating at the second space for a hyphenated name."
 			paragraph summary("Report Notes", myText)	
             paragraph line(2)
         	//}
-		
-		    //Section for customization of the table.
+            
+			//Filter Results based on value
+            if (moduleName == "Attribute Monitor" && parent.checkLicense() == true) {
+                paragraph titleise("Select Filter Options.")  
+                input (name: "myFilterType", title: "<b>Filter Type</b>", type: "enum", options: parent.filterList(), submitOnChange:true, width:2, defaultValue: 0, newLine:false)
+                if (myFilterType != null && myFilterType.toInteger() >= 1 ) input (name: "myFilterText", title: "<b>Enter Comparison Value</b>", type: "string", submitOnChange:true, width:3, defaultValue: "")
+				paragraph summary("Filter Notes", parent.filterNotes() )	
+				paragraph line(2)
+            }
+			
+  	    //Section for customization of the table.
 		    // section {
 			paragraph titleise("Design Table") + "<br>"
 			input (name: "Refresh", type: "button", title: "Refresh Table", backgroundColor: "#27ae61", textColor: "white", submitOnChange: true, width: 2)
@@ -135,7 +185,7 @@ def mainPage() {
 				part2 = "<td>" + buttonLink ('Borders', 'Borders', 4) + "</td><td>" + buttonLink ('Rows', 'Rows', 5) + "</td><td>"  + buttonLink ('Footer', 'Footer', 6) + "</td>"
 				if (moduleName == "Attribute Monitor") part3 = "<td>" + buttonLink ('Highlights', 'Highlights', 7) + "</td><td>" + buttonLink ('Styles', 'Styles', 8) + "</td>" + "</td><td>" + buttonLink ('Advanced', 'Advanced', 9) + "</td>"
                 if (moduleName == "Activity Monitor") part3 = "<td>" + buttonLink ('Styles', 'Styles', 8) + "</td>" + "</td><td>" + buttonLink ('Advanced', 'Advanced', 9) + "</td>"
-                if (parent.isAdvancedLicenseSelected() == "true") table = part1 + part2 + part3 + "</table>"
+                if (parent.checkLicense() == true) table = part1 + part2 + part3 + "</table>"
                 else table = part1 + part2 + "</table>"
 				paragraph table
 				
@@ -144,7 +194,7 @@ def mainPage() {
 					paragraph titleise("General Properties")
 					input (name: "tw", type: "enum", title: bold("Width %"), options: parent.tableSize(), required: false, defaultValue: "90", submitOnChange: true, width: 2)
 					input (name: "th", type: "enum", title: bold("Height %"), options: parent.tableSize(), required: false, defaultValue: "auto", submitOnChange: true, width: 2)
-					input (name: "tbc", type: "color", title: bold2("Background Color", tbc), required:false, defaultValue: "#ffffff", width:2, submitOnChange: true)
+					input (name: "tbc", type: "color", title: bold2("Table Background Color", tbc), required:false, defaultValue: "#ffffff", width:2, submitOnChange: true)
 					input (name: "tff", type: "enum", title: bold("Font"), options: parent.fontFamily(), required: false, defaultValue: "Roboto", submitOnChange: true, width: 2, newLineAfter: true)
 					input (name: "bm", type: "enum", title: bold("Border Mode"), options: parent.tableStyle(), required: false, defaultValue: "collapse",  submitOnChange: true, width: 2)
 					input (name: "bfs", type: "enum", title: bold("Base Font Size"), options: parent.baseFontSize(), required: false, defaultValue: "18", submitOnChange: true, width: 2)
@@ -159,8 +209,13 @@ def mainPage() {
 						input (name: "fbc", type: "color", title: bold2("Frame Color", fbc), required: false, defaultValue: "#90C226", submitOnChange: true, width: 3, newLine: false)
 					}
 					input (name: "tilePreview", type: "enum", title: bold("Select Tile Preview Size"), options: parent.tilePreviewList(), required: false, defaultValue: 2, submitOnChange: true, width: 3, newLine: true)
+					input (name: "isCustomSize", type: "bool", title: "<b>Use Custom Preview Size?</b>", required: false, multiple: false, defaultValue: false, submitOnChange: true, width: 2)
+					if (isCustomSize == true){
+						input (name: "customWidth", type: "text", title: bold("Column Width"), required:false, defaultValue: "200", submitOnChange: true, width: 1)
+						input (name: "customHeight", type: "text", title: bold("Row Height"), required:false, defaultValue: "190", submitOnChange: true, width: 1)
+					}
 					input (name: "iFrameColor", type: "color", title: bold2("Dashboard Color", iFrameColor ), required: false, defaultValue: "#000000", submitOnChange: true, width: 3)
-					
+
 					paragraph line(1)
 					paragraph summary("General Notes", parent.generalNotes() )	
 					}
@@ -170,12 +225,12 @@ def mainPage() {
 					paragraph titleise("Title Properties")
 					input (name: "isTitle", type: "bool", title: "<b>Display Title?</b>", required: false, multiple: false, defaultValue: false, submitOnChange: true, width: 2)
 					if (isTitle == true){
-                    	input (name: "tt", title: "<b>Title Text</b>", type: "string", required:false, defaultValue: "Inactive Devices", width:3, submitOnChange: true)
-						input (name: "ts", type: "enum", title: bold("Size %"), options: parent.textScale(), required: false, defaultValue: "150", width:2, submitOnChange: true)
+                    	input (name: "tt", title: "<b>Title Text</b>", type: "string", required:false, defaultValue: "Inactive Devices", width:3, submitOnChange: true, newLine: true)
+						input (name: "ts", type: "enum", title: bold("Text Size %"), options: parent.textScale(), required: false, defaultValue: "150", width:2, submitOnChange: true)
 						input (name: "ta", type: "enum", title: bold("Alignment"), options: parent.textAlignment(), required: false, defaultValue: "Center", width:2, submitOnChange: true, newLineAfter: true)
-						input (name: "tc", type: "color", title: bold2("Color", tc), required:false, defaultValue: "#000000", width:3, submitOnChange: true)
-						input (name: "to", type: "enum", title: bold("Opacity"), options: parent.opacity(), required: false, defaultValue: "1", submitOnChange: true, width: 2)
-						input (name: "tp", type: "enum", title: bold("Padding"), options: parent.elementSize(), required: false, defaultValue: "0", width:2, submitOnChange: true, newLineAfter:true)
+						input (name: "tc", type: "color", title: bold2("Text Color", tc), required:false, defaultValue: "#000000", width:3, submitOnChange: true)
+						input (name: "to", type: "enum", title: bold("Text Opacity"), options: parent.opacity(), required: false, defaultValue: "1", submitOnChange: true, width: 2)
+						input (name: "tp", type: "enum", title: bold("Text Padding"), options: parent.elementSize(), required: false, defaultValue: "0", width:2, submitOnChange: true, newLineAfter:true)
 					
 						input (name: "isTitleShadow", type: "bool", title: "<b>Add Shadow Text?</b>", required: false, multiple: false, defaultValue: false, submitOnChange: true, width: 2)
 						if (isTitleShadow == true){
@@ -194,12 +249,20 @@ def mainPage() {
 					paragraph titleise("Header Properties")
 					input (name: "isHeaders", type: "bool", title: "<b>Display Headers?</b>", required: false, multiple: false, defaultValue: false, submitOnChange: true, width: 2)
 					if (isHeaders == true ){
-						input (name: "A0", type: "text", title: bold("Column 1 Title"), required:false, defaultValue: "Device", submitOnChange: true, width: 2)
-						input (name: "B0", type: "text", title: bold("Column 2 Title"), required:false, defaultValue: "Value", submitOnChange: true, width: 2)
+                        //Manage the UI if the headers are merged.
+                        input (name: "isMergeHeaders", type: "bool", title: "<b>Merge Headers?</b>", required: false, multiple: false, defaultValue: false, submitOnChange: true, width: 2, newLineAfter:true)
+                        if (isMergeHeaders == true) {
+                                input (name: "A0", type: "text", title: bold("Heading 1"), required:false, defaultValue: "Device", submitOnChange: true, width: 4)
+                            }
+                            else {
+                                input (name: "A0", type: "text", title: bold("Heading 1"), required:false, defaultValue: "Device", submitOnChange: true, width: 2)
+                                input (name: "B0", type: "text", title: bold("Heading 2"), required:false, defaultValue: "State", submitOnChange: true, width: 2)
+                            }
+                        
 						input (name: "hts", type: "enum", title: bold("Text Size %"), options: parent.textScale(), required: false, defaultValue: "125", submitOnChange: true, width: 2)
 						input (name: "hta", type: "enum", title: bold("Alignment"), options: parent.textAlignment(), required: false, defaultValue: 2, submitOnChange: true, width: 2)
 						input (name: "htc", type: "color", title: bold2("Text Color", htc), required: false, defaultValue: "#000000", submitOnChange: true, width: 3)
-						input (name: "hto", type: "enum", title: bold("Text Opacity"), options: parent.opacity(), required: false, defaultValue: "1", submitOnChange: true, width: 2)
+						input (name: "hto", type: "enum", title: bold("Text Opacity"), options: parent.opacity(), required: false, defaultValue: "1", submitOnChange: true, width: 2, newLine: true)
 						input (name: "hp", type: "enum", title: bold("Text Padding"), options: parent.elementSize(), required: false, defaultValue: "0",  submitOnChange: true, width: 2)
 						input (name: "hbc", type: "color", title: bold2("Background Color", hbc), required: false, defaultValue: "#90C226", submitOnChange: true, width: 3)
 						input (name: "hbo", type: "enum", title: bold("Background Opacity"), options: parent.opacity(), required: false, defaultValue: "1",  submitOnChange: true, width: 2)
@@ -211,12 +274,12 @@ def mainPage() {
 				//Border Properties
 				if (activeButton == 4){
 					paragraph titleise("Border Properties")
-					input (name: "isBorder", type: "bool", title: "<b>Display Borders?</b>", required: false, multiple: false, defaultValue: true, submitOnChange: true, width: 2)
+					input (name: "isBorder", type: "bool", title: "<b>Display Borders?</b>", required: false, multiple: false, defaultValue: true, submitOnChange: true, width: 2, newLineAfter:true)
 					if (isBorder == true ){
 						input (name: "bs", type: "enum", title: bold("Style"), options: parent.borderStyle(), required: false, defaultValue: "Solid", submitOnChange: true, width: 2)
 						input (name: "bw", type: "enum", title: bold("Width"), options: parent.elementSize(), required: false, defaultValue: 2,  submitOnChange: true, width: 2)
 						input (name: "bc", type: "color", title: bold2("Border Color", bc), required: false, defaultValue: "#000000", submitOnChange: true, width: 3)
-						input (name: "bo", type: "enum", title: bold("Opacity"), options: parent.opacity(), required: false, defaultValue: "1", submitOnChange: true, width: 2)
+						input (name: "bo", type: "enum", title: bold("Opacity"), options: parent.opacity(), required: false, defaultValue: "1", submitOnChange: true, width: 2, newLine:true)
 						input (name: "br", type: "enum", title: bold("Radius"), options: parent.borderRadius(), required: false, defaultValue: "0", submitOnChange: true, width: 2)
 						input (name: "bp", type: "enum", title: bold("Padding"), options: parent.elementSize(), required: false, defaultValue: "0",  submitOnChange: true, width: 2)
                     }
@@ -232,13 +295,15 @@ def mainPage() {
 					input (name: "rtc", type: "color", title: bold2("Text Color", rtc), required: false, defaultValue: "#000000" , submitOnChange: true, width: 3)
 					input (name: "rto", type: "enum", title: bold("Text Opacity"), options: parent.opacity(), required: false, defaultValue: "1", submitOnChange: true, width: 2)
                     input (name: "rp", type: "enum", title: bold("Text Padding"), options: parent.elementSize(), required: false, defaultValue: "0",  submitOnChange: true, width: 2, newLine: true)
-					input (name: "rbc", type: "color", title: bold2("Background Color", rbc), required: false, defaultValue: "#BFE373" , submitOnChange: true, width: 3)
-					input (name: "rbo", type: "enum", title: bold("Background Opacity"), options: parent.opacity(), required: false, defaultValue: "1",  submitOnChange: true, width: 2)
-					input (name: "isAlternateRows", type: "bool", title: bold("Use Alternate Row Colors?"), required: false, defaultValue: true, submitOnChange: true, width: 3, newLine: true)
+					input (name: "rbc", type: "color", title: bold2("Row Background Color", rbc), required: false, defaultValue: "#BFE373" , submitOnChange: true, width: 3)
+					input (name: "rbo", type: "enum", title: bold("Row Background Opacity"), options: parent.opacity(), required: false, defaultValue: "1",  submitOnChange: true, width: 2)
+					input (name: "isAppendUnits", type: "bool", title: bold("Append Units<br>to Data?"), required: false, defaultValue: true, submitOnChange: true, width: 2, newLine: true)
+                    input (name: "isAlternateRows", type: "bool", title: bold("Use Alternate<br>Row Colors?"), required: false, defaultValue: true, submitOnChange: true, width: 2, newLine: false)
 					if (isAlternateRows == true){
 						input (name: "ratc", type: "color", title: bold2("Alternate Text Color", ratc), required: false, defaultValue: "#000000", submitOnChange: true, width: 3)
                     	input (name: "rabc", type: "color", title: bold2("Alternate Background Color", rabc), required: false, defaultValue: "#E9F5CF", submitOnChange: true, width: 3)
                 	}
+                    
 					paragraph line(1)
 					paragraph summary("Row Notes", parent.rowNotes() )
 				}
@@ -246,7 +311,7 @@ def mainPage() {
 				//Footer Properties
 				if (activeButton == 6){
 					paragraph titleise("Footer Properties")
-					input (name: "isFooter", type: "bool", title: "<b>Display Footer?</b>", required: false, multiple: false, defaultValue: true, submitOnChange: true, width: 2)
+					input (name: "isFooter", type: "bool", title: "<b>Display Footer?</b>", required: false, multiple: false, defaultValue: true, submitOnChange: true, width: 2, newLineAfter:true)
 					if (isFooter == true) {
                     	input (name: "ft", type: "text", title: bold("Footer Text"), required: false, defaultValue: "%time%", width:3, submitOnChange: true)
 						input (name: "fs", type: "enum", title: bold("Text Size %"), options: parent.textScale(), required: false, defaultValue: "50", width:2, submitOnChange: true)
@@ -325,7 +390,7 @@ def mainPage() {
 						paragraph line(1)
 						paragraph "<b>Export</b><br>These are your currently active settings. You can copy these and share them with others via the Hubitat Community forum. Tweaking can be addictive but a lot of fun to explore!"
                         paragraph "<style><div {width: 150px; border: 5px solid #000000;} div.a {word-wrap: break-word;}</style><body><div class='a'><b>Basic Settings:</b><br><mark>" + state.myBaseSettingsMap.sort() + "</mark></div></body>"
-						paragraph "<style><div {width: 150px; border: 5px solid #000000;} div.a {word-wrap: break-word;}</style></head><body><div class='a'><b>Overrides:</b><br><mark>" + overrides + "</mark></div></body>"
+						paragraph "<style><div {width: 150px; border: 5px solid #000000;} div.a {word-wrap: break-word;}</style></head><body><div class='a'><b>Overrides:</b><br><mark>" + overrides.toString() + "</mark></div></body>"
 						paragraph line(1)
 						paragraph "<b>Import</b><br>You can paste settings from other people in here and save them as a new sytle. How great is that!"
 						input (name: "importStyleText", type: "text", title: bold("Paste Basic Settings Here!"), required: false, defaultValue: "?", width:12, height:4, submitOnChange: true)
@@ -361,6 +426,7 @@ def mainPage() {
 							if (state.currentHelperCommand != null ) paragraph "<mark>" + state.currentHelperCommand + "</mark></body>"
 							input (name: "clearOverrides", type: "button", title: "Clear the Overrides", backgroundColor: "#27ae61", textColor: "white", submitOnChange: true, width: 2, newLine: true, newLineAfter: false )
 							input (name: "copyOverrides", type: "button", title: "Copy To Overrides", backgroundColor: "#27ae61", textColor: "white", submitOnChange: true, width: 2, newLine: true, newLineAfter: false )
+							input (name: "appendOverrides", type: "button", title: "Append To Overrides", backgroundColor: "#27ae61", textColor: "white", submitOnChange: true, width: 2, newLine: true, newLineAfter: false )
 							input (name: "Refresh", type: "button", title: "Refresh Table", backgroundColor: "#27ae61", textColor: "white", submitOnChange: true, width: 2)
 						}
 						//**********************************************************************************************************
@@ -392,19 +458,30 @@ def mainPage() {
 //		}	//End of Section
         
  //       section{       //Display Table     
+            myText = dodgerBlue("<i>Tile Builder Documentation</i>")
+            myDocURL = "<a href='https://github.com/GaryMilne/Documentation/blob/main/Tile%20Builder%20Help.pdf' target=_blank>" + myText + "</a>"
+            
 			paragraph summary("Display Tips", parent.displayTips() )
 			
 			myHTML = toHTML(state.iframeHTML)
             myHTML = myHTML.replace("#iFrame1#","body{background:${iFrameColor};font-size:${bfs}px;}")
-
 			state.iFrameFinalHTML = myHTML
-			
-			if (tilePreview == "1" ) paragraph '<iframe srcdoc=' + '"' + myHTML + '"' + ' width="190" height="190" style="border:solid" scrolling="no"></iframe>'
-			if (tilePreview == "2" ) paragraph '<iframe srcdoc=' + '"' + myHTML + '"' + ' width="190" height="380" style="border:solid" scrolling="no"></iframe>'
-			if (tilePreview == "3" ) paragraph '<iframe srcdoc=' + '"' + myHTML + '"' + ' width="190" height="570" style="border:solid" scrolling="no"></iframe>'
-			if (tilePreview == "4" ) paragraph '<iframe srcdoc=' + '"' + myHTML + '"' + ' width="380" height="190" style="border:solid" scrolling="no"></iframe>'
-			if (tilePreview == "5" ) paragraph '<iframe srcdoc=' + '"' + myHTML + '"' + ' width="380" height="380" style="border:solid" scrolling="no"></iframe>'
-			if (tilePreview == "6" ) paragraph '<iframe srcdoc=' + '"' + myHTML + '"' + ' width="380" height="570" style="border:solid" scrolling="no"></iframe>'
+
+			if (isCustomSize == false){
+	            if (tilePreview == "1" ) paragraph '<iframe srcdoc=' + '"' + myHTML + '"' + ' width="190" height="190" style="border:solid" scrolling="no"></iframe>'
+				if (tilePreview == "2" ) paragraph '<iframe srcdoc=' + '"' + myHTML + '"' + ' width="190" height="380" style="border:solid" scrolling="no"></iframe>'
+				if (tilePreview == "3" ) paragraph '<iframe srcdoc=' + '"' + myHTML + '"' + ' width="190" height="570" style="border:solid" scrolling="no"></iframe>'
+				if (tilePreview == "4" ) paragraph '<iframe srcdoc=' + '"' + myHTML + '"' + ' width="380" height="190" style="border:solid" scrolling="no"></iframe>'
+				if (tilePreview == "5" ) paragraph '<iframe srcdoc=' + '"' + myHTML + '"' + ' width="380" height="380" style="border:solid" scrolling="no"></iframe>'
+				if (tilePreview == "6" ) paragraph '<iframe srcdoc=' + '"' + myHTML + '"' + ' width=380 height=570 style="border:solid" scrolling="no"></iframe>'
+			}
+			else {
+				//Use a custom size for the preview window.
+				myString = '<iframe srcdoc=' + '"' + myHTML + '"' + ' width=XXX height=YYY style="border:solid" scrolling="no"></iframe>'
+				myString = myString.replace("XXX", "${settings.customWidth}")
+				myString = myString.replace("YYY", "${settings.customHeight}")
+				paragraph myString
+			}
 			
 			if (state.HTMLsizes.Final < 1024 ){
 				paragraph "<div style='color:#17202A;text-align:left; margin-top:0em; margin-bottom:0em ; font-size:18px'>Current HTML size is: <font color = 'green'><b>${state.HTMLsizes.Final}</b></font color = '#17202A'> bytes. Maximum size for dashboard tiles is <b>1024</b> bytes.</div>"       
@@ -421,11 +498,12 @@ def mainPage() {
 				line = line.replace("true","<b><font color = 'green'> On</font color = 'black'></b>")
 				line = line.replace("false","<b><font color = 'grey'> Off</font color = 'grey'></b>")
 				paragraph note("", line)
+                paragraph "${myDocURL}"
 			}
 			 paragraph line(2)
-		}	//End of Display Table
+		//}	//End of Display Table
         
-        section {	//Configure Data Refresh
+       // section {	//Configure Data Refresh
             paragraph titleise("Configure Data Refresh Interval and Publish")
 			paragraph body("Here you will configure how where the table will be stored and how often it will be refreshed.<br>The HTML data must be less than 1024 bytes in order to be published.")
 			input (name: "myTile", title: "<b>Which Tile Attribute will store the table?</b>", type: "enum", options: parent.allTileList(), required:true, submitOnChange:true, width:3, defaultValue: 0, newLine:false)
@@ -463,6 +541,11 @@ def mainPage() {
     }
 }
 
+//Generic placeholder for test function.
+void test(){
+	
+}
+
 //************************************************************************************************************************************************************************************************************************
 //************************************************************************************************************************************************************************************************************************
 //************************************************************************************************************************************************************************************************************************
@@ -479,6 +562,7 @@ void refreshUIbefore(){
     overridesHelperMap = parent.getSampleOverridesList()
 	state.currentHelperCommand = overridesHelperMap.get(overridesHelperSelection)
 	if (state.flags.isClearOverridesHelperCommand == true){
+		if (isLogTrace == true) log.trace ("Clearing overrides.")
 		app.updateSetting("overrides", [value:"", type:"string"])  //Works
 		state.flags.isClearOverridesHelperCommand = false
 	}
@@ -487,11 +571,10 @@ void refreshUIbefore(){
             details = mySelectedTile.tokenize(":")
 		    if (details[0] != null ) {
 			    tileName = details[0].trim()
-			    log.info ("tileName is $tileName")
+				if (isLogDebug==true) log.debug ("tileName is $tileName")
 			    //We use the tile number when publishing so we strip off the leading word tile.
 			    tileNumber = tileName.replace("tile","")
 			    app.updateSetting("myTile", tileNumber)
-			    //app.updateSetting(mySetting, [value:myValue.toString(), type:"text"]) 
 		    }
 		    if (details[1] != null ) {
 			    tileName = details[1].trim()
@@ -502,7 +585,7 @@ void refreshUIbefore(){
 	}
 }
 
-//This is the refresh routine called at the start of the page. This is used to replace\clear screen values that do not respond when performed in the mainline code.
+//This is the refresh routine called at the end of the page. This is used to replace\clear screen values that do not respond when performed in the mainline code.
 void refreshUIafter(){	
 	//This checks a flag for the saveStlye operation and clears the text field if the flag has been set. Neccessary to do this so the UI updates correctly.
 	if (state.flags.styleSaved == true ){
@@ -517,11 +600,22 @@ void refreshUIafter(){
 		app.updateSetting("myDeviceList",[type:"capability",value:[]])
 		state.flags.myCapabilityChanged == false
 	}
-	//Updates the overrides field if the user selected to copy the command.
+	//Copy the selected command to the Overrides field and replace any existing text.
 	if (state.flags.isCopyOverridesHelperCommand == true){
 		myCommand = state.currentHelperCommand
 		app.updateSetting("overrides", [value:myCommand, type:"string"])  //Works
 		state.flags.isCopyOverridesHelperCommand = false
+	}
+	
+	//Appends the selected command to current contents of the Overrides field.
+	if (state.flags.isAppendOverridesHelperCommand == true){
+		myCurrentCommand = overrides.toString()
+		myCurrentCommand = myCurrentCommand.replace("[", "")
+		myCurrentCommand = myCurrentCommand.replace("]", "")
+		combinedCommand = myCurrentCommand.toString() + " | " + state.currentHelperCommand.toString()
+		
+		app.updateSetting("overrides", [value:combinedCommand.toString(), type:"string"])  //Works
+		state.flags.isAppendOverridesHelperCommand = false
 	}
 }
 
@@ -583,6 +677,11 @@ def appButtonHandler(btn) {
         case "copyOverrides":
             if (isLogTrace) log.trace("appButtonHandler: Clicked on copyOverrides")
 			state.flags.isCopyOverridesHelperCommand = true
+			break
+		case "appendOverrides":
+            if (isLogTrace) log.trace("appButtonHandler: Clicked on appendOverrides")
+			state.flags.isAppendOverridesHelperCommand = true
+			break
 		case "clearOverrides":
             if (isLogTrace) log.trace("appButtonHandler: Clicked on clearOverrides")
 			state.flags.isClearOverridesHelperCommand = true
@@ -604,6 +703,7 @@ def appButtonHandler(btn) {
             break
 		case "importStyle":
 			if (isLogTrace) log.trace("appButtonHandler: Clicked on Importing Style")
+			app.updateSetting("overrides", importStyleOverridesText)
 			def myImportMap = [:]
 			def myOverridesMap = [:]
 			//Add an overrides item to the the empty map.
@@ -661,10 +761,15 @@ def getDeviceMapActMon(){
         deviceName = it.toString()
         if (isLogDebug) log.debug("getDeviceMapActMon: deviceName is: $deviceName, it is: $it, and lastActivity is: $lastActivity")
         //Removes any undesireable characters from the devicename
-        if (myReplacementText != null) deviceName = deviceName.replace(myReplacementText, "")
+        if (myReplacementText1 != null) deviceName = deviceName.replace(myReplacementText1, "")
+		if (myReplacementText2 != null) deviceName = deviceName.replace(myReplacementText2, "")
         if (isAbbreviations == true) deviceName = abbreviate(deviceName)
         def diff
         def hours
+		if (lastActivity == null) {
+			if (isLogDebug) log.debug ("LastActivityAt field is blank for device: $deviceName")
+			lastActivity = new Date(2000-1900, 1, 1, 1, 0, 0)
+		}
         use(groovy.time.TimeCategory) {
             diff = now - lastActivity
             hours = diff.days * 24 + diff.hours
@@ -715,7 +820,7 @@ def getDeviceMapActMon(){
 }
 
 //Returns a map of device activity using the parameters provided by the selection boxes.
-//This function is used exclusively by Activity Monitor
+//This function is used exclusively by Attribute Monitor
 def getDeviceMapAttrMon(){
     if (isLogTrace) log.trace("getDeviceMapAttrMon: Entering.")
     def myMap = [:] //["My Fake":"not present"]    
@@ -723,30 +828,76 @@ def getDeviceMapAttrMon(){
 	deviceType = state.myAttribute
 	if (isLogDebug) log.debug ("DeviceType = $deviceType")
 	    
+    //Go through each of the results in the result set.
     myDeviceList.each { it ->
 		//log.info("getDeviceMapAttrMon: it is: $it.")
         deviceName = it.toString()
         //Removes any undesireable characters from the devicename - Case Sensitive
-        if (myReplacementText != null) deviceName = deviceName.replace(myReplacementText, "")
+        if (myReplacementText1 != null) deviceName = deviceName.replace(myReplacementText1, "")
+		if (myReplacementText2 != null) deviceName = deviceName.replace(myReplacementText2, "")
         if (isAbbreviations == true) deviceName = abbreviate(deviceName)
 		
 		myVal = it."current${deviceType}"
 		dataType = getDataType(myVal.toString())
-		if (isLogInfo) log.info ("dataType is: $dataType")
+		if (isLogInfo) ("myFilterType is: $myFilterType. myFilterText is: $myFilterText. dataType is: $dataType. myFilterTextDataType is: $myFilterTextDataType")
+		myFilterTextDataType = getDataType(myFilterText)
 		
-		if (dataType == "String") myMap["${deviceName}"] = myVal
-		if (dataType == "Integer") myMap["${deviceName}"] = myVal.toInteger()	
+		includeResult = false
 		
-		if (dataType == "Float") {
-			float myFloat = myVal.toFloat()
-			myFloat = myFloat.round(myDecimalPlaces.toInteger())
-			//log.info ("myFloat is: $myFloat")
-			//If the selected number of decimal places it 0 then return an integer otherwise the float preserves the trailing 0 after the point.
-			if (myDecimalPlaces.toInteger() == 0) myMap["${deviceName}"] = myFloat.toInteger()
-			else myMap["${deviceName}"] = myFloat.round(myDecimalPlaces.toInteger())
+        //Determine whether the result should be filtered out.
+		if (myFilterType != null && myFilterText != null && myFilterType.toInteger() >= 1 && myFilterText != "?" ){
+        	if (dataType == "String" && myFilterTextDataType == "String") {
+				if (myFilterType == "1" && myVal == settings.myFilterText) myMap["${deviceName}"] = myVal
+				if (myFilterType == "2" && myVal != settings.myFilterText) myMap["${deviceName}"] = myVal
+		 		if (myFilterType != "1" && myFilterType != "2") myMap["${deviceName}"] = myVal
+        	}
+		
+			if (dataType == "Integer" && myFilterTextDataType != "String") {
+				if (myFilterType == "3" && myVal.toInteger() == settings.myFilterText.toInteger() ) myMap["${deviceName}"] = myVal.toInteger()	
+				if (myFilterType == "4" && myVal.toInteger() <= settings.myFilterText.toInteger() ) myMap["${deviceName}"] = myVal.toInteger()	
+				if (myFilterType == "5" && myVal.toInteger() >= settings.myFilterText.toInteger() ) myMap["${deviceName}"] = myVal.toInteger()	
+				if (myFilterType != "3" && myFilterType != "4" && myFilterType != "5") myMap["${deviceName}"] = myVal.toInteger()	
+			}
+		
+            if (dataType == "Float"){ // && myFilterTextDataType == "Float") {
+                float myFloat = myVal.toFloat()
+				log.info ("myFloat is: $myFloat, $myDecimalPlaces, $myFilterType ")
+				
+				if (myFilterType == "3" && Float.compare(myFloat, settings.myFilterText.toFloat()) == 0 ){
+					//log.info ("== Match $myFloat")
+					includeResult = true
+				}
+				if (myFilterType == "4" && Float.compare(myFloat, settings.myFilterText.toFloat()) <= 0 ){
+					//log.info ("<= than Match $myFloat")
+					includeResult = true
+				}
+				if (myFilterType == "5" && Float.compare(myFloat, settings.myFilterText.toFloat()) >= 0 ){
+					//log.info (">= than Match $myFloat")
+					includeResult = true
+				}
+				//This condition occurs if they have selected a text filter but entered a float value.
+				if (myFilterType != "3" && myFilterType != "4" && myFilterType != "5") {
+					includeResult == true
+				}
+				
+                //If the selected number of decimal places is 0 then return an integer, otherwise the float preserves the trailing 0 after the decimal point.
+				if (includeResult == true && myDecimalPlaces.toInteger() == 0) myMap["${deviceName}"] = myFloat.toInteger()
+				if (includeResult == true && myDecimalPlaces.toInteger() != 0) myMap["${deviceName}"] = myFloat.round(myDecimalPlaces.toInteger())		
+			}
+            if (dataType == "Null") log.warn("getDeviceMapAttrMon: Device $deviceName has a null field for attribute '$deviceType' and will be skipped.")
+        	
+			}
+        //If it's not going to be filtered
+		else {
+            //log.info("Not filtering")
+            if (dataType == "Float") {
+                float myFloat = myVal.toFloat()
+                myFloat = myFloat.round(myDecimalPlaces.toInteger())
+                if (myDecimalPlaces.toInteger() == 0) myMap["${deviceName}"] = myFloat.toInteger()
+			    else myMap["${deviceName}"] = myFloat.round(myDecimalPlaces.toInteger())
+            }
+            else myMap["${deviceName}"] = myVal
 		}
-		if (dataType == "Null") log.warn("getDeviceMapAttrMon: Device $deviceName has a null field for attribute '$deviceType' and will be skipped.")
-        //log.debug("getDeviceMapAttrMon: deviceName is: $deviceName, temperature is: $temperature, humidity is: $humidity,  battery is: $battery")
 	}
     
     //Sort Orders 1 is a forward alpha sort on device name, 2 is a forward alpha sort on value, 3 is a reverse alpha sort on value, 4 is a high to low numeric sort, 5 is a low to high numeric sort
@@ -759,6 +910,7 @@ def getDeviceMapAttrMon(){
 	
     if (mySortOrder == "4" ) myMap = myMap.sort { -it.value }
     if (mySortOrder == "5" ) myMap = myMap.sort { it.value }
+	
     return myMap
 }
 
@@ -777,6 +929,9 @@ def abbreviate(deviceName){
     deviceName = deviceName.replaceAll(" (?i)room", " Rm")
     deviceName = deviceName.replaceAll(" (?i)Door", " Dr")
     deviceName = deviceName.replaceAll(" (?i)Bedroom", " BedRm")
+	deviceName = deviceName.replaceAll(" (?i)Bathroom", " Bath")
+	deviceName = deviceName.replaceAll(" (?i)Living Room", " Living")
+	deviceName = deviceName.replaceAll(" (?i)Dining Room", " Living")
     deviceName = deviceName.replaceAll(" (?i)Windows", " Win")
     deviceName = deviceName.replaceAll(" (?i)Window", " Win")
     deviceName = deviceName.replaceAll(" (?i)Sensor", " Sns")
@@ -834,6 +989,7 @@ void refreshTable(){
 	
     //Iterate through the sortedMap and take the number of entries corresponding to the number set by the deviceLimit
 	recordCount = sortedMap.size()
+	
 	//Make myDeviceLimit = 0 if the they choose 'No Selection' from the drop down or have not selected anything into the devicelist.
 	if ( myDeviceLimit == null || myDeviceList == null) myDeviceLimit = 0
 	sortedMap.eachWithIndex{ key, value, i -> 
@@ -870,6 +1026,7 @@ void refreshTable(){
 		}
 	int myRows = Math.min(recordCount, myDeviceLimit.toInteger())
 	if (isLogDebug) log.debug ("refreshTable: calling makeHTML: ${data} and myRows:${myRows} with deviceLimit: ${myDeviceLimit}")
+	state.recordCount = myRows
 	makeHTML(data, myRows)
 }
 
@@ -879,28 +1036,31 @@ void makeHTML(data, int myRows){
 	
 	//Configure all of the HTML template lines.
 	String HTMLCOMMENT = "<!--#comment#-->"
-	String HTMLSTYLE1 = "<head><style>#class##iFrame1#table.#id#{border-collapse:#bm#;width:#tw#%;height:#th#%;margin:Auto;font-family:#tff#;background-color:#tbc#;#table#;}"	//Table Style - Always included
-	String HTMLSTYLE2 = ".#id# tr{color:#rtc#;text-align:#rta#;#row#}.#id# td{background:#rbc#;font-size:#rts#%;padding:#rp#px;#data#}</style>"	//End of the Table Style block - Always included.
+	//String HTMLSTYLE1 = "<head><style>body{overflow-y:scroll}</style>   <style>#class##iFrame1#table.#id#{border-collapse:#bm#;width:#tw#%;height:#th#%;margin:Auto;font-family:#tff#;background-color:#tbc#;#table#;}"	//Table Style - Always included
+    String HTMLSTYLE1 = "<head>#pre1#<style>#class##iFrame1#table.#id#{border-collapse:#bm#;width:#tw#%;height:#th#%;margin:Auto;font-family:#tff#;background-color:#tbc#;#table#;}"	//Table Style - Always included.  
+	String HTMLSTYLE2 = ".#id# tr{color:#rtc#;text-align:#rta#;#row#}.#id# td{background-color:#rbc#;font-size:#rts#%;padding:#rtp#px;#data#}</style>"	//End of the Table Style block - Always included.
 	String HTMLBORDERSTYLE = "<style>.#id# th,.#id# td{border:#bs# #bw#px #bc#;padding:#bp#px;border-radius:#br#px;#border#}</style>"	//End of the Table Style block. Sets border style for TD and TH elements. - Always included.
 	String HTMLTITLESTYLE = "<style>ti#id#{display:block;color:#tc#;font-size:#ts#%;font-family:#tff#;text-align:#ta#;#titleShadow#;padding:#tp#px;#title#}</style>"		//This is the row for the Title Style - May be omitted.
-	String HTMLHEADERSTYLE = "<style>.#id# th{background:#hbc#;color:#htc#;text-align:#hta#;font-size:#hts#%;padding:#hp#px;#header#}</style>"		//This is the row for Header Style - Will be ommitted 
-	String HTMLARSTYLE = "<style>.#id# tr:nth-child(even){color:#ratc#;background-color:#rabc#;#alternateRow#}</style>"							//This is the row for Alternating Row Style - May be omitted.
-	String HTMLHIGHLIGHT1STYLE = "<style>h#id#1{color:#hc1#;font-size:#hts1#%}</style>"		//Highlighting Styles - May be ommitted.
-	String HTMLHIGHLIGHT2STYLE = "<style>h#id#2{color:#hc2#;font-size:#hts2#%}</style>"		//Highlighting Styles - May be ommitted.
-	String HTMLDIVSTYLE = "<style>div.#id#{height:auto;background-color:#fbc#;#box#}</style>"
-	String HTMLDIVSTART = "<div class=#id#>#br1#"				//The #br1# tag is replaced with a <br> when the Frame is enabled and the Footer is disabled. This provides better spacing.
-	String HTMLTITLE = "<ti#id#>#tt#</ti#id#>"						//This is the row for the Title - May be omitted.
-	String HTMLTABLESTART = "</head><body><table class=#id#>"
-	String HTMLR0 = "<tr><th>#A00#</th><th>#B00#</th></tr>"			//This is the row for Column Header - May be omitted.
-	String HTMLTBODY = "<tbody>"									//Sets the start of table body section
+	String HTMLHEADERSTYLE = "<style>.#id# th{background:#hbc#;color:#htc#;text-align:#hta#;font-size:#hts#%;padding:#htp#px;#header#}</style>"		//This is the row for Header Style - Will be ommitted 
+	String HTMLARSTYLE = "<style>.#id# tr:nth-child(even){color:#ratc#;background-color:#rabc#;#alternaterow#;}</style>"							//This is the row for Alternating Row Style - May be omitted.
+	String HTMLHIGHLIGHT1STYLE = "<style>h#id#1{color:#hc1#;font-size:#hts1#%;#high1#}</style>"														//Highlighting Styles - May be ommitted.
+	String HTMLHIGHLIGHT2STYLE = "<style>h#id#2{color:#hc2#;font-size:#hts2#%;#high2#}</style>"														//Highlighting Styles - May be ommitted.
+	String HTMLDIVSTYLE = "<style>div.#id#{height:auto;background-color:#fbc#;#frame#}</style>"														//Div container - May be ommitted.
+	String HTMLDIVSTART = "<div class=#id#>#pre2#"																									//Div class - May be ommitted. Includes a free form #pre2# tag at the start of the DIV. 
+	String HTMLTITLE = "<ti#id#>#tt#</ti#id#>"																										//This is the row for the Title - May be omitted.
+	String HTMLTABLESTART = "</head><body><table class=#id#>"																						//Start of the Table - always present.
+    String HTMLR0 = ""
+    if (isMergeHeaders == true) HTMLR0 = "<tr><th colspan=2>#A00#</th></tr>"																	    //This is the row for Single Column Headers - May be omitted.
+    else HTMLR0 = "<tr><th>#A00#</th><th>#B00#</th></tr>"																							//This is the row for Dual Column Header - May be omitted.
+	String HTMLTBODY = "<tbody>"																													//Sets the start of table body section
 	String HTMLR1 = "<tr><td>#A01#</td><td>#B01#</td></tr>"; String HTMLR2 = "<tr><td>#A02#</td><td>#B02#</td></tr>"; String HTMLR3 = "<tr><td>#A03#</td><td>#B03#</td></tr>"; String HTMLR4 = "<tr><td>#A04#</td><td>#B04#</td></tr>"; String HTMLR5 = "<tr><td>#A05#</td><td>#B05#</td></tr>"
 	String HTMLR6 = "<tr><td>#A06#</td><td>#B06#</td></tr>"; String HTMLR7 = "<tr><td>#A07#</td><td>#B07#</td></tr>"; String HTMLR8 = "<tr><td>#A08#</td><td>#B08#</td></tr>"; String HTMLR9 = "<tr><td>#A09#</td><td>#B09#</td></tr>"; String HTMLR10 = "<tr><td>#A10#</td><td>#B10#</td></tr>"
 	String HTMLR11 = "<tr><td>#A11#</td><td>#B11#</td></tr>"; String HTMLR12 = "<tr><td>#A12#</td><td>#B12#</td></tr>"; String HTMLR13 = "<tr><td>#A13#</td><td>#B13#</td></tr>"; String HTMLR14 = "<tr><td>#A14#</td><td>#B14#</td></tr>"; String HTMLR15 = "<tr><td>#A15#</td><td>#B15#</td></tr>"
 	String HTMLR16 = "<tr><td>#A16#</td><td>#B16#</td></tr>"; String HTMLR17 = "<tr><td>#A17#</td><td>#B17#</td></tr>"; String HTMLR18 = "<tr><td>#A18#</td><td>#B18#</td></tr>"; String HTMLR19 = "<tr><td>#A19#</td><td>#B19#</td></tr>"; String HTMLR20 = "<tr><td>#A20#</td><td>#B20#</td></tr>"
-	String HTMLTABLEEND = "</tbody></table>#br2#"				//The #br2# tag is replaced with a <br> when the Frame is enabled and the Footer is disabled. This provides better spacing.
+	String HTMLTABLEEND = "</tbody></table>"
 	String HTMLFOOTER = "<style>ft#id#{display:block;text-align:#fa#;font-size:#fs#%;color:#fc#;#footer#</style><ft#id#>#ft#</ft#id#>"		//Footer Style and Footer - May be omitted
-	String HTMLDIVEND = "</div>"
-	String HTMLEND = "</body>"
+	String HTMLDIVEND = "#post1#</div>"	//Includes #post1# which is a free form tag at the end of the div visible when a frame is used.
+	String HTMLEND = "#post2#</body>" //Includes #post2# which is a free form tag at the end of the body.
 	
     //Set the HTML* to "" if they are not going to be displayed.
 	if (isComment == false) HTMLCOMMENT = ""
@@ -951,17 +1111,20 @@ void makeHTML(data, int myRows){
 	//Get the units we are using, if any.
 	//myUnit = unitsMap.get(myUnits?.toInteger())
     
-    //Replace any %day%, %time%, %units% fields with the actual value
+    //Replace any %day%, %time%, %units%, %count% fields with the actual value
 	//Get the units we are using and corrent the formatting.
 	if (myUnits == "None") myUnit = ""
 	else myUnit = myUnits.replace("_"," ")
 	//Set an appropriate format for day and time.
     def myTime = new Date().format('HH:mm a')
     def myDay = new Date().format('E')
-    interimHTML = interimHTML.replaceAll("%day%", myDay)
-    interimHTML = interimHTML.replaceAll("%time%", myTime)
-    interimHTML = interimHTML.replaceAll("%units%", myUnit)
-    
+	
+	//Replace macro values regardless of case.
+    interimHTML = interimHTML.replaceAll("(?i)%day%", myDay)
+    interimHTML = interimHTML.replaceAll("(?i)%time%", myTime)
+    interimHTML = interimHTML.replaceAll("(?i)%units%", myUnit)
+	interimHTML = interimHTML.replaceAll("(?i)%count%", state.recordCount.toString())
+	
     //Replace any embedded tags using [] with <>
     interimHTML = toHTML(interimHTML)
     
@@ -988,7 +1151,7 @@ void makeHTML(data, int myRows){
 	}
 	else  {
 		state.iframeHTML = iframeHTML
-		state.HTML = "<b>HTML length exceeded 1024 bytes (${state.HTMLsizes.Final}).</b>"
+		state.HTML = "<b>HTML length exceeded 1024 bytes for '${myTileName}' (${state.HTMLsizes.Final}).</b>"
         if (isLogDebug) log.debug("makeHTML: HTML final size is > 1024 bytes.")
 	}
 }
@@ -1082,7 +1245,7 @@ def highlightValue(attributeValue){
 	}
 	
 	//Get the units we are using, if any and append them.
-	if (myUnits == "None") { return "[td]" + attributeValue + "[/td]"	}
+	if (myUnits == "None" || isAppendUnits == false ) { return "[td]" + attributeValue + "[/td]"	}
 	else {
 		myUnit = myUnits.replace("_"," ")
 		return "[td]" + attributeValue + myUnit + "[/td]"	}
@@ -1138,18 +1301,20 @@ void deleteSubscription(){
 void publishSubscribe(){
     if (isLogTrace) log.trace("createSubscription: Entering.")
 	//if (isLogInfo) 
-	log.info("createSubscription: Creating subscription for Tile: $myTile with description: $appName.")
+    log.info("createSubscription: Creating subscription for Tile: $myTile with description: $myTileName.")
 	//Remove all existing subscriptions.
 	unsubscribe()
     
 	//Setup a subscription to the currently selected device list and the attribute type relevant to that list.
 	capabilities = capabilitiesInteger.clone() + capabilitiesFloat.clone() + capabilitiesString.clone()
-	deviceType = capabilities.get(myCapability)
-	
-	if (myDeviceLimit >= 1 && myDeviceList != null ) subscribe(myDeviceList, deviceType.toLowerCase(), handler)
-	//Populate the Initial Table based on the present state.
-	publishTable()
-}
+    deviceType = capabilities.get(myCapability)
+	if (myDeviceLimit.toInteger() >= 1 && myDeviceList ) {
+		subscribe(myDeviceList, deviceType.toLowerCase(), handler)
+		//Populate the Initial Table based on the present state.
+        publishTable()
+	}
+	    
+    }
 
 //This should get executed whenever any of the subscribed devices receive an update to the monitored attribute.
 def handler(evt) {
@@ -1167,7 +1332,7 @@ void publishTable(){
 	myStorageDevice = parent.getStorageDevice()
     if (isLogDebug) log.debug("publishTable: myStorageDevice is: $myStorageDevice")
     if (myStorageDevice != null ) {
-        myStorageDevice.createTile(myTile, state.HTML, myTileName)
+        myStorageDevice.createTile(settings.myTile, state.HTML, settings.myTileName)
     }
 	else log.error("publishTable: Unable to connect to the storage device '$myStorageDevice'. Is the device created and available?")
 }
@@ -1181,27 +1346,29 @@ void createSchedule(){
 	unschedule()
 	unsubscribe()
 	
+									   
 	if (isLogInfo) log.info("createSchedule: publishInterval is: ${publishInterval}")
     if (publishInterval == "0" ) { 
 		log.warn("createSchedule: Automatic refresh has been disabled.")
 	}
     else {
 		//Use https://cronmaker.com
-		//nutes = publishInterval   0 0 6 1/1 * ? *.
+		//Minutes = publishInterval   0 0 6 1/1 * ? *.
 		switch(publishInterval.toInteger()){
         	case [1,2,5,10,15,30]:
 				//Every 15 Minute: 0 0/15 * 1/1 * ? *
 				cronJob = "0 0/" + publishInterval.toString() + " * 1/1 * ? *"
 				break
 			case [60, 120, 240, 480, 720]:
-				//Every 15 Hours: 0 0 0/15 1/1 * ? *
+				//Every 2 Hours: 0 0 0/2 1/1 * ? *
 				hours = publishInterval.toInteger()/60
-				cronJob = "0 0/1 * 1/" + hours.toString() + " * ? *"
+				cronJob = "0 0 0/" + hours.toString() + " 1/1 * ? *"
 				break
 			case 1440:
 				//Every Day start at 06:00; 0 0 6 1/1 * ? *
 				cronJob = "0 0 6 1/1 * ? *"
 			}
+								  
 		if (isLogDebug) log.debug ("createSchedule: cronJob is ${cronJob}.")
         schedule(cronJob, publishTable)
         myStorageDevice = parent.getStorageDevice()
@@ -1253,8 +1420,8 @@ def saveCurrentStyle(String styleName){
 
 //Takes all of the values in the style and applies them to the controls.
 def loadStyle(String styleName){
-    if (isLogInfo) log.info("loadStyle: style ${styleName} received from parent with settings: ${myStyle}.")
 	myStyle = parent.loadStyle(styleName)    
+	if (isLogInfo) log.info("loadStyle: style ${styleName} received from parent with settings: ${myStyle}.")
 	//Now update all of the settings with the retreived values
 	return myStyle
 }
@@ -1340,16 +1507,6 @@ def fillStyle(){
 	}
 	else { myHP = hp ; myRP = rp }	
 	
-	//Determine what spacer are required.  If the Title or footer are on and the frame is on then everything is fine and we don't need the spacers.
-	myFooterSpacer = ""
-	myTitleSpacer = ""
-	
-	//If the frame is on and the title\footer are off that is when the spacers are needed.
-	if (isFrame == true ){
-		if( isTitle == false) { myTitleSpacer = "<br>" }
-		if (isFooter == false) { myFooterSpacer = "<br>" }
-	}
-	
 	//Calculate the composite values here.
 	if (isTitleShadow == true) myTitleShadow = "text-shadow:" + shhor + "px " + shver + "px " + shblur + "px " + shcolor
 	
@@ -1368,8 +1525,8 @@ def fillStyle(){
 	
 	rgbaColorScheme = ["#tc#":mytc,"#hbc#":myhbc, "#htc#":myhtc,"#rbc#":myrbc, "#rtc#":myrtc, "#bc#":mybc]	
 	titleScheme = ["#tt#":tt, "#ts#":ts, "#tc#":tc, "#tp#":tp, "#ta#":ta, "#to#":to, "#shcolor#":shcolor, "#shver#":shver, "#shhor#":shhor, "#shblur#":shblur, "#titleShadow#":myTitleShadow]
-	headerScheme = ["#A00#":A0, "#B00#":B0, "#hbc#":hbc, "#hbo#":hbo, "#htc#":htc, "#hto#":hto, "#hts#":hts, "#hta#":hta , "#hp#":myHP] 		
-	rowScheme = ["#rbc#":rbc, "#rtc#":rtc, "#rts#":rts, "#rta#":rta ,"#rabc#":rabc, "#ratc#":ratc, "#rp#":myRP, "#rto#":rto, "#rbo#":rbo]			
+	headerScheme = ["#A00#":A0, "#B00#":B0, "#hbc#":hbc, "#hbo#":hbo, "#htc#":htc, "#hto#":hto, "#hts#":hts, "#hta#":hta , "#htp#":myHP] 		
+	rowScheme = ["#rbc#":rbc, "#rtc#":rtc, "#rts#":rts, "#rta#":rta ,"#rabc#":rabc, "#ratc#":ratc, "#rtp#":myRP, "#rto#":rto, "#rbo#":rbo]			
 	//Add a temporary class ID of 'qq'. A double qq is not used in the english language. The final one will be assigned by the Tile Builder Storage Device when the Tile is published.
 	tableScheme = ["#id#":"qq", "#th#":th,"#tw#":tw, "#tbc#":tbc]		
 	borderScheme = ["#bw#":bw, "#bc#":bc, "#bs#":bs, "#br#":br, "#bp#":bp, "#bo#":bo ]
@@ -1377,10 +1534,11 @@ def fillStyle(){
 	highlightScheme = ["#hc1#":hc1, "#hts1#":hts1, "#hc2#":hc2, "#hts2#":hts2]
 	keywordScheme = ["#k1#":k1, "#k2#":k2, "#ktr1#":ktr1,"#ktr2#":ktr2]
 	thresholdScheme = ["#top1#":top1, "#tcv1#":tcv1, "#ttr1#":ttr1, "#top2#":top2, "#tcv2#":tcv2, "#ttr2#":ttr2]
-	otherScheme = ["#comment#":comment, "#bm#":bm,"#tff#":tff, "#bfs#":bfs, "#fbc#":fbc, "#br1#":myTitleSpacer, "#br2#":myFooterSpacer,"#iFrameColor#":iFrameColor] 
+	otherScheme = ["#comment#":comment, "#bm#":bm,"#tff#":tff, "#bfs#":bfs, "#fbc#":fbc, "#customWidth#":customWidth, "#customHeight#":customHeight, "#iFrameColor#":iFrameColor] 
+	//otherScheme = ["#comment#":comment, "#bm#":bm,"#tff#":tff, "#bfs#":bfs, "#fbc#":fbc, "#customWidth#":customWidth, "#customHeight#":customHeight, "#iFrameColor#":iFrameColor] 
 	
 	//The booleanScheme uses the same configuration but these are not tags that are stored within the HTML. However they are stored in settings as they guide the logic flow of the application.
-	booleanScheme1 = ["#isFrame#":isFrame, "#isComment#":isComment,"#isTitle#":isTitle,"#isTitleShadow#":isTitleShadow,"#isHeaders#":isHeaders,"#isBorder#":isBorder,"#isAlternateRows#":isAlternateRows,"#isFooter#":isFooter]  
+	booleanScheme1 = ["#isCustomSize#":isCustomSize, "#isFrame#":isFrame, "#isComment#":isComment,"#isTitle#":isTitle,"#isTitleShadow#":isTitleShadow,"#isHeaders#":isHeaders,"#isBorder#":isBorder,"#isAlternateRows#":isAlternateRows,"#isFooter#":isFooter]  
 	booleanScheme2 = ["#isOverrides#":isOverrides,"#isScrubHTML#":isScrubHTML, "#isKeyword1#":isKeyword1, "#isKeyword2#":isKeyword2, "#isThreshold1#":isThreshold1, "#isThreshold2#":isThreshold2 ]
 	
 	//'myBaseSettingsMap' are those configured through the UI. 'myOverridesMap' are those extracted from the overrides text field and converted to a map. 
@@ -1398,7 +1556,7 @@ def fillStyle(){
 	//Calculate the base settings map and save it to state. These have HEX colors and can be applied directly to settings.
 	myBaseSettingsMap = titleScheme.clone() + headerScheme.clone() + rowScheme.clone() + tableScheme.clone() + borderScheme.clone() + footerScheme.clone() + highlightScheme.clone() + keywordScheme.clone() + thresholdScheme.clone() + otherScheme.clone() + booleanScheme1.clone() + booleanScheme2.clone()
 	
-	//For this one we start with the same base and add the RGBA color value which overwrite the HEX values. This result is foe use in the display.
+	//For this one we start with the same base and add the RGBA color value which overwrite the HEX values. This result is for use in the display.
 	state.myBaseSettingsMap = myBaseSettingsMap.clone()
 	myBaseSettingsMapRGBA = myBaseSettingsMap.clone() + rgbaColorScheme.clone()
 	
@@ -1431,10 +1589,12 @@ def fillStyle(){
 	myStyleMap.remove("#A00#")
 	myStyleMap.remove("#B00#")
 	myStyleMap.remove("#ft#")
-    //The value of #titleShadow#, br1 and br2 are calculated values based on other settings and do not need to be preserved.
+    //The value of #titleShadow#, pre and post are calculated values based on other settings and do not need to be preserved.
     myStyleMap.remove("#titleShadow#")
-    myStyleMap.remove("#br1#")
-    myStyleMap.remove("#br2#")
+    myStyleMap.remove("#pre1#")
+	myStyleMap.remove("#pre2#")
+    myStyleMap.remove("#post1#")
+	myStyleMap.remove("#post2#")
     
 	myStyleMap.overrides = settings.overrides
 	
@@ -1492,6 +1652,10 @@ def initialize(){
 	app.updateSetting("myUnits", [value:"None", type:"String"])
     app.updateSetting("isAbbreviations", false)
 	
+	//Filtering
+	app.updateSetting("myFilterType", 0)
+	app.updateSetting("myFilterText", "")
+	
 	//General
 	app.updateSetting("classID", "qq")
 	app.updateSetting("tilePreview","4")
@@ -1499,9 +1663,12 @@ def initialize(){
 	app.updateSetting("comment", "?")
 	app.updateSetting("isFrame", false)
 	app.updateSetting("fbc", [value:"#bbbbbb", type:"color"])
-	app.updateSetting("tbc", [value:"#ffffff", type:"color"])
+	app.updateSetting("tbc", [value:"#d9ecb1", type:"color"])
 	app.updateSetting("isShowSettings", false)
 	app.updateSetting("iFrameColor", [value:"#bbbbbb", type:"color"])
+	app.updateSetting("isCustomSize", false)
+	app.updateSetting("customWidth", "200")
+	app.updateSetting("customHeight", "190")
 	
 	app.updateSetting("isLogDebug", false)
     app.updateSetting("isLogTrace", false)
@@ -1542,8 +1709,9 @@ def initialize(){
 	
 	//Header Properties
 	app.updateSetting("isHeaders", true)
+    app.updateSetting("isMergeHeaders", false)
 	app.updateSetting("A0", "Device")
-	app.updateSetting("B0", "Value")
+	app.updateSetting("B0", "State")
 	app.updateSetting("hbc", [value:"#90C226", type:"color"])
 	app.updateSetting("hbo", "1")
 	app.updateSetting("htc", [value:"#000000", type:"color"])
@@ -1555,10 +1723,11 @@ def initialize(){
 	//Row Properties
 	app.updateSetting("rtc", [value:"#000000", type:"color"])
 	app.updateSetting("rts", "80")
-	app.updateSetting("rbc", [value:"#d9ecb1", type:"color"])
-	app.updateSetting("rbo", "1")
+	app.updateSetting("rbc", [value:"#000000", type:"color"])
+	app.updateSetting("rbo", "0")
 	app.updateSetting("rta", "Center")
 	app.updateSetting("rto", "1")
+    app.updateSetting("isAppendUnits", false)
 	app.updateSetting("isAlternateRows", false)
 	app.updateSetting("rabc", [value:"#dff8aa", type:"color"])
 	app.updateSetting("ratc", [value:"#000000", type:"color"])
@@ -1609,10 +1778,12 @@ def initialize(){
 	//Other
 	//app.updateSetting("myTile", 1)
 	app.updateSetting("mySelectedTile", "")
-    app.updateSetting("myReplacementText", "?")
+    app.updateSetting("myReplacementText1", "?")
+	app.updateSetting("myReplacementText2", "?")
+	app.updateSetting("publishInterval", [value:1, type:"enum"])
     
 	//Flags for multi-part operations usually to do with screen refresh.
-	state.flags = [isClearImport: false , isCopyOverridesHelperCommand: false, isClearOverridesHelperCommand: false, styleSaved: false, myCapabilityChanged: false]
+	state.flags = [isClearImport: false , isCopyOverridesHelperCommand: false, isAppendOverridesHelperCommand: false, isClearOverridesHelperCommand: false, styleSaved: false, myCapabilityChanged: false]
 	state.myCapabilityHistory = [new: "seed1", old: "seed"]
 }
 
@@ -1742,9 +1913,9 @@ def beginsWith(data, startString){
 
 //Converts a seperated text string into a map.
 def overridesToMap(myString , recordSeperator, fieldSeperator ){
-	overrides = [:]
+	myoverrides = [:]
 	//if (isLogDebug) log.debug ("myString is: ${myString}")
-	if (myString == null || myString.size() < 7 ) return overrides
+	if (myString == null || myString.size() < 7 ) return myoverrides
 	
 	myString = myString + " "
 	//Put the contents of the highlight setting into a map
@@ -1756,12 +1927,12 @@ def overridesToMap(myString , recordSeperator, fieldSeperator ){
 			    d0 = d0.trim()
 			    String d1 = it.substring(equalsLoc+1, it.size())
 			    //if (isLogDebug) log.debug ("it is: ${it}   equalsLoc:${equalsLoc}  myString is: ${myString}  d0 is:${d0} and d1 is:${d1}")
-			    overrides."${d0.toLowerCase()}" = d1.trim()
+			    myoverrides."${d0.toLowerCase()}" = d1.trim()
 		    }
         }
 		catch (Exception e) { log.error ("Exception ${e} in overridesToMap. Probably a malformed overrides string.") }
 	//if (isLogDebug) log.debug("overrides: ${overrides}")
-	return overrides
+	return myoverrides
 }
 
 //Removes any unneccessary content from the payload. Is controlled by the isScrubHTML setting on the Advanced tab.
@@ -1777,6 +1948,10 @@ def scrubHTML(HTML, iFrame){
 	myHTML = myHTML.replace("font-size:100%", "")
 	//myHTML = myHTML.replace("text-align:Left", "")
 	
+	//Remove any objects that had been detected as opacity=0
+	myHTML = myHTML.replace("background-color:rgba(0,0,0,0)", "")
+	myHTML = myHTML.replace("color:rgba(0,0,0,0)", "")
+	
 	myHTML = myHTML.replace("auto%", "auto")
 	myHTML = myHTML.replace("Auto%", "auto")
 	myHTML = myHTML.replace("width:auto", "")
@@ -1790,20 +1965,27 @@ def scrubHTML(HTML, iFrame){
 	myHTML = myHTML.replace("#table#", "")
 	myHTML = myHTML.replace("#header#", "")
 	myHTML = myHTML.replace("#row#", "")
-	myHTML = myHTML.replace("#alternateRow#", "")
+	myHTML = myHTML.replace("#alternaterow#", "")
 	myHTML = myHTML.replace("#data#", "")
 	myHTML = myHTML.replace("#footer#", "")
 	myHTML = myHTML.replace("#titleShadow#", "")
 	myHTML = myHTML.replace("#class#", "")
 	myHTML = myHTML.replace("#border#", "")
-	myHTML = myHTML.replace("#box#", "")
-    myHTML = myHTML.replace("#html#", "")
+	myHTML = myHTML.replace("#frame#", "")
+	myHTML = myHTML.replace("#pre1#", "")
+	myHTML = myHTML.replace("#pre2#", "")
+	myHTML = myHTML.replace("#post1#", "")
+	myHTML = myHTML.replace("#post2#", "")
+	myHTML = myHTML.replace("#high1#", "")
+	myHTML = myHTML.replace("#high2#", "")
+	
     
     if (iFrame == true ) myHTML = myHTML.replace("#iFrame1#", "")
 	
+	//Replace any excess spaces, parentheses or punctuation.
 	myHTML = myHTML.replace(" :", ":")
 	myHTML = myHTML.replace(": ", ":")
-	myHTML = myHTML.replace(", ", ",")
+	//myHTML = myHTML.replace(", ", ",")
 	myHTML = myHTML.replace(" {", "{")
 	myHTML = myHTML.replace("{;", "{")
 	myHTML = myHTML.replace(";;;", ";")
@@ -1811,6 +1993,7 @@ def scrubHTML(HTML, iFrame){
 	myHTML = myHTML.replace(";}", "}")
 	myHTML = myHTML.replace(",,", ",")
 	myHTML = myHTML.replace("  ", " ")
+	myHTML = myHTML.replace("%%", "%")
 
 	return myHTML
 }
@@ -1865,9 +2048,15 @@ def findSpace(String myDevice, int myOccurrence){
 //Converts an RGB color and opacity to an RGBA
 def getRGBA(color, opacity){
 	//if (isLogDebug) log.debug ("color is: ${color}, opacity is: ${opacity}" )
-	myRGB = hubitat.helper.ColorUtils.hexToRGB(color)
-	myRGBA = "rgba(" + myRGB[0] + "," + myRGB[1] + "," + myRGB[2] + "," + opacity.toString() + ")"
-	return myRGBA
+	if (opacity == 0 ) {
+		//This object is invisible at opacity=0. So we will set the color to 0,0,0,0 and strip it out of the final file.
+		return rgba(0,0,0,0)
+	}
+	else {
+		myRGB = hubitat.helper.ColorUtils.hexToRGB(color)
+		myRGBA = "rgba(" + myRGB[0] + "," + myRGB[1] + "," + myRGB[2] + "," + opacity.toString() + ")"
+		return myRGBA
+	}
 }
 
 //Converts a RGBA color and opacity into an RGB value. Expecting imput like. rgba(217,236,177,1)
@@ -1915,3 +2104,4 @@ def getDataType(String myVal){
 	if ( isFloat == true ) return "Float"
 	return "String"
 }
+
