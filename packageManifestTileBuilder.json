@@ -7,8 +7,8 @@
   "apps": [
     {
       "id": "82c4cdaf-cadc-48b0-afc9-624d53543498",
-      "name": "",
-      "namespace": "",
+      "name": "Tile Builder",
+      "namespace": "garyjmilne",
       "location": "https://raw.githubusercontent.com/GaryMilne/Hubitat-TileBuilder/main/Tile_Builder_Parent.groovy",
       "required": true,
       "oauth": false,
