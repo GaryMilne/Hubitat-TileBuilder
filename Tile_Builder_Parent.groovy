@@ -798,12 +798,9 @@ def activateLicense(){
     def secondHalf = myResult.substring(8, 16)
     
     def key = firstHalf.toUpperCase() + "-" + secondHalf.toUpperCase()
-    log.info ("<b>Expected License Key is: ${key}</b>")
-    log.info ("<b>Entered License Key is: ${licenseKey.toUpperCase()}</b>")
     
     if (key == licenseKey) {
         state.isAdvancedLicense = true
-        log.info ("It's a match")
         return true
         }
     else return false
