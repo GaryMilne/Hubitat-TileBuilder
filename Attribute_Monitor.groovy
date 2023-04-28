@@ -41,8 +41,9 @@
 *  Version 1.1.3 - Added ability to merge Column header fields.								
 *  Version 1.1.4 - Fixed bug with display of floating point numbers when filtering is enabled.
 *  Version 1.2.0 - Cleaned up a variety of message text. Version revved to match other components and Help file for first public release.
+*  Version 1.2.1 - Minor bug fix relating to the handling of Units
 *
-*  Gary Milne - April 26th, 2023
+*  Gary Milne - April 28th, 2023
 *
 *  This code is Activity Monitor and Attribute Monitor combined.
 *  The personality is dictated by @Field static moduleName a few lines ahead of this.
@@ -596,7 +597,7 @@ void refreshUIafter(){
     //If the myCapability flag has been changed then the myDeviceList is cleared as the potential device list would be different based on the capability selected.
 	//Only applies to Activity Monitor but retained for ease of maintenance.
 	if (state.flags.myCapabilityChanged == true ) {
-		log.info ("Reset list")
+		//log.info ("Reset list")
 		app.updateSetting("myDeviceList",[type:"capability",value:[]])
 		state.flags.myCapabilityChanged == false
 	}
@@ -908,8 +909,13 @@ def getDeviceMapAttrMon(){
         myMap = reverseSortMap(myMap)
     }
 	
-    if (mySortOrder == "4" ) myMap = myMap.sort { -it.value }
-    if (mySortOrder == "5" ) myMap = myMap.sort { it.value }
+    try {
+        if (mySortOrder == "4" ) myMap = myMap.sort { -it.value }
+        if (mySortOrder == "5" ) myMap = myMap.sort { it.value }
+    }
+    catch (ex) {
+        log.error('getDeviceMapAttrMon(): Error sorting devices. Check that all selected device has a non null value for this attribute.')
+    }
 	
     return myMap
 }
@@ -1113,7 +1119,7 @@ void makeHTML(data, int myRows){
     
     //Replace any %day%, %time%, %units%, %count% fields with the actual value
 	//Get the units we are using and corrent the formatting.
-	if (myUnits == "None") myUnit = ""
+	if (myUnits == null || myUnits == "None") myUnit = ""
 	else myUnit = myUnits.replace("_"," ")
 	//Set an appropriate format for day and time.
     def myTime = new Date().format('HH:mm a')
@@ -1185,9 +1191,9 @@ def highlightValue(attributeValue){
 	
 	//Otherwise it must be a number.
 	else {
-	//Get the units we are using, if any and append them.
-	if (myUnits == "None") myUnit = ""
-	else myUnit = myUnits.replace("_"," ")
+	    //Get the units we are using, if any and append them.
+	    if (myUnits == null || myUnits == "None" ) myUnit = ""
+	    else myUnit = myUnits.replace("_"," ")
 		
 	//Process the first threshold value.
 	if (isThreshold1 == true && tcv1 != null && tcv1 != "") {
@@ -1245,7 +1251,7 @@ def highlightValue(attributeValue){
 	}
 	
 	//Get the units we are using, if any and append them.
-	if (myUnits == "None" || isAppendUnits == false ) { return "[td]" + attributeValue + "[/td]"	}
+	if (myUnits == null || myUnits == "None" || isAppendUnits == false ) { return "[td]" + attributeValue + "[/td]"	}
 	else {
 		myUnit = myUnits.replace("_"," ")
 		return "[td]" + attributeValue + myUnit + "[/td]"	}
@@ -1318,8 +1324,7 @@ void publishSubscribe(){
 
 //This should get executed whenever any of the subscribed devices receive an update to the monitored attribute.
 def handler(evt) {
-	//if (isLogInfo)
-	log.info("handler: Subscription event handler called with event: $evt. ") 
+	if (isLogInfo) log.info("handler: Subscription event handler called with event: $evt. ") 
 	publishTable()   
 }
 
