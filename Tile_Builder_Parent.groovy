@@ -36,8 +36,9 @@
 *  Version 1.1.1 - Cleanup of some of the in-line help information. 
 *  Version 1.1.2 - Added licensing routines. 
 *  Version 1.2.0 - Limited public release. Version change to synchronize with other modules and Help. 
-*  Version 1.2.1 - Rework of setup screen based on feedback from @sburke781. Simplifies, reduces screen clutter and add a setup "Wizard".
-*  Gary Milne - April 28th, 2023
+*  Version 1.2.2 - Rework of setup screen based on feedback from @sburke781. Simplifies, reduces screen clutter and add a setup "Wizard".
+*
+*  Gary Milne - April 29th, 2023
 *
 **/
 
@@ -96,91 +97,98 @@ def mainPage() {
         section { 
             paragraph "<div style='text-align:center;color: #c61010; font-size:30px;text-shadow: 0 0 5px #FFF, 0 0 10px #FFF, 0 0 15px #FFF, 0 0 20px #49ff18, 0 0 30px #49FF18, 0 0 40px #49FF18, 0 0 55px #49FF18, 0 0 75px #ffffff;;'> Tile Builder 🎨</div>"
             //Intro
-            if (state.showIntro == true ) {
+            if (state.showIntro == true || state.setupState == 1) {
                 input(name: 'btnShowIntro', type: 'button', title: 'Introduction ▼', backgroundColor: 'green', textColor: 'white', submitOnChange: true, width: 2)  //▼ ◀ ▶ ▲
                 
-                part1 = "<b>Tile Builder</b> allows you to create custom tiles with a broad range of information that can be published to a <b>Hubitat Dashboard</b> using a native application."
-                part2 = "<b>Tile Builder</b> can eliminate the hassle of maintaining a seperate external system just so that you can have an attractive dashboard. A sample tile generated with Tile Builder Advanced is shown below.<br>"
-                if (state.setup == true) titleise2(red("<b>First time setup!</b>"))
+                part1 = "<b>Tile Builder</b> allows you to create custom tiles with a broad range of information that can be published to a <b>Hubitat Dashboard</b> using a native application. "
+                part2 = "<b>Tile Builder</b> can eliminate the hassle of maintaining a seperate system in order to get an attractive dashboard. A sample tile generated with Tile Builder Advanced is shown below.<br>"
+                if (state.setupState != 99) titleise2(red("<b>First time setup!</b>"))
                 paragraph(part1 + part2)
+                
+                myString = "You are installing <b>Tile Builder Standard which is free</b> and provides a highly functional addition to the basic Hubitat Dashboard capabilities.<br>"
+                myString += "If you wish to upgrade to <b>Tile Builder Advanced</b> you can do so after setup is complete by visiting the Licensing section."
+                paragraph myString
                 
                 //Get the sample table
                 myHTML = getSample()
                 paragraph '<iframe srcdoc=' + '"' + myHTML + '"' + ' width="170" height="160" style="border:solid;color:red" scrolling="no"></iframe>'
                 
-                
-                frameBorder="0"
-                if (state.setup == true) myText = "  Use the <b>Next</b> button to move through the sections. For subsequent visits you will be able to click directly on the section headers."
+                if (state.setupState != 99) myText = "  Use the <b>Next</b> button to move through the sections for initial setup."
                 else myText = "<b>Click on the section headers to navigate to a section.</b>"
                 paragraph(myText)
                 
                 //Only show button during the setup process
-                if (state.setup == true ) {
-                    input(name: 'btnNext', type: 'button', title: 'Next ▶', backgroundColor: 'teal', textColor: 'white', submitOnChange: true, width: 2)  //▼ ◀ ▶ ▲
+                if (state.setupState != 99) {
+                    input(name: 'btnNext1', type: 'button', title: 'Next ▶', backgroundColor: 'teal', textColor: 'white', submitOnChange: true, width: 2)  //▼ ◀ ▶ ▲
                 }
             }
             else {
                 input(name: 'btnShowIntro', type: 'button', title: 'Introduction ▶', backgroundColor: 'DodgerBlue', textColor: 'white', submitOnChange: true, width: 2)  //▼ ◀ ▶ ▲
             }
             paragraph line(2)
+            //End of Intro
             
             
             //Licensing
-            if (state.showLicense == true ) {
-                input(name: 'btnShowLicense', type: 'button', title: 'Licensing ▼', backgroundColor: 'green', textColor: 'white', submitOnChange: true, width: 2, newLineBefore: true, newLineAfter: false)  //▼ ◀ ▶ ▲
-                myString = "<b>Tile Builder Standard is free</b> and provides a highly functional addition to the basic Hubitat Dashboard capabilities.<br>"
-                myString = myString + "<b>Tile Builder Advanced</b> adds Filters, Highlights, Styles and a range of powerful customizations options. "
-			    myString = myString + "Click <a href='https://github.com/GaryMilne/Documentation/blob/main/Tile%20Builder%20Help.pdf'>here</a> for more information.</br></br>"
+            if (state.setupState == 99) {
+                if (state.showLicense == true) {
+                    input(name: 'btnShowLicense', type: 'button', title: 'Licensing ▼', backgroundColor: 'green', textColor: 'white', submitOnChange: true, width: 2, newLineBefore: true, newLineAfter: false)  //▼ ◀ ▶ ▲
+                    myString = "<b>Tile Builder Standard is free</b> and provides a highly functional addition to the basic Hubitat Dashboard capabilities.<br>"
+                    myString += "<b>Tile Builder Advanced</b> adds Filters, Highlights, Styles and a range of powerful customizations options. "
+			        myString += "Click <a href='https://github.com/GaryMilne/Documentation/blob/main/Tile%20Builder%20Help.pdf'>here</a> for more information.</br></br>"
             
-                //ID = getID()
-                //paragraph note('', "<b>Your ID is: ${hubID}</b>")
-                myString = myString + "To purchase the license for <b>Tile Builder Advanced</b> you must do the following:<br>"
-                myString += "<b>1)</b> Donate at least <b>\$5</b> to ongoing development via PayPal using this <a href='https://www.paypal.com/donate/?business=YEAFRPFHJCTFA&no_recurring=1&item_name=A+donation+of+\$5+or+more+grants+you+license+to+Tile+Builder+Advanced.+Please+leave+your+Hubitat+Community+ID.&currency_code=USD'>link.</a></br>"			
-                myString += "<b>2)</b> Forward the paypal eMail receipt along with your ID (<b>" + getID() + "</b>) to <b>TileBuilderApp@gmail.com</b>. Please include your Hubitat community ID for future notifications.<br>"
-                myString += "<b>3)</b> Wait for license key eMail notification (usually within 24 hours).<br>"
-                myString += "<b>4)</b> Apply license key using the input box below.<br>"
-                myString += "<b>Please respect the time and effort it took to create this application and comply with the terms of the license.</b>"
-                paragraph note('', myString)
+                    //ID = getID()
+                    //paragraph note('', "<b>Your ID is: ${hubID}</b>")
+                    myString = myString + "To purchase the license for <b>Tile Builder Advanced</b> you must do the following:<br>"
+                    myString += "<b>1)</b> Donate at least <b>\$5</b> to ongoing development via PayPal using this <a href='https://www.paypal.com/donate/?business=YEAFRPFHJCTFA&no_recurring=1&item_name=A+donation+of+\$5+or+more+grants+you+license+to+Tile+Builder+Advanced.+Please+leave+your+Hubitat+Community+ID.&currency_code=USD'>link.</a></br>"			
+                    myString += "<b>2)</b> Forward the paypal eMail receipt along with your ID (<b>" + getID() + "</b>) to <b>TileBuilderApp@gmail.com</b>. Please include your Hubitat community ID for future notifications.<br>"
+                    myString += "<b>3)</b> Wait for license key eMail notification (usually within 24 hours).<br>"
+                    myString += "<b>4)</b> Apply license key using the input box below.<br>"
+                    myString += "<b>Please respect the time and effort it took to create this application and comply with the terms of the license.</b>"
+                    paragraph note('', myString)
             
-                if (state.isAdvancedLicense == false ){
-                    input (name: "licenseKey", title: "<b>Enter Advanced License Key</b>", type: "string", submitOnChange:true, width:3, defaultValue: "?")
-                    input (name: 'activateLicense', type: 'button', title: 'Activate Advanced License', backgroundColor: 'orange', textColor: 'black', submitOnChange: true, width: 2)
-                    myString = '<b>Activation State: ' + red(state.activationState) + '</b><br>'
-                    myString = myString + 'You are running ' + dodgerBlue('<b><u>Tile Builder Standard</u></b>')
-                    paragraph myString
+                    if (state.isAdvancedLicense == false ){
+                        input (name: "licenseKey", title: "<b>Enter Advanced License Key</b>", type: "string", submitOnChange:true, width:3, defaultValue: "?")
+                        input (name: 'activateLicense', type: 'button', title: 'Activate Advanced License', backgroundColor: 'orange', textColor: 'black', submitOnChange: true, width: 2)
+                        myString = '<b>Activation State: ' + red(state.activationState) + '</b><br>'
+                        myString = myString + 'You are running ' + dodgerBlue('<b><u>Tile Builder Standard</u></b>')
+                        paragraph myString
+                    }
+                    else {
+                        myString = '<b>Activation State: ' + green(state.activationState) + '</b><br>'
+                        myString = myString + 'You are running ' + green('<b><u>Tile Builder Advanced</u></b>')
+                        paragraph myString
+                    }
                 }
-                else {
-                    myString = '<b>Activation State: ' + green(state.activationState) + '</b><br>'
-                    myString = myString + 'You are running ' + green('<b><u>Tile Builder Advanced</u></b>')
-                    paragraph myString
-                }
-                //Only show button during the setup process
-                if (state.setup == true ) {
-                    input(name: 'btnNext', type: 'button', title: 'Next ▶', backgroundColor: 'teal', textColor: 'white', submitOnChange: true, width: 2)  //▼ ◀ ▶ ▲
-                }
-            }
             else {
                 input(name: 'btnShowLicense', type: 'button', title: 'Licensing ▶', backgroundColor: 'DodgerBlue', textColor: 'white', submitOnChange: true, width: 2)  //▼ ◀ ▶ ▲
-            }
+                }
             paragraph line(2)
-            
+            }
+            //End of Licensing
             
             //Device
             if (state.showDevice == true ) {
                 input(name: 'btnShowDevice', type: 'button', title: 'Storage Device ▼', backgroundColor: 'green', textColor: 'white', submitOnChange: true, width: 2, newLineBefore: true)  //▼ ◀ ▶ ▲
-
+                paragraph "<b>Tile Builder</b> stores generated tiles on a special purpose <u>Tile Builder Storage Device</u>. You must <b>create a device and attach</b> to it using the controls below.<br>"                 
+                paragraph note('Note: ', "Each instance of <b>Tile Builder</b> must have it's own unique storage device.")
+                    
                 if (state.isStorageConnected == false ) {
                     paragraph red('❌ - A Tile Builder Storage Device is not connected.')
                     myString = "You do not have a 'Tile Builder Storage Device' connected. Click the button below to create\\connect one. <br>"
-                    myString = myString + "<b>Important: </b>If you remove the <b>Tile Builder</b> App the Tile Builder Storage Device will become orphaned and unusable. <br>"
-                    myString = myString + "<b>Note: </b>It is possible to install multiple instances of <b>Tile Builder</b>. In such a scenario each instance should be connected to a unique Tile Builder Storage Device."
+                    myString += "<b>Important: </b>If you remove the <b>Tile Builder</b> App the Tile Builder Storage Device will become orphaned and unusable. <br>"
+                    myString += "<b>Note: </b>It is possible to install multiple instances of <b>Tile Builder</b>. In such a scenario each instance should be connected to a unique Tile Builder Storage Device."
                     
                     input(name: 'selectedDevice', type: 'enum', title: bold('Select a Tile Builder Storage Device'), options: storageDevices(), required: false, defaultValue: 'Tile Builder Storage Device 1', submitOnChange: true, width: 3, newLineAfter:true)
                     input(name: 'createDevice', type: 'button', title: 'Create Device', backgroundColor: 'MediumSeaGreen', textColor: 'white', submitOnChange: true, width: 2)
-                    input(name: 'connectDevice', type: 'button', title: 'Connect Device', backgroundColor: 'MediumSeaGreen', textColor: 'white', submitOnChange: true, width: 2)
-                    input(name: 'deleteDevice', type: 'button', title: 'Delete Device', backgroundColor: 'Maroon', textColor: 'yellow', submitOnChange: true, width: 2)
+                    //paragraph ("isStorageConnected: $state.isStorageConnected")
+                    
+                    if (state.isStorageConnected == false) input(name: 'connectDevice', type: 'button', title: 'Connect Device', backgroundColor: 'Orange', textColor: 'white', submitOnChange: true, width: 2)
+                    else input(name: 'doNothing', type: 'button', title: 'Connect Device', backgroundColor: 'MediumSeaGreen', textColor: 'white', submitOnChange: true, width: 2)
+                            
+                    input(name: 'deleteDevice', type: 'button', title: 'Delete Device', backgroundColor: 'Maroon', textColor: 'yellow', submitOnChange: true, width: 2, newLineAfter: true)
                     if (state.hasMessage != null && state.hasMessage != '' ) {
-                        if (state.hasMessage.contains("Error")) paragraph note('Error: ', red(state.hasMessage))
+                        if (state.hasMessage.contains("Error")) paragraph note('', red(state.hasMessage))
                         else paragraph note('', green(state.hasMessage))
                     }
                 }
@@ -188,125 +196,103 @@ def mainPage() {
                     paragraph green('✅ - ' + state.myStorageDevice + ' is connected.')
                     paragraph note('', 'You have successfully connected to a Tile Builder Storage Device on your system. You can now create and publish tiles.')
                     input(name: 'disconnectDevice', type: 'button', title: 'Disconnect Device', backgroundColor: 'orange', textColor: 'black', submitOnChange: true, width: 2, newLineAfter: true)
-                }
+                    }
                 //Only show button during the setup process
-                if (state.setup == true ) {
-                    input(name: 'btnNext', type: 'button', title: 'Next ▶', backgroundColor: 'teal', textColor: 'white', submitOnChange: true, width: 2)  //▼ ◀ ▶ ▲
+                if (state.setupState != 99)
+                    input(name: 'btnNext2', type: 'button', title: 'Next ▶', backgroundColor: 'teal', textColor: 'white', submitOnChange: true, width: 2, newLine: true)  //▼ ◀ ▶ ▲
                 }
-            }
-            else {
-                input(name: 'btnShowDevice', type: 'button', title: 'Storage Device ▶', backgroundColor: 'DodgerBlue', textColor: 'white', submitOnChange: true, width: 2)  //▼ ◀ ▶ ▲
-            }
+            else input(name: 'btnShowDevice', type: 'button', title: 'Storage Device ▶', backgroundColor: 'DodgerBlue', textColor: 'white', submitOnChange: true, width: 2)  //▼ ◀ ▶ ▲
             paragraph line(2)
-            
-            
+            //End of Device
+                    
             //Setup Complete
-            if (state.showSetupComplete == true){
-                state.setup = false
+            if (state.setupState == 3){
                 paragraph titleise2(green('The required steps for setup are now complete!<br>'))
                 paragraph 'Click <b>Finish Setup</b> to proceed to creating your first tile!'
-                paragraph note("Note: ", "From now on you can click on the section headers to navigate the setup options.")
-                input(name: 'btnNext', type: 'button', title: 'Finish Setup ▶', backgroundColor: 'teal', textColor: 'white', submitOnChange: true, width: 2)  //▼ ◀ ▶ ▲
+                paragraph note("Note: ", "From now on you can click on the section headers to navigate the configuration options.")
+                input(name: 'btnNext3', type: 'button', title: 'Finish Setup ▶', backgroundColor: 'teal', textColor: 'white', submitOnChange: true, width: 2)  //▼ ◀ ▶ ▲
                 paragraph line(2)
                 }
+            //End of Setup
             
-                
             //Create Tiles
-            if (state.showCreateEdit == true ) {
-                //if (true ){
-                input(name: 'btnShowCreateEdit', type: 'button', title: 'Create\\Edit Tiles ▼', backgroundColor: 'green', textColor: 'white', submitOnChange: true, width: 2, newLineBefore: true, newLineAfter: false)  //▼ ◀ ▶ ▲
-                myString = '<b>Tile Builder</b> has two types of tile.<br>'
-                myString += '<b>Activity Monitor:</b> Tiles monitor a group of devices for activity\\inactivity using the <b>lastActivityAt</b> attribute. These tiles are refreshed at routine intervals.<br>'
-                myString += '<b>Attribute Monitor:</b> Tiles are event driven and aggregate multiple devices\\single attribute into a single tile. For example, all room temps on a single tile.<br>'
-                paragraph note('', myString)
-                app(name: 'TBPA', appName: 'Tile Builder - Activity Monitor', namespace: 'garyjmilne', title: 'Add New Activity Monitor', multiple: true)
-                app(name: 'TBPA', appName: 'Tile Builder - Attribute Monitor', namespace: 'garyjmilne', title: 'Add New Attribute Monitor', multiple: true)
+            if (state.setupState == 99) {
+                if (state.showCreateEdit == true) {
+                    //if (true ){
+                    input(name: 'btnShowCreateEdit', type: 'button', title: 'Create\\Edit Tiles ▼', backgroundColor: 'green', textColor: 'white', submitOnChange: true, width: 2, newLineBefore: true, newLineAfter: false)  //▼ ◀ ▶ ▲
+                    myString = '<b>Tile Builder</b> has two types of tile:<br>'
+                    myString += '<b>1) Activity Monitor:</b> Tiles monitor a group of devices for activity\\inactivity using the <b>lastActivityAt</b> attribute. These tiles are refreshed at routine intervals.<br>'
+                    myString += '<b>2) Attribute Monitor:</b> Tiles are event driven and aggregate multiple devices\\single attribute into a single tile. For example, all room temps on a single tile.<br>'
+                    paragraph note('', myString)
+                    app(name: 'TBPA', appName: 'Tile Builder - Activity Monitor', namespace: 'garyjmilne', title: 'Add New Activity Monitor', multiple: true)
+                    app(name: 'TBPA', appName: 'Tile Builder - Attribute Monitor', namespace: 'garyjmilne', title: 'Add New Attribute Monitor', multiple: true)
+                    }
+                else {
+                    input(name: 'btnShowCreateEdit', type: 'button', title: 'Create\\Edit Tiles ▶', backgroundColor: 'DodgerBlue', textColor: 'white', submitOnChange: true, width: 2, newLineBefore: true, newLineAfter: false)  //▼ ◀ ▶ ▲
                 }
-            else {
-                input(name: 'btnShowCreateEdit', type: 'button', title: 'Create\\Edit Tiles ▶', backgroundColor: 'DodgerBlue', textColor: 'white', submitOnChange: true, width: 2, newLineBefore: true, newLineAfter: false)  //▼ ◀ ▶ ▲
+                paragraph line(2)
             }
-            paragraph line(2)
-            
-
-            //Manage Tiles
-            if (state.showManage == true ) {
-                input(name: 'btnShowManage', type: 'button', title: 'Manage Tiles ▼', backgroundColor: 'green', textColor: 'white', submitOnChange: true, width: 2, newLineBefore: true, newLineAfter: false)  //▼ ◀ ▶ ▲
-                myString = 'Here you can view information about the tiles on this storage device, which are in use, the last time those tiles were updated and delete obsolete tiles.<br>'
-                myString += 'In the <b>Tile Builder Storage Device</b> you can preview also the tiles, add descriptions and delete tiles as neccessary.'
-                paragraph note('Note: ', myString)
-                input name: 'tilesInUse', type: 'enum', title: bold('List Tiles in Use'), options: getTileList(), required: false, defaultValue: 'Tile List', submitOnChange: false, width: 3, newLineAfter:false
-                input name: 'tilesInUseByActivity', type: 'enum', title: bold('List Tiles in Use By Activity'), options: getTileListByActivity(), required: false, defaultValue: 'Tile List By Activity', submitOnChange: true, width: 3, newLineAfter:true
-				input(name: 'deleteTile', type: 'button', title: '↑ Delete ↑ Selected ↑ Tile ↑', backgroundColor: 'Maroon', textColor: 'yellow', submitOnChange: true, width: 2)
-				paragraph note('Note: ', 'Deleting a tile does not delete the <b>Tile Builder</b> child app that generates the tile. Delete the child app first and then delete the tile.')
-            }
+            //End of Create Tiles
+        
+            //Manage Tiles 
+            if (state.setupState == 99) {
+                if (state.showManage == true ) {
+                    input(name: 'btnShowManage', type: 'button', title: 'Manage Tiles ▼', backgroundColor: 'green', textColor: 'white', submitOnChange: true, width: 2, newLineBefore: true, newLineAfter: false)  //▼ ◀ ▶ ▲
+                    myString = 'Here you can view information about the tiles on this storage device, which tiles are in use, the last time those tiles were updated and delete obsolete tiles.<br>'
+                    myString += 'In the <b>Tile Builder Storage Device</b> you can preview also the tiles, add descriptions and delete tiles as neccessary.'
+                    paragraph note('Note: ', myString)
+                    input name: 'tilesInUse', type: 'enum', title: bold('List Tiles in Use'), options: getTileList(), required: false, defaultValue: 'Tile List', submitOnChange: false, width: 4, newLineAfter:false
+                    input name: 'tilesInUseByActivity', type: 'enum', title: bold('List Tiles in Use By Activity'), options: getTileListByActivity(), required: false, defaultValue: 'Tile List By Activity', submitOnChange: true, width: 4, newLineAfter:true
+		    		input(name: 'deleteTile', type: 'button', title: '↑ Delete ↑ Selected ↑ Tile ↑', backgroundColor: 'Maroon', textColor: 'yellow', submitOnChange: true, width: 2)
+			    	paragraph note('Note: ', 'Deleting a tile does not delete the <b>Tile Builder</b> child app that generates the tile. Delete the child app first and then delete the tile.')
+                }
                 
             else {
                 input(name: 'btnShowManage', type: 'button', title: 'Manage Tiles ▶', backgroundColor: 'DodgerBlue', textColor: 'white', submitOnChange: true, width: 2, newLineBefore: true, newLineAfter: false)  //▼ ◀ ▶ ▲
-            }
+                }
             paragraph line(2)
+            }
+            //End of Manage  
             
-
             //More
-            if (state.showMore == true ) {
-                input(name: 'btnShowMore', type: 'button', title: 'More ▼', backgroundColor: 'green', textColor: 'white', submitOnChange: true, width: 2, newLineBefore: true, newLineAfter: true)  //▼ ◀ ▶ ▲
-                label title: bold('Enter a name for this Tile Builder parent instance (optional)'), required: false, width: 4
-                input 'isLogInfo',   'bool', title: '<b>Enable info logging?</b>', defaultValue: true, submitOnChange: false, width: 2
-                input 'isLogDebug',   'bool', title: '<b>Enable debug logging?</b>', defaultValue: false, submitOnChange: false, width: 2
-                input 'isLogTrace',   'bool', title: '<b>Enable trace logging?</b>', defaultValue: false, submitOnChange: false, width: 2, newLineAfter:true
-                paragraph line(1)
-                paragraph body('<b>Support Functions</b>')
-                input(name: 'defaultStyles'  , type: 'button', title: 'Rebuild Default Styles', backgroundColor: '#27ae61', textColor: 'white', submitOnChange: true, width: 2)
-                input(name: 'removeLicense'  , type: 'button', title: 'De-Activate Software License', backgroundColor: '#27ae61', textColor: 'white', submitOnChange: true, width: 3)
-                input (name: "supportCode", title: "<b>Support Code</b>", type: "string", submitOnChange:true, width:3, defaultValue: "?")
-                input(name: "test"  , type: "button", title: "test", backgroundColor: "#27ae61", textColor: "white", submitOnChange: true, width: 2, newLineAfter: false)
-            }
-            else {
-                input(name: 'btnShowMore', type: 'button', title: 'More ▶', backgroundColor: 'DodgerBlue', textColor: 'white', submitOnChange: true, width: 2)  //▼ ◀ ▶ ▲
-            }
+            if (state.setupState == 99) {
+                if (state.showMore == true) {
+                    input(name: 'btnShowMore', type: 'button', title: 'More ▼', backgroundColor: 'green', textColor: 'white', submitOnChange: true, width: 2, newLineBefore: true, newLineAfter: true)  //▼ ◀ ▶ ▲
+                    label title: bold('Enter a name for this Tile Builder parent instance (optional)'), required: false, width: 4
+                    input 'isLogInfo',   'bool', title: '<b>Enable info logging?</b>', defaultValue: true, submitOnChange: false, width: 2
+                    input 'isLogDebug',   'bool', title: '<b>Enable debug logging?</b>', defaultValue: false, submitOnChange: false, width: 2
+                    input 'isLogTrace',   'bool', title: '<b>Enable trace logging?</b>', defaultValue: false, submitOnChange: false, width: 2, newLineAfter:true
+                    paragraph line(1)
+                    paragraph body('<b>Support Functions</b>')
+                    input(name: 'defaultStyles'  , type: 'button', title: 'Rebuild Default Styles', backgroundColor: '#27ae61', textColor: 'white', submitOnChange: true, width: 2)
+                    input(name: 'removeLicense'  , type: 'button', title: 'De-Activate Software License', backgroundColor: '#27ae61', textColor: 'white', submitOnChange: true, width: 3)
+                    input (name: "supportCode", title: "<b>Support Code</b>", type: "string", submitOnChange:true, width:3, defaultValue: "?")
+                }
+                else {
+                    input(name: 'btnShowMore', type: 'button', title: 'More ▶', backgroundColor: 'DodgerBlue', textColor: 'white', submitOnChange: true, width: 2)  //▼ ◀ ▶ ▲
+                }
             paragraph line(2)
-            
+            }
+            //End of More
+        
+           //paragraph ("setupState is: $state.setupState")
+           //input(name: "test"  , type: "button", title: "test", backgroundColor: "#27ae61", textColor: "white", submitOnChange: true, width: 2, newLineAfter: false)
         }
-        //Refresh the UI - neccessary for controls located on the same page.
-        log.info ("Refresh again")
-        refreshUI()
+        
     }
-}
+        
+        //Refresh the UI - neccessary for controls located on the same page.
+        //log.info ("Refresh again")
+        //refreshUI()
+    }
 
 def test(){
-    ID = getID()
-    log.info ("ID is: $ID")
-    state.setup = true
-    state.showSetupComplete = false
+    initialize()
     showSection("Intro", true)
+    state.setupState = 1
+    state.hasMessage= ""
 }
 
-
-def activateLicense(){
-    String hubUID = getHubUID()
-    def P1 = (hubUID.substring(0, 8)).toUpperCase()
-    def P2 = (hubUID.substring(Math.max(hubUID.length() - 8, 0))).toUpperCase()
-    
-    myResult = obfuscateStrings(P1.reverse().toString(), P2.reverse().toString())
-    
-    def firstHalf = myResult.substring(0, 8)
-    def secondHalf = myResult.substring(8, 16)
-    
-    def key = firstHalf.toUpperCase() + "-" + secondHalf.toUpperCase()
-    
-    if (key == licenseKey) {
-        state.isAdvancedLicense = true
-        return true
-        }
-    else return false
-}
-
-def getID(){
-    //Create a Quasi Unique Identifier
-    String hubUID = getHubUID()
-    def P1 = (hubUID.substring(0, 8)).toUpperCase()
-    def P2 = (hubUID.substring(Math.max(hubUID.length() - 8, 0))).toUpperCase()
-    return ("${P1}-${P2}")
-}
 
 //************************************************************************************************************************************************************************************************************************
 //************************************************************************************************************************************************************************************************************************
@@ -320,8 +306,7 @@ def getID(){
 
 //Show the selected section and hide all the others.
 def showSection(section, override){
-    if (state.setup == true && override == false) return
-    //if (state.setup == true && override == false) return
+    //if (state.inSetup == true && override == false) return
     state.showIntro = false
     state.showLicense = false
     state.showDevice = false
@@ -339,14 +324,6 @@ def showSection(section, override){
     if (section == "More" ) state.showMore = true
 }
 
-//Used to move from section to section during the setup process
-void nextSection(){
-    if (state.showIntro == true) { showSection("License", true); return }
-    if (state.showLicense == true) { showSection("Device", true); return }
-    if (state.showDevice == true) { showSection("SetupComplete", true); return }
-    if (state.showSetupComplete == true) { showSection("CreateEdit", true); return }
-}
-
 //This is the standard button handler that receives the click of any button control.
 def appButtonHandler(btn) {
     switch (btn) {
@@ -354,9 +331,19 @@ def appButtonHandler(btn) {
             if (isLogTrace) log.trace('appButtonHandler: Clicked on test')
             test()
             break
-        case 'btnNext':
-            log.info("Next Section")
-            nextSection()
+        case 'btnNext1':
+            if (isLogTrace) log.trace('appButtonHandler: Clicked on btnNext1')
+            state.setupState = 2
+            showSection("Device", true)
+            break
+        case 'btnNext2':
+            if (isLogTrace) log.trace('appButtonHandler: Clicked on btnNext2')
+            state.setupState = 3
+            showSection("SetupComplete", true)
+            break
+        case 'btnNext3':
+            state.setupState = 99
+            showSection("CreateEdit", true)
             break
         case 'btnShowIntro':
             if (isLogTrace) log.trace('appButtonHandler: Clicked on btnShowIntro')
@@ -405,6 +392,8 @@ def appButtonHandler(btn) {
 		case 'deleteTile':
             if (isLogTrace) log.trace('appButtonHandler: Clicked on deleteTile')
             deleteTile()
+            break
+        case 'doNothing':
             break
         case 'activateLicense': 
             if (isLogTrace) log.trace('appButtonHandler: Clicked on activateLicense')
@@ -770,78 +759,6 @@ def listStyles() {
     return myList.sort()
 }
 
-//************************************************************************************************************************************************************************************************************************
-//************************************************************************************************************************************************************************************************************************
-//************************************************************************************************************************************************************************************************************************
-//**************
-//**************  Installation and Update Functions
-//**************
-//************************************************************************************************************************************************************************************************************************
-//************************************************************************************************************************************************************************************************************************
-//************************************************************************************************************************************************************************************************************************
-
-def installed() {
-    if (isLogTrace) log.trace ('installed: Entering installed')
-    if (isLogInfo) log.info "Installed with settings: ${settings}"
-}
-
-def updated() {
-    if (isLogTrace) log.trace ('updated: Entering updated')
-    if (isLogInfo) log.info "Updated with settings: ${settings}"
-    unschedule()
-    unsubscribe()
-}
-
-def initialize() {
-    if (isLogTrace) log.trace ('initialized: Entering initialize')
-    if (isLogInfo) log.info ('Running Initialize.')
-    if ( state.initialized == true ) {
-        if (isLogInfo) log.info ('initialize has already been run. Exiting')
-        return
-    }
-    makeDefaultStyles()
-
-    //Set the flag so that this should only ever run once.
-    state.initialized = true
-
-    //Set initial Log settings
-    app.updateSetting('isLogDebug', false)
-    app.updateSetting('isLogTrace', false)
-    app.updateSetting('isLogInfo', false)
-    app.updateSetting('isLogWarn', true)
-    app.updateSetting('isLogError', true)
-
-    state.setup = true
-    state.showIntro = true
-    state.showLicense = false
-    state.showDevice = false
-    state.showSetupComplete = false
-    state.showCreateEdit = false
-    state.showManage = false
-    state.showMore = false
-    state.descTextEnable = false
-    state.debugOutput = false
-    state.isStorageConnected = false
-    state.flags = [selectedDeviceChanged: false]
-    state.selectedDeviceHistory = [new: 'seed1', old: 'seed']
-    state.isAdvancedLicense = false
-    state.activationState = "Not Activated"
-    
-    app.updateSetting("myInput", [value:"#c61010", type:"color"])
-    app.updateSetting('selectedDevice', 'Tile Builder Storage Device 1')
-}
-
-
-//Determine if something has changed in the command list.
-def isSelectedDeviceChanged() {
-    if (state.selectedDeviceHistory.new != selectedDevice) {
-        state.selectedDeviceHistory.old = state.selectedDeviceHistory.new
-        state.selectedDeviceHistory.new = selectedDevice
-        state.flags.selectedDeviceChanged = true
-    }
-    else { state.flags.selectedDeviceChanged = false }
-}
-
 //*****************************************************************************************************
 //Utility Functions
 //*****************************************************************************************************
@@ -908,6 +825,32 @@ String obfuscateStrings(String str1, String str2) {
     return result
 }
 
+def activateLicense(){
+    String hubUID = getHubUID()
+    def P1 = (hubUID.substring(0, 8)).toUpperCase()
+    def P2 = (hubUID.substring(Math.max(hubUID.length() - 8, 0))).toUpperCase()
+    
+    myResult = obfuscateStrings(P1.reverse().toString(), P2.reverse().toString())
+    
+    def firstHalf = myResult.substring(0, 8)
+    def secondHalf = myResult.substring(8, 16)
+    
+    def key = firstHalf.toUpperCase() + "-" + secondHalf.toUpperCase()
+    
+    if (key == licenseKey) {
+        state.isAdvancedLicense = true
+        return true
+        }
+    else return false
+}
+
+def getID(){
+    //Create a Quasi Unique Identifier
+    String hubUID = getHubUID()
+    def P1 = (hubUID.substring(0, 8)).toUpperCase()
+    def P2 = (hubUID.substring(Math.max(hubUID.length() - 8, 0))).toUpperCase()
+    return ("${P1}-${P2}")
+}
 
 
 //************************************************************************************************************************************************************************************************************************
@@ -1136,3 +1079,77 @@ def displayTips() {
     myText += '<b>Use Custom Preview Size:</b> If you use a Hubitat dashboard tile size other than the default of 200 x 190 you can match that by enabling this setting and entering your preferred grid size. Preview is still an approximation dependant on Hubitat dashboard padding.'
     return myText
 }
+
+
+
+//************************************************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************************************************
+//**************
+//**************  Installation and Update Functions
+//**************
+//************************************************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************************************************
+
+def installed() {
+    if (isLogTrace) log.trace ('installed: Entering installed')
+    if (isLogInfo) log.info "Installed with settings: ${settings}"
+}
+
+def updated() {
+    if (isLogTrace) log.trace ('updated: Entering updated')
+    if (isLogInfo) log.info "Updated with settings: ${settings}"
+    unschedule()
+    unsubscribe()
+}
+
+def initialize() {
+    if (isLogTrace) log.trace ('initialized: Entering initialize')
+    if (isLogInfo) log.info ('Running Initialize.')
+    if ( state.initialized == true ) {
+        if (isLogInfo) log.info ('initialize has already been run. Exiting')
+        return
+    }
+    makeDefaultStyles()
+
+    //Set the flag so that this should only ever run once.
+    state.initialized = true
+
+    //Set initial Log settings
+    app.updateSetting('isLogDebug', false)
+    app.updateSetting('isLogTrace', false)
+    app.updateSetting('isLogInfo', false)
+    app.updateSetting('isLogWarn', true)
+    app.updateSetting('isLogError', true)
+
+    state.setupState = 0
+    state.showIntro = true
+    state.showLicense = false
+    state.showDevice = false
+    state.showCreateEdit = false
+    state.showManage = false
+    state.showMore = false
+    state.descTextEnable = false
+    state.debugOutput = false
+    state.isStorageConnected = false
+    state.flags = [selectedDeviceChanged: false]
+    state.selectedDeviceHistory = [new: 'seed1', old: 'seed']
+    state.isAdvancedLicense = false
+    state.activationState = "Not Activated"
+    
+    app.updateSetting("myInput", [value:"#c61010", type:"color"])
+    app.updateSetting('selectedDevice', 'Tile Builder Storage Device 1')
+}
+
+
+//Determine if something has changed in the command list.
+def isSelectedDeviceChanged() {
+    if (state.selectedDeviceHistory.new != selectedDevice) {
+        state.selectedDeviceHistory.old = state.selectedDeviceHistory.new
+        state.selectedDeviceHistory.new = selectedDevice
+        state.flags.selectedDeviceChanged = true
+    }
+    else { state.flags.selectedDeviceChanged = false }
+}
+
