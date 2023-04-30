@@ -43,7 +43,7 @@
       "namespace": "garyjmilne",
       "location": "https://raw.githubusercontent.com/GaryMilne/Hubitat-TileBuilder/main/Tile_Builder_Storage_Driver.groovy",
       "required": true,
-      "version": "1.2.1"
+      "version": "1.2.11"
     }
   ]
 }

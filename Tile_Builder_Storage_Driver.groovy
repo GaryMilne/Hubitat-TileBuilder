@@ -28,8 +28,9 @@
 *  Version 1.0.1 - Internal Only
 *  Version 1.0.2 - Converted all logging to use the log() function and added settingoption.
 *  Version 1.2.0 - Revved version to match other components for initial public release.
+*  Version 1.2.1 - Changed allocation of classIdDigit to be automatic based upon the device network ID. 
 *
-*  Gary Milne - April 26th, 2023
+*  Gary Milne - April 28th, 2023
 *
 **/
 
@@ -66,7 +67,7 @@ metadata {
     attribute "tile24", "string"
     attribute "tile25", "string"
     
-	command "test"
+	//command "test"
     command "initialize"
     command "createTile", [ [name:"The tile number.*" , type: "NUMBER" , description: "Valid entries are '1 - 25'", range: 1..25], [name:"The tile content.*" , type: "STRING", description: "Usually HTML created by Tile Builder" ], [name:"Tile Description." , type: "STRING" , description: "i.e. 'Battery Activity'"] ]
     command "deleteTile", [ [name:"The tile number.*", type: "NUMBER", description: "Valid entries are '1 - 25'", range: 1..25] ]
@@ -74,7 +75,6 @@ metadata {
 }
 
     section("Configure the Inputs"){
-        input name: "ClassIDDigit", type: "enum", title: "First Digit of Class ID's assigned by this device (Default is A). If you have more than one Tile Builder Storage Device they must use a different digit.", description: "A single digit in the range A - C.", options: ["A","B","C"], defaultValue: "A"
         input name: "logging_level", type: "number", title: bold("Level of detail displayed in log. Higher number is more verbose."), description: italic("Enter log level 0-2. (Default is 0.)"), defaultValue: "0", required:true, displayDuringSetup: false            
         } 
 
@@ -89,6 +89,7 @@ void updated() {
 
 void test(){
 	sendEvent(name: test, value: "Empty")
+    
 }
 
 //Returns a list of classIDs presently in use.
@@ -98,15 +99,21 @@ def getClassIDinUse(){
 
 //Creates a tile
 void createTile(tileNumber, HTML, description) {
-	log("createTile", "Publishing tile: $tileNumber - $description", 0)
+    log("createTile", "Publishing tile: $tileNumber - $description", 0)
     tileName = "tile" + tileNumber.toString()
     if (state.tileDescriptions == null) state.tileDescriptions = [:]
     
-	//Calculates a character for the second digit of the class ID. Using a=1, b=2 etc. This gives us a 2 digit classID in the range of aa to az or 26 unique values. This should be sufficient for the Tile Builder which is contructed for 20 tiles.
+    //Set the initial digit of the classID based on the device driver instance.
+    classIdDigit = ""
+    if (device.deviceNetworkId == "Tile_Builder_Storage_Device_1") classIdDigit = "A"
+    if (device.deviceNetworkId == "Tile_Builder_Storage_Device_2") classIdDigit = "B"
+    if (device.deviceNetworkId == "Tile_Builder_Storage_Device_3") classIdDigit = "C"
+    
+	//Calculates a character for the second digit of the class ID. Using a=1, b=2 etc. This gives us a 2 digit classID in the range of aa to az or 26 unique values. This should be sufficient for the Tile Builder which is contructed for 25 tiles.
 	myChar = (char)(96 + tileNumber.toInteger())
 	//log.info("ascii val is: ${myChar}")
-	myClassID = settings.ClassIDDigit + myChar.toString()
-		
+	myClassID = classIdDigit + myChar.toString()
+    
 	//Replace the temporary classID with the permanent one.
 	HTML = HTML.replace("qq", myClassID)
     sendEvent(name: tileName, value: HTML)
@@ -232,14 +239,9 @@ def initialize(){
     //The device is not created instantly and calls to state may fail if made too soon.
     pauseExecution(1000)
     
-    //now = new Date()
-	//state.lastUpdate."${tileName}" = now.toString()
-    
     if (state.tileDescriptions == null) state.tileDescriptions = [:] // ["tile1":"None"]
-    if (state.lastUpdate == null) state.lastUpdate = [:]  //["tile1":"none"]
+    if (state.lastUpdate == null) state.lastUpdate = [:]  //["tile1":"none"]  
 }
-
-
 
 
 
