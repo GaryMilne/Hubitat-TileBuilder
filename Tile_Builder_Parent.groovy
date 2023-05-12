@@ -37,10 +37,15 @@
 *  Version 1.1.2 - Added licensing routines. 
 *  Version 1.2.0 - Limited public release. Version change to synchronize with other modules and Help. 
 *  Version 1.2.2 - Rework of setup screen based on feedback from @sburke781. Simplifies, reduces screen clutter and add a setup "Wizard".
+*  Version 1.2.3 - Adds a footer to the main screen containing versioning information.
+*  Version 1.2.4 - Split Overrides Helper examples into multiple categories for easier navigation. Add new examples.
+*  Version 1.2.6 - Round up version to match child Apps.
 *
-*  Gary Milne - April 29th, 2023
+*  Gary Milne - May 12th, 2023
 *
 **/
+import groovy.transform.Field
+@Field static final Version = "<b>Tile Builder Parent v1.2.6 (5/12/23)</b>"
 
 //These are the data for the pickers used on the child forms.
 def elementSize() { return ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20'] }
@@ -53,16 +58,17 @@ def textAlignment() { return ['Left', 'Center', 'Right', 'Justify'] }
 def tableSize() { return ['Auto', '50', '55', '60', '65', '70', '75', '80', '85', '90', '95', '100'] }
 def opacity() { return ['1', '0.9', '0.8', '0.7', '0.6', '0.5', '0.4', '0.3', '0.2', '0.1', '0'] }
 def inactivityTime() { return [0:'0 hours', 1:'1 hour', 2:'2 hours', 4:'4 Hours', 8:'8 hours', 12:'12 hours', 24:'1 day', 48:'2 days', 72:'3 days', 168:'1 week', 336:'2 weeks', 730:'1 month', 2190:'3 months', 4380:'6 months', 8760:'1 year'] }
-def deviceLimit() { return [0:'0 devices', 1:'1 device', 2:'2 devices', 3:'3 devices', 4:'4 devices', 5:'5 devices', 6:'6 devices', 7:'7 devices', 8:'8 devices', 9:'9 devices', 10:'10 devices', 11:'11 device', 12:'12 devices', 13:'13 devices', 14:'14 devices', 15:'15 devices', 16:'16 devices', 17:'17 devices', 18:'18 devices', 19:'19 devices', 20:'20 devices'] }
+def deviceLimit() { return [0:'0 devices', 1:'1 device', 2:'2 devices', 3:'3 devices', 4:'4 devices', 5:'5 devices', 6:'6 devices', 7:'7 devices', 8:'8 devices', 9:'9 devices', 10:'10 devices', 11:'11 device', 12:'12 devices', 13:'13 devices', 14:'14 devices', 15:'15 devices', 16:'16 devices', 17:'17 devices', 18:'18 devices', 19:'19 devices', 20:'20 devices', 21:'21 device', 22:'22 devices', 23:'23 devices', 24:'24 devices', 25:'25 devices', 26:'26 devices', 27:'27 devices', 28:'28 devices', 29:'29 devices', 30:'30 devices'] }
 def truncateLength() { return [99:'No truncation.', 98:'First Space', 97:'Second Space', 96:'Third Space', 10:'10 characters.', 12:'12 characters.', 15:'15 characters.', 18:'18 characters.', 20:'20 characters.', 22:'22 characters.', 25:'25 characters.', 30:'30 characters.'] }
 def refreshInterval() { return [0:'Never', 1:'1 minute', 2:'2 minutes', 5:'5 minutes', 10:'10 minutes', 15:'15 minutes', 30:'30 minutes', 60:'1 hour', 120:'2 hours', 240:'4 hours', 480:'8 hours', 720:'12 hours', 1440:'24 hours'] }
 def pixels() { return ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '-1', '-2', '-3', '-4', '-5', '-6', '-7', '-8', '-9', '-10', '-11', '-12', '-13', '-14', '-15', '-16', '-17', '-18', '-19', '-20'] }
 def borderRadius() { return ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26', '27', '28', '29', '30'] }
 def baseFontSize() { return ['10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '22', '24', '26', '28', '30'] }
-def tilePreviewList() { return [1:'1 x 1', 2:'1 x 2', 3:'1 x 3', 4:'2 x 1', 5:'2 x 2', 6:'2 x 3'] }
+def tilePreviewList() { return [1:'1 x 1', 2:'1 x 2', 3:'1 x 3', 4:'1 x 4', 5:'2 x 1', 6:'2 x 2', 7:'2 x 3', 8:'2 x 4'] }
 def storageDevices() { return ['Tile Builder Storage Device 1', 'Tile Builder Storage Device 2', 'Tile Builder Storage Device 3'] }
 def allTileList() { return [1:'tile1', 2:'tile2', 3:'tile3', 4:'tile4', 5:'tile5', 6:'tile6', 7:'tile7', 8:'tile8', 9:'tile9', 10:'tile10', 11:'tile11', 12:'tile12', 13:'tile13', 14:'tile14', 15:'tile15', 16:'tile16', 17:'tile17', 18:'tile18', 19:'tile19', 20:'tile20', 21:'tile21', 22:'tile22', 23:'tile23', 24:'tile24', 25:'tile25'] }
 def filterList() { return [0:'No Filter', 1:'String ==', 2:'String !=', 3:'Numeric ==', 4:'Numeric <=', 5:'Numeric >='] }
+def overrideCategory() { return ['Animation', 'Field Replacement', 'Text', 'Border', 'Background', 'Misc', 'Classes', 'Margin & Padding', 'Transform'] }
 
 definition(
     name: 'Tile Builder',
@@ -98,7 +104,7 @@ def mainPage() {
             paragraph "<div style='text-align:center;color: #c61010; font-size:30px;text-shadow: 0 0 5px #FFF, 0 0 10px #FFF, 0 0 15px #FFF, 0 0 20px #49ff18, 0 0 30px #49FF18, 0 0 40px #49FF18, 0 0 55px #49FF18, 0 0 75px #ffffff;;'> Tile Builder 🎨</div>"
             //Intro
             if (state.showIntro == true || state.setupState == 1) {
-                input(name: 'btnShowIntro', type: 'button', title: 'Introduction ▼', backgroundColor: 'green', textColor: 'white', submitOnChange: true, width: 2)  //▼ ◀ ▶ ▲
+                input(name: 'btnShowIntro', type: 'button', title: 'Introduction ▼', backgroundColor: 'navy', textColor: 'white', submitOnChange: true, width: 2)  //▼ ◀ ▶ ▲
                 
                 part1 = "<b>Tile Builder</b> allows you to create custom tiles with a broad range of information that can be published to a <b>Hubitat Dashboard</b> using a native application. "
                 part2 = "<b>Tile Builder</b> can eliminate the hassle of maintaining a seperate system in order to get an attractive dashboard. A sample tile generated with Tile Builder Advanced is shown below.<br>"
@@ -132,13 +138,11 @@ def mainPage() {
             //Licensing
             if (state.setupState == 99) {
                 if (state.showLicense == true) {
-                    input(name: 'btnShowLicense', type: 'button', title: 'Licensing ▼', backgroundColor: 'green', textColor: 'white', submitOnChange: true, width: 2, newLineBefore: true, newLineAfter: false)  //▼ ◀ ▶ ▲
+                    input(name: 'btnShowLicense', type: 'button', title: 'Licensing ▼', backgroundColor: 'navy', textColor: 'white', submitOnChange: true, width: 2, newLineBefore: true, newLineAfter: false)  //▼ ◀ ▶ ▲
                     myString = "<b>Tile Builder Standard is free</b> and provides a highly functional addition to the basic Hubitat Dashboard capabilities.<br>"
                     myString += "<b>Tile Builder Advanced</b> adds Filters, Highlights, Styles and a range of powerful customizations options. "
 			        myString += "Click <a href='https://github.com/GaryMilne/Documentation/blob/main/Tile%20Builder%20Help.pdf'>here</a> for more information.</br></br>"
             
-                    //ID = getID()
-                    //paragraph note('', "<b>Your ID is: ${hubID}</b>")
                     myString = myString + "To purchase the license for <b>Tile Builder Advanced</b> you must do the following:<br>"
                     myString += "<b>1)</b> Donate at least <b>\$5</b> to ongoing development via PayPal using this <a href='https://www.paypal.com/donate/?business=YEAFRPFHJCTFA&no_recurring=1&item_name=A+donation+of+\$5+or+more+grants+you+license+to+Tile+Builder+Advanced.+Please+leave+your+Hubitat+Community+ID.&currency_code=USD'>link.</a></br>"			
                     myString += "<b>2)</b> Forward the paypal eMail receipt along with your ID (<b>" + getID() + "</b>) to <b>TileBuilderApp@gmail.com</b>. Please include your Hubitat community ID for future notifications.<br>"
@@ -169,7 +173,7 @@ def mainPage() {
             
             //Device
             if (state.showDevice == true ) {
-                input(name: 'btnShowDevice', type: 'button', title: 'Storage Device ▼', backgroundColor: 'green', textColor: 'white', submitOnChange: true, width: 2, newLineBefore: true)  //▼ ◀ ▶ ▲
+                input(name: 'btnShowDevice', type: 'button', title: 'Storage Device ▼', backgroundColor: 'navy', textColor: 'white', submitOnChange: true, width: 2, newLineBefore: true)  //▼ ◀ ▶ ▲
                 paragraph "<b>Tile Builder</b> stores generated tiles on a special purpose <u>Tile Builder Storage Device</u>. You must <b>create a device and attach</b> to it using the controls below.<br>"                 
                 paragraph note('Note: ', "Each instance of <b>Tile Builder</b> must have it's own unique storage device.")
                     
@@ -219,7 +223,7 @@ def mainPage() {
             if (state.setupState == 99) {
                 if (state.showCreateEdit == true) {
                     //if (true ){
-                    input(name: 'btnShowCreateEdit', type: 'button', title: 'Create\\Edit Tiles ▼', backgroundColor: 'green', textColor: 'white', submitOnChange: true, width: 2, newLineBefore: true, newLineAfter: false)  //▼ ◀ ▶ ▲
+                    input(name: 'btnShowCreateEdit', type: 'button', title: 'Create\\Edit Tiles ▼', backgroundColor: 'navy', textColor: 'white', submitOnChange: true, width: 2, newLineBefore: true, newLineAfter: false)  //▼ ◀ ▶ ▲
                     myString = '<b>Tile Builder</b> has two types of tile:<br>'
                     myString += '<b>1) Activity Monitor:</b> Tiles monitor a group of devices for activity\\inactivity using the <b>lastActivityAt</b> attribute. These tiles are refreshed at routine intervals.<br>'
                     myString += '<b>2) Attribute Monitor:</b> Tiles are event driven and aggregate multiple devices\\single attribute into a single tile. For example, all room temps on a single tile.<br>'
@@ -237,7 +241,7 @@ def mainPage() {
             //Manage Tiles 
             if (state.setupState == 99) {
                 if (state.showManage == true ) {
-                    input(name: 'btnShowManage', type: 'button', title: 'Manage Tiles ▼', backgroundColor: 'green', textColor: 'white', submitOnChange: true, width: 2, newLineBefore: true, newLineAfter: false)  //▼ ◀ ▶ ▲
+                    input(name: 'btnShowManage', type: 'button', title: 'Manage Tiles ▼', backgroundColor: 'navy', textColor: 'white', submitOnChange: true, width: 2, newLineBefore: true, newLineAfter: false)  //▼ ◀ ▶ ▲
                     myString = 'Here you can view information about the tiles on this storage device, which tiles are in use, the last time those tiles were updated and delete obsolete tiles.<br>'
                     myString += 'In the <b>Tile Builder Storage Device</b> you can preview also the tiles, add descriptions and delete tiles as neccessary.'
                     paragraph note('Note: ', myString)
@@ -253,16 +257,19 @@ def mainPage() {
             paragraph line(2)
             }
             //End of Manage  
-            
+       
             //More
             if (state.setupState == 99) {
                 if (state.showMore == true) {
-                    input(name: 'btnShowMore', type: 'button', title: 'More ▼', backgroundColor: 'green', textColor: 'white', submitOnChange: true, width: 2, newLineBefore: true, newLineAfter: true)  //▼ ◀ ▶ ▲
+                    input(name: 'btnShowMore', type: 'button', title: 'More ▼', backgroundColor: 'navy', textColor: 'white', submitOnChange: true, width: 2, newLineBefore: true, newLineAfter: true)  //▼ ◀ ▶ ▲
                     label title: bold('Enter a name for this Tile Builder parent instance (optional)'), required: false, width: 4
-                    input 'isLogInfo',   'bool', title: '<b>Enable info logging?</b>', defaultValue: true, submitOnChange: false, width: 2
-                    input 'isLogDebug',   'bool', title: '<b>Enable debug logging?</b>', defaultValue: false, submitOnChange: false, width: 2
-                    input 'isLogTrace',   'bool', title: '<b>Enable trace logging?</b>', defaultValue: false, submitOnChange: false, width: 2, newLineAfter:true
+                    input (name: "isLogInfo",  type: "bool", title: "<b>Enable info logging?</b>", defaultValue: false, submitOnChange: false, width: 2)
+                    input (name: "isLogTrace", type: "bool", title: "<b>Enable trace logging?</b>", defaultValue: false, submitOnChange: false, width: 2)
+                    input (name: "isLogDebug", type: "bool", title: "<b>Enable debug logging?</b>", defaultValue: false, submitOnChange: false, width: 2)
+                    input (name: "isLogWarn",  type: "bool", title: "<b>Enable warn logging?</b>", defaultValue: true, submitOnChange: false, width: 2)
+                    input (name: "isLogError",  type: "bool", title: "<b>Enable error logging?</b>", defaultValue: true, submitOnChange: false, width: 2, newLineAfter: true)
                     paragraph line(1)
+                    
                     paragraph body('<b>Support Functions</b>')
                     input(name: 'defaultStyles'  , type: 'button', title: 'Rebuild Default Styles', backgroundColor: '#27ae61', textColor: 'white', submitOnChange: true, width: 2)
                     input(name: 'removeLicense'  , type: 'button', title: 'De-Activate Software License', backgroundColor: '#27ae61', textColor: 'white', submitOnChange: true, width: 3)
@@ -274,7 +281,14 @@ def mainPage() {
             paragraph line(2)
             }
             //End of More
-        
+			
+			//Now add a footer.
+            myText = '<div style="display: flex; justify-content: space-between;">'
+            myText += '<div style="text-align:left;font-weight:small;font-size:12px"> Developer: Gary J. Milne</div>'
+            myText += '<div style="text-align:center;font-weight:small;font-size:12px">Version: ' + Version + '</div>'
+            myText += '<div style="text-align:right;font-weight:small;font-size:12px">Copyright 2022 - 2023</div>'
+            myText += '</div>'
+            paragraph myText  
            //paragraph ("setupState is: $state.setupState")
            //input(name: "test"  , type: "button", title: "test", backgroundColor: "#27ae61", textColor: "white", submitOnChange: true, width: 2, newLineAfter: false)
         }
@@ -293,6 +307,19 @@ def test(){
     state.hasMessage= ""
 }
 
+
+//Returns a short version of the Storage Device Name for this instance.
+def getStorageShortName(){
+    if (isLogInfo) log.info ("Storage Name is: ${state.myStorageDeviceDNI.toString()} ")
+    if (state.myStorageDeviceDNI == "Tile_Builder_Storage_Device_1" ) return "TBSD1"
+    if (state.myStorageDeviceDNI == "Tile_Builder_Storage_Device_2" ) return "TBSD2"
+    if (state.myStorageDeviceDNI == "Tile_Builder_Storage_Device_3" ) return "TBSD3"
+}
+
+//Returns a long version of the Storage Device Name for this instance.
+def getStorageLongName(){
+    return state.myStorageDeviceDNI.toString()
+}
 
 //************************************************************************************************************************************************************************************************************************
 //************************************************************************************************************************************************************************************************************************
@@ -595,7 +622,7 @@ def makeDefaultStyles() {
     if (isLogTrace) log.trace ('makeDefaultStyles: Entering makeDefaultStyles')
 
     styleA = convertStyleStringToMap('#isCustomSize#=false, #tbc#=#ffffff, #tilePreview#=5, #isFrame#=true, #fbc#=#000000, #tc#=#f6cd00, #isKeyword1#=false, #isKeyword2#=false, #bp#=3, #isHeaders#=true, #htp#=0, #hta#=Center, #ts#=140, #shcolor#=#f6cd00, #fc#=#000000, #to#=1, #rabc#=#dff8aa, #hbc#=#f6cd00, #shblur#=2, #hts#=100, #bm#=Collapse, #rtc#=#000000, #hbo#=1, #iFrameColor#=#fffada, #shver#=2, #tff#=Comic Sans MS, #isTitleShadow#=false, #rtp#=0, #comment#=?, #tp#=3, #th#=Auto, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.8, #shhor#=2, #htc#=#000000, #rbc#=#fbed94, #fa#=Center, #rts#=80, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=1, #fs#=60, #rta#=Center, #isFooter#=false, #tw#=90, #bfs#=18, #bc#=#000000, #ratc#=#000000, #bw#=2, #bs#=Solid')
-    styleB = ['overrides':'#Class#=@keyframes A{0%{transform:rotate(-360deg)}100% {transform:rotate(0)}}|#Row#=animation:A 2s ease 0s 1 normal forwards| #title#=font-weight:900']
+    styleB = ['overrides':'#Class1#=@keyframes A{0%{transform:rotate(-360deg)}100% {transform:rotate(0)}}|#Row#=animation:A 2s ease 0s 1 normal forwards| #title#=font-weight:900']
     style = styleA + styleB
     state.'*Style-AM Banana' = style
 
@@ -635,12 +662,12 @@ def makeDefaultStyles() {
     state.'*Style-AM Halloween' = style
 	
 	styleA = convertStyleStringToMap('#isCustomSize#=false, #tc#=#e5e826, #isKeyword1#=true, #bp#=0, #ktr2#=[div classXglow]📬[/div], #isHeaders#=false, #htp#=6, #hta#=Center, #ts#=150, #shcolor#=#7a7a7a, #tbc#=#696969, #fc#=#3be800, #hc2#=#ca6f1e, #ttr1#=?, #to#=1, #rabc#=#dff8aa, #hbc#=#000000, #shblur#=10, #hts#=60, #bm#=Collapse, #rtc#=#41ff00, #k1#=off, #hbo#=1, #iFrameColor#=#696969, #shver#=2, #tff#=Lucida, #isThreshold1#=false, #ttr2#=?, #isTitleShadow#=false, #rtp#=0, #top1#=[1], #comment#=?, #tp#=3, #hts2#=300, #th#=Auto, #tcv1#=70, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=1, #k2#=on, #isFrame#=false, #isThreshold2#=false, #shhor#=2, #htc#=#41ff00, #rbc#=#696969, #top2#=[3], #fa#=Center, #rts#=150, #isBorder#=false, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #tcv2#=30, #hts1#=300, #isKeyword2#=true, #bo#=1, #fs#=50, #fbc#=#000000, #rta#=Left, #isFooter#=false, #ktr1#=📭, #tw#=100, #bfs#=18, #hc1#=#f5f90b, #bc#=#c52b2b, #ratc#=#000000, #bw#=5, #bs#=Solid')
-    styleB = ['overrides':'#Class#= .glow {animation: glow 3s ease-in-out infinite alternate;} @keyframes glow {from {text-shadow: 0 0 10px #fff, 0 0 20px #fff, 0 0 35px #e60073;}to {text-shadow: 0 0 10px #fff, 0 0 15px #ff4da6;}} | #row#=text-align: center |#rtp#=0 | #bp#=-5| #row#=text-align: center |#rtp#=0 | #bp#=-5']
+    styleB = ['overrides':'#Class1#= .glow {animation: glow 3s ease-in-out infinite alternate;} @keyframes glow {from {text-shadow: 0 0 10px #fff, 0 0 20px #fff, 0 0 35px #e60073;}to {text-shadow: 0 0 10px #fff, 0 0 15px #ff4da6;}} | #row#=text-align: center |#rtp#=0 | #bp#=-5| #row#=text-align: center |#rtp#=0 | #bp#=-5']
     style = styleA + styleB
     state.'*Style-AM Mailbox (See Docs)' = style
 	
 	styleA = convertStyleStringToMap('#tc#=#751f2e, #isKeyword1#=false, #bp#=5, #ktr2#=?, #isHeaders#=true, #htp#=0, #hta#=Center, #ts#=120, #shcolor#=#ffffff, #tbc#=#ffffff, #fc#=#66cbe0, #hc2#=#CA6F1E, #ttr1#=?, #to#=1, #rabc#=#dff8aa, #hbc#=#832333, #shblur#=4, #hts#=100, #isCustomSize#=false, #bm#=Seperate, #rtc#=#f4b53b, #customWidth#=200, #k1#=?, #hbo#=1, #iFrameColor#=#696969, #shver#=0, #tff#=Comic Sans MS, #isThreshold1#=false, #ttr2#=?, #isTitleShadow#=true, #rtp#=0, #top1#=[1], #comment#=?, #tp#=3, #customHeight#=290, #hts2#=125, #th#=Auto, #tcv1#=100, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.9, #k2#=?, #isFrame#=false, #isThreshold2#=false, #shhor#=0, #htc#=#f4b53b, #rbc#=#832333, #top2#=[3], #fa#=Center, #rts#=80, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #tcv2#=30, #hts1#=125, #isKeyword2#=false, #bo#=1, #fs#=100, #fbc#=#000000, #rta#=Center, #isFooter#=false, #ktr1#=?, #tw#=100, #bfs#=18, #hc1#=#008000, #bc#=#d9b784, #ratc#=#000000, #bw#=2, #bs#=Solid')
-    styleB = ['overrides':'#Class#=@keyframes myAnim {0% {opacity: 0;transform: rotate(-540deg) scale(0);}100% {opacity: 1;transform: rotate(0) scale(1);}} | #Header#=animation: myAnim 2s ease 0s 1 normal backwards; | #Row#=animation: myAnim 2s ease 0s 1 normal forwards;']
+    styleB = ['overrides':'#Class1#=@keyframes myAnim {0% {opacity: 0;transform: rotate(-540deg) scale(0);}100% {opacity: 1;transform: rotate(0) scale(1);}} | #Header#=animation: myAnim 2s ease 0s 1 normal backwards; | #Row#=animation: myAnim 2s ease 0s 1 normal forwards;']
     style = styleA + styleB
     state.'*Style-AM Marooned' = style
 	
@@ -665,7 +692,7 @@ def makeDefaultStyles() {
     state.'*Style-AM Pastel Swirl' = style
 	
     styleA = convertStyleStringToMap('#isCustomSize#=false, #tbc#=#ffffff, #tc#=#b2e0de, #isKeyword1#=false, #isKeyword2#=false, #bp#=10, #isHeaders#=false, #htp#=5, #hta#=Center, #ts#=140, #shcolor#=#000000, #fc#=#000000, #to#=1, #rabc#=#dff8aa, #hbc#=#9ec1eb, #shblur#=3, #hts#=100, #bm#=Seperate, #rtc#=#000000, #hbo#=1, #iFrameColor#=#888686, #shver#=0, #tff#=Comic Sans MS, #isTitleShadow#=false, #rtp#=10, #comment#=?, #tp#=15, #th#=Auto, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=1, #isFrame#=true, #shhor#=0, #htc#=#000000, #rbc#=#b2e0de, #tilePreview#=5, #fa#=Center, #rts#=90, #isBorder#=false, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=1, #fs#=60, #fbc#=#624141, #rta#=Center, #isFooter#=false, #tw#=90, #bfs#=18, #bc#=#000000, #ratc#=#000000, #bw#=2, #bs#=Solid')
-    styleB = ['overrides':'#Class#=@keyframes me {0% {opacity: 1;box-shadow: 0px 0px 1px 1px #624141}100% {opacity: 1;box-shadow: 0px 0px 10px 10px #f3a183}} | #Table#=animation: me 10s linear 0s infinite alternate-reverse']
+    styleB = ['overrides':'#Class1#=@keyframes me {0% {opacity: 1;box-shadow: 0px 0px 1px 1px #624141}100% {opacity: 1;box-shadow: 0px 0px 10px 10px #f3a183}} | #Table#=animation: me 10s linear 0s infinite alternate-reverse']
     style = styleA + styleB
     state.'*Style-AM Sea Foam Glow' = style
 	
@@ -886,72 +913,160 @@ def chooseButtonText(buttonNumber, buttonText) {
 //************************************************************************************************************************************************************************************************************************
 //************************************************************************************************************************************************************************************************************************
 //**************
-//**************  Child Functions - These are all called during the design process. Functions called during the Table generation process have been relocated to the child app for efficiency.
+//**************  Child Functions - Overrides Helper - These are all called during the design process. Functions called during the Table generation process have been relocated to the child app for efficiency.
 //**************
 //************************************************************************************************************************************************************************************************************************
 //************************************************************************************************************************************************************************************************************************
 //************************************************************************************************************************************************************************************************************************
 
+def getOverridesListAll(){
+    def overridesMapAll = getOverrideAnimationList()    
+    overridesMapAll += getOverrideFieldReplacementList()
+    overridesMapAll += getOverrideTextList()
+    overridesMapAll += getOverrideBorderList()
+    overridesMapAll += getOverrideBackgroundList()
+    overridesMapAll += getOverrideClassList()
+    overridesMapAll += getOverrideMarginPaddingList()
+    overridesMapAll += getOverrideTransformList()
+    overridesMapAll += getOverrideMiscList()
+    return overridesMapAll
+}
+
 //Each record is a map entry that looks like this. "Short description: Long Description" : "sample command"
-def getSampleOverridesList() {
-    return ['#Field# Replacement Values - Title: Replace the Title text, alignment, color, opacity and size.' : '#tt#=My Title | #ta#=left | #tc#=#0000FF | #to#=0.8 | #ts#=300',
-    '#Field# Replacement Values - Header: Replace the Header alignment, color, background color, opacity and padding.' : '#hta#=left | #htc#=#0000FF | #hbc#=#813795 | #hbo#=0.5 | #hts#=150 | #hto#=0.5 | #htp#=5',
-    '#Field# Replacement Values - Row: Replace the Row alignment, color, background color, opacity and padding.' : '#rta#=left | #rtc#=#0000FF | #rbc#=#813795 | #rbo#=0.5 | #rts#=150 | #rto#=0.5 | #rtp#=5',
-    '#Field# Replacement Values - Border: Replace the Border color, style, radius, width and padding.' : '#bc#=#0000FF | #bs#=dotted | #br#=25 | #bw#=10 | #bp#=5',
-    '#Field# Replacement Values - Footer: Replace the Footer text, alignment, color and size.' : '#ft#=My Footer | #fa#=right | #fc#=#FF00FF| #fs#=100',
-    '#Named# Variables Replacement Values: Place a border around the title, footer and table objects if visible.' : '#title#=border: 5px dashed red | #footer#=border: 5px groove green |  #border#=border: 6px solid white',
-    'Animation Example 1: Spin the #Row# elements on a refresh.' : '#Class#=@keyframes myAnim {0% {opacity: 0;transform: rotate(-540deg) scale(0);}100% {opacity: 1;transform: rotate(0) scale(1);}} | #Row#=animation: myAnim 2s ease 0s 1 normal forwards;',
-    'Animation Example 2: Fades in the #Table# on a refresh.' : '#Class#=@keyframes myAnim {0% {opacity: 0}100% {opacity: 1}} | #Table#=animation: myAnim 5s linear 0s 1 normal forwards;',
-    'Animation Example 3: Constantly change the background hue between two color values.' : '#Class#=@keyframes Anim {50%{background-color: #cc2b5e} 100%{background-color:#753a88}} | #Table#=animation:Anim 10s ease 0s infinite alternate-reverse forwards;',
-    'Background Color: Sets the background color of an object.' : '#Table#=background-color: #ff0000;',
-    'Background Gradient: Sets the background of an object as a gradient between 2 or more colors. Also sets the row background opacity to 0.5.' : '#Table#=background: linear-gradient(70deg, #6c2b5e 0%, #c5cc88 100%) | #rbo#=0.2',
-    'Background Conical Gradient: Sets a repeating gradient in a cone from a central point.' : '#Table#=background-image: repeating-conic-gradient(red 10%, yellow 15%);border-radius: 5% | #hbo#=0.3 | #rbo#=0.9;',
-    'Background Radial Gradient: Sets a circular gradient that diffuses at the edges.' : '#Table#=background: radial-gradient(circle at 100%, #333, #333 50%, #eee 75%, #333 75%);',
-    'Background Repeating Pattern #1: Sets a repeating set of slanted lines.' : '#Row#=background-image: repeating-linear-gradient(45deg, red 0px, red 10px, red 10px, yellow 10px, yellow 20px) | #rbo#=0.6',
-	'Background Repeating Pattern #2: Sets a repeating swirl background effect.' : '#Table#=background-image: repeating-radial-gradient(#0000 0% 6%,#c39f76 7% 13% ); background-size:40px 40px | #Row#=font-weight:bold',
+def getOverrideAnimationList(){
+    return [
+    'Fade: Fades in an object on refresh.' : '#Class1#=@keyframes fade {0% {opacity: 0}100% {opacity: 1}} | #Table#=animation: fade 5s linear 0s 1 normal forwards;',
+    'Hue: Constantly change the background hue between two color values.' : '#Class1#=@keyframes hue {50%{background-color: #cc2b5e} 100%{background-color:#753a88}} | #Table#=animation: hue 10s ease 0s infinite alternate-reverse forwards;',
+    'Ping: Performs a ping effect on an object' : '#Class1#=@keyframes ping {0% {opacity: 0.8;transform: scale(0.2);} 90% {opacity: .5;transform: scale(1.2);} 100% {opacity: 1;transform: scale(1.0);}} | #Table#=animation: ping 1s ease 0s 1 normal forwards;' ,
+    'Pulse: Causes an object to pulsate' : '#Class1#=@keyframes pulse {0% {transform: scale(0.8);} 100% {transform: scale(1);}} | #Table#=animation: pulse 1s linear 0s 2 alternate-reverse forwards;}',
+    'Roll: Causes an object to roll into place. ' : '#Class1#=@keyframes roll {0% {opacity: 0;transform: translateX(-125px) rotate(-500deg);}100% {opacity: 1;transform: translateX(0px) rotate(0deg);}} | #Table#=animation: roll 1s linear 0s 1 alternate forwards;',
+    'Slide: Slide an object back and forth continuously' : '#Class1#=@keyframes slide {0% {transform: translateX(-20px);} 100% {transform: translateX(20px);}} | #Table#=animation:slide 2s linear 0s 2 alternate-reverse; ',
+    'Spin: Spin an object on a refresh.' : '#Class1#=@keyframes spin {0% {opacity: 0;transform: rotate(-540deg) scale(0);}100% {opacity: 1;transform: rotate(0) scale(1);}} | #Row#=animation: spin 2s ease 0s 1 normal forwards;',
+    'Glow: Places an animated glow around text' : '#Class1#=@keyframes glow {from {text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px #ff0000;}to {text-shadow: 0 0 10px #fff, 0 0 15px #00FF00;}} | #Table#=animation: glow 5s ease-in-out infinite alternate;',
+    'Scale: Changes the X and Y scale of an object.' : '#Class1#=@keyframes scale {0% {transform: scaleY(2);}100% {transform: scaleY(1);}} | #Table#=animation: scale 1s linear'
+    ]
+}
+
+def getOverrideFieldReplacementList(){
+    return [
+    'Title: Replace the Title text, alignment, color, opacity and size.' : '#tt#=My Title | #ta#=left | #tc#=#0000FF | #to#=0.8 | #ts#=300',
+    'Header: Replace the Header alignment, color, background color, opacity and padding.' : '#hta#=left | #htc#=#0000FF | #hbc#=#813795 | #hbo#=0.5 | #hts#=150 | #hto#=0.5 | #htp#=5',
+    'Row: Replace the Row alignment, color, background color, opacity and padding.' : '#rta#=left | #rtc#=#0000FF | #rbc#=#813795 | #rbo#=0.5 | #rts#=150 | #rto#=0.5 | #rtp#=5',
+    'Border: Replace the Border color, style, radius, width and padding.' : '#bc#=#0000FF | #bs#=dotted | #br#=25 | #bw#=10 | #bp#=5',
+    'Footer: Replace the Footer text, alignment, color and size.' : '#ft#=My Footer | #fa#=right | #fc#=#FF00FF| #fs#=100',
+    'Named: Replace Named Variables: Place a border around the title, footer and table objects if visible.' : '#title#=border: 5px dashed red | #footer#=border: 5px groove green |  #border#=border: 6px solid white' 
+    ]
+}
+
+def getOverrideBackgroundList(){
+    return [
+    'Solid Color: Sets the background color of an object.' : '#Table#=background-color: #ff0000;',
+    'Color Gradient #1: Sets the background of an object as a gradient between 2 or more colors. Also sets the row background opacity to 0.5.' : '#Table#=background: linear-gradient(70deg, #6c2b5e 0%, #c5cc88 100%) | #rbo#=0.2',
+    'Color Gradient #2: From https://bennettfeely.com/gradients/ ' : '#Table#=background:linear-gradient(cyan,transparent),linear-gradient(-45deg,magenta,transparent),linear-gradient(45deg,yellow,transparent);background-blend-mode: multiply;',
+    'Conical Gradient: Sets a repeating gradient in a cone from a central point.' : '#Table#=background-image: repeating-conic-gradient(red 10%, yellow 15%);border-radius: 5% | #hbo#=0.3 | #rbo#=0.9;',
+    'Radial Gradient: Sets a circular gradient that diffuses at the edges.' : '#Table#=background: radial-gradient(circle at 100%, #333, #333 50%, #eee 75%, #333 75%);',
+    'Repeating Pattern #1: Sets a repeating set of slanted lines.' : '#Row#=background-image: repeating-linear-gradient(45deg, red 0px, red 10px, red 10px, yellow 10px, yellow 20px) | #rbo#=0.6',
+	'Repeating Pattern #2: Sets a repeating swirl background effect.' : '#Table#=background-image: repeating-radial-gradient(#0000 0% 6%,#c39f76 7% 13% ); background-size:40px 40px | #Row#=font-weight:bold',
+    'Transparent Texture : From https://www.transparenttextures.com/patterns/wood-pattern.png' : "#Table#=background-color: #695100;background-image: url('https://www.transparenttextures.com/patterns/wood-pattern.png');",
+
+'Background Blend Mode: From https://bennettfeely.com/gradients/'  : '#Table#=background: radial-gradient(circle at bottom left,transparent 0,transparent 2em,beige 2em,beige 4em,transparent 4em,transparent 6em,khaki 6em,khaki 8em,transparent 8em,transparent 10em),\
+radial-gradient(circle at top right,transparent 0,transparent 2em,beige 2em,beige 4em,transparent 4em,transparent 6em,khaki 6em,khaki 8em,transparent 8em,transparent 10em),\
+radial-gradient(circle at top left,transparent 0,transparent 2em,navajowhite 2em,navajowhite 4em,transparent 4em,transparent 6em,peachpuff 6em,peachpuff 8em,transparent 8em,transparent 10em),\
+radial-gradient(circle at bottom right,transparent 0,transparent 2em,palegoldenrod 2em,palegoldenrod 4em,transparent 4em,transparent 6em,peachpuff 6em,peachpuff 8em,transparent 8em,transparent 10em),\
+blanchedalmond;background-blend-mode: multiply;background-size: 10em 10em;background-position: 0 0, 0 0, 5em 5em, 5em 5em;',
+        
+'Repeating Linear Gradient: Creates a plaid style effect.' : '#Table#=background:repeating-linear-gradient(50deg,#F7A37B,#F7A37B 1em,#FFDEA8 1em,#FFDEA8 2em,#D0E4B0 2em,#D0E4B0 3em,#7CC5D0 3em,#7CC5D0 4em,#00A2E1 4em,#00A2E1 5em,#0085C8 5em,#0085C8 6em),\
+repeating-linear-gradient(-50deg,#F7A37B,#F7A37B 1em,#FFDEA8 1em,#FFDEA8 2em,#D0E4B0 2em,#D0E4B0 3em,#7CC5D0 3em,#7CC5D0 4em,#00A2E1 4em,#00A2E1 5em,#0085C8 5em,#0085C8 6em);background-blend-mode: multiply;',           
+
+'Repeating Radial Gradient: From https://blog.logrocket.com/advanced-effects-with-css-background-blend-modes-4b750198522a/' : '#Table#= background:radial-gradient(khaki 40px,transparent 0,transparent 100%),radial-gradient(skyblue 40px,transparent 0,transparent 100%),\
+radial-gradient(pink 40px,transparent 0,transparent 100%), snow;background-blend-mode: multiply;background-size: 100px 100px;background-position: 0 0, 33px 33px, -33px -33px;',
+
+'Repeating Isometric : From https://www.magicpattern.design/tools/css-backgrounds' : '#Table#=background-color: #e5e5f7; opacity: 0.8;background-image: linear-gradient(30deg, #444cf7 12%, transparent 12.5%, transparent 87%, #444cf7 87.5%, #444cf7),\
+linear-gradient(150deg, #444cf7 12%, transparent 12.5%, transparent 87%, #444cf7 87.5%, #444cf7), linear-gradient(30deg, #444cf7 12%, transparent 12.5%, transparent 87%, #444cf7 87.5%, #444cf7), linear-gradient(150deg, #444cf7 12%, transparent 12.5%, transparent 87%, #444cf7 87.5%, #444cf7),\
+linear-gradient(60deg, #444cf777 25%, transparent 25.5%, transparent 75%, #444cf777 75%, #444cf777), linear-gradient(60deg, #444cf777 25%, transparent 25.5%, transparent 75%, #444cf777 75%, #444cf777);background-size: 20px 35px;background-position: 0 0, 0 0, 10px 18px, 10px 18px, 0 0, 10px 18px;'
+    ]
+}
+
+def getOverrideBorderList(){
+    return [
     "Border Spacing: Sets the distance between adjacent borders. When combined with border mode 'seperate', border radius of 20 and color gradient it can produce a pleasing gradient button effect as shown here." : '#Table#=border-spacing: 15px 10px | #bs#=seperate | #br#=20 | #Data#=background: linear-gradient(0deg, #43cea2 0%, #185a9d 100%) | #Row#=font-weight: bold;',
     'Border Properties: Sets a border, border width, border type and border color.' : '#Header#=border: 5px dashed #B15656;',
-    'Border Radius: Sets the radius of a border corner. If only one value is specified it applies to all corners' : '#Row#=border-radius:30px;',
+    'Border Radius: Sets the radius of a border corner. If only one value is specified it applies to all corners' : '#Border#=border-radius:30px;',
     'Border Effect1: Eliminate outside edges of a grid for a tic-tac-toe appearance.' : '#Table#=border-collapse: collapse; border-style: hidden;',
-	'Border Effect2: Use a Radial Gradient to highlight row data when using Border Mode=Seperate.' : '#Border#=background: radial-gradient(transparent 65%, #90C226 95%) | #Data#=font-weight: bold; letter-spacing: 2px; | #bs#=seperate',
-    'Box Shadow: Sets a diffuse color box around the edge of an object.' : '#Table#=box-shadow: 0px 0px 10px 10px #E8DD95;',
-	'Class Example 1: Rotate an element 540 degrees when activated. Called with #element#=animation etc.' : '#Class#=@keyframes myAnim {0% {opacity: 0;transform: rotate(-540deg) scale(0);}100% {opacity: 1;transform: rotate(0) scale(1);} } | #Row#=animation: myAnim 2s ease 0s 1 normal forwards;',
-    'Class Example 2: Blink an element twice when activated. Called with #element#=animation etc.' : '#Class#=@keyframes myAnim {0%,50%,100% {opacity: 1;}25%,75% {opacity: 0;} } | #Title#=animation: myAnim 2s ease 0s 1 normal forwards;',
-	'Class Example 3: Change background color to red when activated. Called with [div class=cl99]My Value[/div] in highlights.' : '#Class#=.cl99{background-color: #ff0000;} ',
-	'Class Example 4: Add box chadow to element when activated. Called with [div class=cl99]My Value[/div] in highlights.' : '#Class#=.cl99{box-shadow: 0px 0px 10px 10px #E8DD95;} ',
-	'Class Example 5: Move element back and forth continuously when activated. Called with [div class=cl99]█[/div] in highlights.' : '#Class#=.cl99{animation: myAnim 1s linear 0s infinite alternate-reverse;} @keyframes myAnim {0% {transform: translateX(-20px);}100% {transform: translateX(20px);} }',
-	'Class Example 6: Spin an element continuously when activated. Called with [div class=cl99]❌[/div] in highlights.' : '#Class#=.cl99{animation: myAnim 1s linear 0s infinite normal forwards;} @keyframes myAnim {0% {transform: rotate(0deg);}100% {transform: rotate(360deg);} }',	
+	'Border Effect2: Use a Radial Gradient to highlight row data when using Border Mode=Seperate.' : '#Border#=background: radial-gradient(transparent 65%, #90C226 95%) | #Data#=font-weight: bold; letter-spacing: 2px; | #bs#=seperate' 
+    ]
+}
+
+def getOverrideClassList(){
+    return [ 
+	'Class Example 1: Rotate an element 540 degrees when activated. Called with #element#=animation etc.' : '#Class1#=@keyframes myAnim {0% {opacity: 0;transform: rotate(-540deg) scale(0);}100% {opacity: 1;transform: rotate(0) scale(1);} } | #Row#=animation: myAnim 2s ease 0s 1 normal forwards;',
+    'Class Example 2: Blink an element twice when activated. Called with #element#=animation etc.' : '#Class1#=@keyframes myAnim {0%,50%,100% {opacity: 1;}25%,75% {opacity: 0;} } | #Title#=animation: myAnim 2s ease 0s 1 normal forwards;',
+	'Class Example 3: Change background color to red when activated. Called with [div class=cl99]My Value[/div] in highlights.' : '#Class1#=.cl99{background-color: #ff0000;} ',
+	'Class Example 4: Add box chadow to element when activated. Called with [div class=cl99]My Value[/div] in highlights.' : '#Class1#=.cl99{box-shadow: 0px 0px 10px 10px #E8DD95;} ',
+	'Class Example 5: Move element back and forth continuously when activated. Called with [div class=cl99]█[/div] in highlights.' : '#Class1#=.cl99{animation: myAnim 1s linear 0s infinite alternate-reverse;} @keyframes myAnim {0% {transform: translateX(-20px);}100% {transform: translateX(20px);} }',
+	'Class Example 6: Spin an element continuously when activated. Called with [div class=cl99]❌[/div] in highlights.' : '#Class1#=.cl99{animation: myAnim 1s linear 0s infinite normal forwards;} @keyframes myAnim {0% {transform: rotate(0deg);}100% {transform: rotate(360deg);} }',	
 	'Class Example 7: Call off-loaded Animation Class: Call an animation class YOU defined in the Dashboard CSS file as .spin{animation: spin 1s linear 0s 2 normal forwards;} @keyframes spin {0% {transform: rotate(0deg);}100% {transform: rotate(360deg);}}' : '#Row#=animation: spin 1s linear 0s 2 normal forwards;',
-	'Class Example 8: Define two classes at once, .on and .off. Called with [div class=on]💡[/div] or [div class=off]💡[/div] in highlights.' :  '#Class#=.off{opacity:0.5} .on{text-shadow: 0px 0px 15px #ffff00;}',
-    'Color: Sets the color of an object.' : '#Header#=color: #5049EA;',
-	'Hover: Sets the mouse cursor shape when hovering over an object. Applies to all tiles on a dashboard.' : '#Row#=cursor: se-resize;',
-    'Hover: Changes the text color and size of data [td] cells when it is hovered over. Applies to all tiles on a dashboard.' : '#Class#=td:hover {color:green;transform:scale(1.2)}',
-    'Hover: Sets a linear repeating gradient on an object when it is hovered over. Applies to all tiles on a dashboard.' : '#Class#=td:hover{background-image: repeating-linear-gradient(45deg, red 0px, red 10px, red 10px, yellow 10px, yellow 20px)!important;opacity:0.5}',
-	'Learn: Tags: Show location of #Pre1#, #Pre2#, #Post1#, Post2# tags for educational purposes.' : " #pre1#=[z style=color:red][z]'Pre1' tag at beginning of HTML.[/z] | #pre2#=[z]'Pre2' tag at beginning of Frame.[/z] | #post1#=[z]'Post1' tag at end of Frame.[/z] |  #post2#=[z]'Post2' tag at end of HTML.[/z]",
-	'Learn: Padding: Show a border around all primary elements to help diagnose\\understand padding issues.' : '#Title#=outline: 2px dotted red | #Table#=outline: 2px dotted yellow | #Footer#=outline: 2px dotted blue | #Box#=outline: 2px dotted green | #Alternaterow#=outline: 2px dashed purple;',
-	'Learn: Macros: Show the available macro terms that can be expanded. <b>Enable Title First!</b>' : "#ts#=80% | #ta#=Left | #tt#=Day = %day% (abbreviated day)[br]Time = %time% (abbreviated time) [br] Units = '%units%' (Selected units, if any)[br] Count = %count% (Results in table)",
-	'Margin: Adds a margin to an element to increase space between elements for visual appeal. Margin can be a negative number. See also padding.' : "#Title#=margin-top:10px; margin-bottom:5px; margin-left:-50px | #Footer#=margin-top:5px",
-	'Opacity: Sets the opacity of an object in the range 0 (transparent) to 1 (opaque).' : '#Header#=opacity: 0.5;',
-	'Padding: Adds a minimum amount of space between or within an object. If you have Borders enabled use border padding to control row height. If not, use text padding. Example uses both.' : '#Border#=padding:5px; | #Title#=padding-bottom:10px; | #Data#=padding:5px;',
-	'Pre\\Post Tag: Use a Pre\\Post tag as a lightweight alternative to a Footer.  If space is tight you can turn off the Title\\Footer and achieve a similar result by defining your own style. Will be centered in Dashboard.' : '#Post2#=[z style=color:orange;font-size:70%;]%day% @ %time%[/z]',
-	'Pre\\Post Tag: Use a Pre\\Post tag as a lightweight alternative to a Title. If space is tight you can turn off the Title\\Footer and achieve a similar result by defining your own style. Will be centered in Dashboard.' : '#Pre1#=[z style=color:gold;font-size:120%;]My Title[/z]',
-    'Outline: Draws an outline around the OUTSIDE of an object.' : '#Table#=outline: 2px solid red;',
-    'Rotate in 2D: Rotates an object in 2 dimensions.' : '#Table#=transform: rotate(3deg) | #Title#=transform: rotate(-3deg); | #ts#=160;',
-    'Rotate in 3D: Rotates an object in 3 dimensions.' : '#Header#=transform: rotateX(20deg) rotateY(15deg) rotateZ(5deg);',
-    'Scale Example 1: Changes the scale of an object to make it smaller or larger.' : '#Table#=transform: scale(0.9);',
-	'Scale Example 2: Changes the X and Y scale of an object disproportionately to one another.' : '#Class#=@keyframes myAnim {0% {transform: scaleY(2);}100% {transform: scaleY(1);}} | #Table#=animation: myAnim 1s linear 0s 1 normal forwards;',
-    'Skew: Skews an object to give it a 3D look.' : '#Data#=transform: skew(24deg, 2deg) | #Header#=transform: skew(-24deg, -2deg);',
-	'Text - Alignment: Sets the alignment of text.' : '#Header#=text-align: center;',
+	'Class Example 8: Define two classes at once, .on and .off. Called with [div class=on]💡[/div] or [div class=off]💡[/div] in highlights.' :  '#Class1#=.off{opacity:0.5} .on{text-shadow: 0px 0px 15px #ffff00;}' 
+    ]
+}
+
+def getOverrideTextList(){
+    return [
+    'Text - Alignment: Sets the alignment of text.' : '#Header#=text-align: left;',
 	'Text - Bold: Sets text to a font-weight equivalent of bold.' : '#Data#=font-weight:700',
 	'Text - Decoration: Sets decorative elements for text such as underlining.' : '#Header#=text-decoration: underline wavy #C34E4E;',
 	'Text - Letter Spacing: Change the letter spacing of text.' : '#Data#=letter-spacing:5px',
 	'Text - Shadow: Sets a diffuse shadow effect of one or more specified colors around text.' : '#Data#=text-shadow: 5px 5px 10px #F33E25, 0px 0px 16px #EAA838;',
     'Text - Transform: Sets the afffected text to Capitalized, Lower Case or Upper Case.' : 'text-transform: uppercase;',
-	'Text - Word Spacing: Sets the spacing between words in pixels.' : '#Data#=word-spacing: 20px;',		
-    'Transform Perspective: Changes the perspective of the affected object.' : '#Row#=Perspective: 150px; transform: rotateX(25deg) rotateY(20deg);transform-style: preserve-3d;',
-    'Translate: Moves an object up, down, left or right.' : '#Row#=transform: translate(20px, -10px) | #Title#=transform: translate(0px, 300px);',
-    'Transition: Provides a transition effect for state changes:' : '#Class#=td:hover {outline: 10px solid #ffff00} | #Table#={outline: 10px solid #ffff00;outline: 1px solid #C34545; transition: outline 1s ease 0s;}' ]
+	'Text - Word Spacing: Sets the spacing between words in pixels.' : '#Data#=word-spacing: 20px;' 
+    ]
 }
+
+def getOverrideMarginPaddingList(){
+    return [
+    'Margin: Adds a margin to an element to increase space between elements for visual appeal. Margin can be a negative number. See also padding.' : "#Title#=margin-top:10px; margin-bottom:5px; margin-left:-50px | #Footer#=margin-top:5px",    
+	'Padding: Show a border around all primary elements to help diagnose\\understand margin & padding issues.' : '#Title#=outline: 2px dotted red | #Table#=outline: 2px dotted yellow | #Footer#=outline: 2px dotted blue | #Box#=outline: 2px dotted green | #Alternaterow#=outline: 2px dashed purple;',
+    'Padding: Adds a minimum amount of space between or within an object. If you have Borders enabled use border padding to control row height. If not, use text padding. Example uses both.' : '#Border#=padding:5px; | #Title#=padding-bottom:10px; | #Data#=padding:5px;' 
+    ]
+}
+
+def getOverrideMiscList(){
+    return [
+    'Box Shadow: Sets a diffuse color box around the edge of an object.' : '#Table#=box-shadow: 0px 0px 10px 10px #E8DD95;',
+    'Color: Sets the color of an object.' : '#Header#=color: #5049EA;',
+    'Hover: Sets the mouse cursor shape when hovering over an object. Applies to all tiles on a dashboard.' : '#Row#=cursor: se-resize;',
+    'Hover: Changes the text color and size of data [td] cells when it is hovered over. Applies to all tiles on a dashboard.' : '#Class1#=td:hover {color:green;transform:scale(1.2)}',
+    'Hover: Sets a linear repeating gradient on an object when it is hovered over. Applies to all tiles on a dashboard.' : '#Class1#=td:hover{background-image: repeating-linear-gradient(45deg, red 0px, red 10px, red 10px, yellow 10px, yellow 20px)!important;opacity:0.5}',
+    'Hover: Puts a yellow border around an object whe it is hovered over. Applies to all tiles on a dashboard:' : '#Class1#=td:hover {outline: 10px solid #ffff00} | #Table#={outline: 10px solid #ffff00;outline: 1px solid #C34545; transition: outline 1s ease 0s;}',
+    'Macros: Show the available macro terms that can be expanded. <b>Enable Title First!</b>' : "#ts#=80% | #ta#=Left | #tt#=Day = %day% (abbreviated day)[br]Time = %time% (abbreviated time) [br] Units = '%units%' (Selected units, if any)[br] Count = %count% (Results in table)",
+    'Opacity: Sets the opacity of an object in the range 0 (transparent) to 1 (opaque).' : '#Header#=opacity: 0.5;',
+    'Outline: Draws an outline around the OUTSIDE of an object.' : '#Table#=outline: 2px solid red;'   
+    ]     
+}
+
+def getOverrideTransformList(){
+    return [
+    'Rotate in 2D: Rotates an object in 2 dimensions.' : '#Table#=transform: rotate(3deg) | #Title#=transform: rotate(-3deg); | #ts#=160;',
+    'Rotate in 3D: Rotates an object in 3 dimensions.' : '#Header#=transform: rotateX(20deg) rotateY(15deg) rotateZ(5deg);',
+    'Scale: Changes the scale of an object to make it smaller or larger.' : '#Table#=transform: scale(0.9);',
+    'Skew: Skews an object to give it a 3D look.' : '#Data#=transform: skew(24deg, 2deg) | #Header#=transform: skew(-24deg, -2deg);',
+    'Perspective: Changes the perspective of the affected object.' : '#Row#=Perspective: 150px; transform: rotateX(25deg) rotateY(20deg);transform-style: preserve-3d;',
+    'Translate: Moves an object up, down, left or right.' : '#Row#=transform: translate(20px, -10px) | #Title#=transform: translate(0px, 300px);'
+    ]     
+}
+
+
+//************************************************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************************************************
+//**************
+//**************  Child Functions Notes - These are the on-screen help text during the design process.
+//**************
+//************************************************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************************************************
+
+
 
 def filterNotes() {
     myText = 'You can filter a result set to match only those items matching\\not matching certain criteria. For example you may only want to see open doors, temperatures above 80°F or lights that are on.<br>'
@@ -971,9 +1086,9 @@ def generalNotes() {
     myText += "The default value of 18px provides a visual match for the Dashboard default 'Font Size' of 12 unknown units.<br>"
     myText += '<b>Font Family</b> allows you to choose an alternate font, but you must check whether your Dashboard devices can render the font you specify. The default font is <b>Roboto. </b>'
     myText += 'You can use overrides to specify an alternate font not included in the menu system, for example: <b>#tff#:Helvetica or #tff#:Blackadder ITC</b> are examples of overrides to specify an alternate device font.<br>'
-    myText +=  'A <b>frame adds about 65 bytes</b> plus any other settings that may be added via overrides. When a frame is enabled you can use #pre1# and #post1# tags (#pre1#=[br] | #post1#=[br]) to place spacers above the Title and below the Footer if a wide margin is desired.'
+    myText +=  'A <b>frame adds about 65 bytes</b> plus any other settings that may be added via overrides. Frame padding is set to 20px. With the Advanced version you can override this with #Frame#=padding:20px;.'
     myText += 'If your frame shows as top and bottom stripes it means you have a background color applied to the table, but a table width of 100%. Reduce the table width for proper border appearance.</br>'
-    myText += '<b>Use Custom Preview Size:</b> If you use a Hubitat dashboard tile size other than the default of 200 x 190 you can match that by enabling this setting and entering your preferred grid size. Preview is still an approximation dependant on Hubitat dashboard padding.<br>'
+    myText += '<b>Use Custom Preview Size:</b> If you use a Hubitat dashboard tile size other than the default of 200 x 190 you can match that by enabling this setting and entering your planned tile size. Preview is still an approximation dependant on Hubitat dashboard padding.<br>'
     myText +=  'A <b>comment adds 11 bytes</b> plus the comment text. Comments are saved within the HTML but are not visible.<br>'
     return myText
 }
@@ -986,7 +1101,6 @@ def titleNotes() {
 	myText += "You can use <b>Hyperlinks</b> in the texct fields using the form: [a href='http://192.168.0.200']My Title[/a].<br>"
     myText += 'Enabling <b>a title adds 112 bytes</b> to the HTML size plus the title text. Enabling <b>a title shadow adds 35 bytes</b> to the HTML size.<br>'
     myText += 'When space is tight you can disable the Title and use a merged header field instead.'
-    if ( checkLicense() ) myText += '<br>You can also use the #pre1#\\#pre2# tags to create an alternative lightweight header and save space. See Overrides Helper for examples.'
     return myText
 }
 
@@ -1017,7 +1131,6 @@ def rowNotes() {
 def footerNotes() {
     myText = 'You can add HTML tags to text fields using square brackets such as [b][u]My FooterH[/u][/b].<br>'
     myText += "You can use %day%, %time%, %units% or %count% in any text field. They will be replaced by current day, current time, selected units (when applicable) or number of data lines in the table. "
-    if ( checkLicense() ) myText += '<br>You can use the #post1#\\#post2# tag to create an alternative lightweight footer and save space. See Overrides Helper for example.<br>'
     myText += 'Enabling <b>a footer adds about 95 bytes</b> plus the footer text.'
     return myText
 }
@@ -1062,7 +1175,7 @@ def overrideNotes() {
     myText += "<b>Show Overrides Helper:</b> Overrides are very powerful, but not intuitive. To reduce the learning curve the <b>Overrides Helper</b> provides 40+ examples to perform a variety of operations on different components of the table."
     myText += "The best thing to do is just try them out. Simply pick a <u>Sample Override</u> to try out, click the <b>Copy to Overrides</b> and then click <b>Refresh Table</b> to apply them. Most efects will be visible right away, some might only be visible during a browser refresh."
     myText += 'In some cases an effect may not be visible at all. For example setting the table background to a gradient will only be visible if the table rows and\\or the table header have an opacity less than 1.<br>'
-	myText += '<b>#Class#</b> names are: #Table#, #Title#, #Header#, #Row#, #Data#, #Footer# and #Border#. See documentation for others.<br>'
+	myText += '<b>#Class1#</b> names are: #Table#, #Title#, #Header#, #Row#, #Data#, #Footer# and #Border#. See documentation for others.<br>'
     myText += "See the full <b>Tile Builder</b> documentation at this <a href='https://github.com/GaryMilne/Documentation/blob/main/Tile%20Builder%20Help.pdf'>link.</a> There are multiple web resources for building these CSS strings but here is an easy one to get you started: https://webcode.tools/generators/css"
     return myText
 }
@@ -1152,4 +1265,3 @@ def isSelectedDeviceChanged() {
     }
     else { state.flags.selectedDeviceChanged = false }
 }
-

@@ -29,8 +29,8 @@
 *  Version 1.0.2 - Converted all logging to use the log() function and added settingoption.
 *  Version 1.2.0 - Revved version to match other components for initial public release.
 *  Version 1.2.1 - Changed allocation of classIdDigit to be automatic based upon the device network ID. 
-*
-*  Gary Milne - April 28th, 2023
+*  Version 1.2.6 - Version revved to match Tile Builder Modules.
+*  Gary Milne - May 12th, 2023
 *
 **/
 
@@ -116,7 +116,8 @@ void createTile(tileNumber, HTML, description) {
     
 	//Replace the temporary classID with the permanent one.
 	HTML = HTML.replace("qq", myClassID)
-    sendEvent(name: tileName, value: HTML)
+    attrHTML = 	toHTML(HTML)
+    sendEvent(name: tileName, value: attrHTML)
     state.tileDescriptions."${tileName}" = description
 	updated(tileName)
 	
