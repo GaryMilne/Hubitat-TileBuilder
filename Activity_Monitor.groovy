@@ -132,7 +132,7 @@ def mainPage() {
             }
         
             if (moduleName == "Activity Monitor"){
-                paragraph "<div style='color:#17202A;text-align:left; margin-top:0em; font-size:16px'><b>You can choose a list to make it easier to select devices. You only need to populate the list you plan to use as only one list will be active at a time.</b><br></div>"  //Line with Description of the selected command.                                                                                                                                               
+                input(name: 'btnShowDevices', type: 'button', title: 'Select Attribute and Devices ▼', backgroundColor: 'navy', textColor: 'white', submitOnChange: true, width: 3, newLineAfter: true)  //▼ ◀ ▶ ▲
                 input (name: "useList", title: "<b>Use List</b>", type: "enum", options: [1:"All Devices", 2:"Battery Devices", 3:"Motion Devices", 4:"Presence Sensors", 5:"Switches", 6:"Contact Sensors", 7:"Temperature Sensors"], required:true, state: selectOk?.devicePage ? "complete" : null, submitOnChange:true, width:2, defaultValue: 1)
                 if (useList == "1" ) input "devices1", "capability.*", title: "All Devices to be monitored" , multiple: true, required: false, defaultValue: null, width: 6
                 if (useList == "2" ) input "devices2", "capability.battery", title: "Battery Devices to be Monitored" , multiple: true, required: false, defaultValue: null, width: 6
@@ -182,14 +182,14 @@ def mainPage() {
                 input (name: "myFilterType", title: "<b>Filter Type</b>", type: "enum", options: parent.filterList(), submitOnChange:true, width:2, defaultValue: 0, newLine:false)    
                 if (myFilterType != null && myFilterType.toInteger() >= 1 ) input (name: "myFilterText", title: "<b>Enter Comparison Value</b>", type: "string", submitOnChange:true, width:3, defaultValue: "")
                 paragraph summary("Filter Notes", parent.filterNotes() )      
-                paragraph line(2) 
             }
             else input(name: 'btnShowFilter', type: 'button', title: 'Select Filter Options ▶', backgroundColor: 'dodgerBlue', textColor: 'white', submitOnChange: true, width: 3)  //▼ ◀ ▶ ▲
+            paragraph line(2) 
         }
         
         //Section for customization of the table.
         if (state.show.Design == true) {
-            input (name: 'btnShowDesign', type: 'button', title: 'Design Table ▼', backgroundColor: 'navy', textColor: 'white', submitOnChange: true, width: 3, newLineAfter: true)  //▼ ◀ ▶ ▲
+            input (name: 'btnShowDesign', type: 'button', title: 'Design Table ▼', backgroundColor: 'navy', textColor: 'white', submitOnChange: true, width: 3, newLine: true, newLineAfter: true)  //▼ ◀ ▶ ▲
             //input (name: "Refresh", type: "button", title: "<big>🔄 Refresh Table 🔄</big>", backgroundColor: "#27ae61", textColor: "white", submitOnChange: true, width: 2)
             input (name: "Refresh", type: "button", title: "Refresh Table", backgroundColor: "#27ae61", textColor: "white", submitOnChange: true, width: 2)
             input (name: "isCustomize", type: "bool", title: "Customize Table", required: false, multiple: false, defaultValue: false, submitOnChange: true, width: 2 )
@@ -518,14 +518,14 @@ def mainPage() {
                     input (name: "isShowHTML", type: "bool", title: "<b>Show Pseudo HTML?</b>", required: false, multiple: false, defaultValue: false, submitOnChange: true, width: 2)
                     if (isOverrides == true) {
                         paragraph line(1) 
-                        input (name: "overrideHelperCategory", type: "enum", title: bold("Override Category"), options: parent.overrideCategory().sort(), required: true, defaultValue: "Animation", width:2, submitOnChange: true, newLineAfter: true)
+                        input (name: "overrideHelperCategory", type: "enum", title: bold("Override Category"), options: parent.overrideCategory().sort(), required: true, width:2, submitOnChange: true, newLineAfter: true)
                         input (name: "overridesHelperSelection", type: "enum", title: bold("$overrideHelperCategory Examples"), options: getOverrideCommands(overrideHelperCategory.toString()), required: false, width:12, submitOnChange: true, newLineAfter: true)
                         if (state.currentHelperCommand != null ) paragraph "<mark>" + state.currentHelperCommand + "</mark></body>"
                         input (name: "clearOverrides", type: "button", title: "Clear the Overrides", backgroundColor: "#27ae61", textColor: "white", submitOnChange: true, width: 2, newLine: true, newLineAfter: false )
                         input (name: "copyOverrides", type: "button", title: "Copy To Overrides", backgroundColor: "#27ae61", textColor: "white", submitOnChange: true, width: 2, newLine: true, newLineAfter: false )
                         input (name: "appendOverrides", type: "button", title: "Append To Overrides", backgroundColor: "#27ae61", textColor: "white", submitOnChange: true, width: 2, newLine: true, newLineAfter: false )
                         input (name: "Refresh", type: "button", title: "Refresh Table", backgroundColor: "#27ae61", textColor: "white", submitOnChange: true, width: 2)
-                        input (name: "overrides", type: "textarea", title: titleise("Settings Overrides (Tab to Save)"), required: false, defaultValue: "?", width:12, rows:5, submitOnChange: true)
+                        input (name: "overrides", type: "textarea", title: titleise("Settings Overrides"), required: false, defaultValue: "?", width:12, rows:5, submitOnChange: true)
                         if (isCompactDisplay == false) paragraph summary("About Overrides", parent.overrideNotes() )    
                     }
                     
@@ -597,7 +597,7 @@ def mainPage() {
                 }
               }
             }  //End of showDesign
-            else input(name: 'btnShowDesign', type: 'button', title: 'Design Table ▶', backgroundColor: 'dodgerBlue', textColor: 'white', submitOnChange: true, width: 3)  //▼ ◀ ▶ ▲
+            else input(name: 'btnShowDesign', type: 'button', title: 'Design Table ▶', backgroundColor: 'dodgerBlue', textColor: 'white', submitOnChange: true, width: 3, newLine: true)  //▼ ◀ ▶ ▲
             paragraph line(2)
             //End of Display Table
         
@@ -643,7 +643,7 @@ def mainPage() {
             }   
             
         //Now add a footer.
-        myDocURL = "<a href='https://github.com/GaryMilne/Documentation/blob/main/Tile%20Builder%20Help.pdf' target=_blank> <i><b>Tile Builder Help</b></i></a>"
+        myDocURL = "<a href='https://github.com/GaryMilne/Hubitat-TileBuilder/blob/main/Tile%20Builder%20Help.pdf' target=_blank> <i><b>Tile Builder Help</b></i></a>"
         myText = '<div style="display: flex; justify-content: space-between;">'
         myText += '<div style="text-align:left;font-weight:small;font-size:12px"> <b>Documentation:</b> ' + myDocURL + '</div>'
         myText += '<div style="text-align:center;font-weight:small;font-size:12px">Version: ' + Version + '</div>'
@@ -2107,15 +2107,15 @@ def initialize(){
     
     //Highlight Colors
     app.updateSetting("hc1", [value:"#008000", type:"color"])
-    app.updateSetting("hts1", "110")
+    app.updateSetting("hts1", "100")
     app.updateSetting("hc2", [value:"#CA6F1E", type:"color"])
-    app.updateSetting("hts2", "110")
+    app.updateSetting("hts2", "100")
     app.updateSetting("hc3", [value:"#00FF00", type:"color"])
-    app.updateSetting("hts3", "110")
+    app.updateSetting("hts3", "100")
     app.updateSetting("hc4", [value:"#0000FF", type:"color"])
-    app.updateSetting("hts4", "110")
+    app.updateSetting("hts4", "100")
     app.updateSetting("hc5", [value:"#FF0000", type:"color"])
-    app.updateSetting("hts5", "110")
+    app.updateSetting("hts5", "100")
     
     //Keywords
     app.updateSetting("isKeyword1", false)
@@ -2175,6 +2175,9 @@ def initialize(){
     app.updateSetting("publishInterval", [value:1, type:"enum"])
     app.updateSetting("isCompactDisplay", false)
     
+    app.updateSetting("overrideHelperCategory", [value:"Animation", type:"text"])
+    app.updateSetting("overridesHelperSelection", [value:"Fade: Fades in an object on refresh.", type:"text"])
+        
     //Set initial Log settings
     app.updateSetting('isLogDebug', false)
     app.updateSetting('isLogTrace', false)
@@ -2187,7 +2190,7 @@ def initialize(){
     state.myCapabilityHistory = [new: "seed1", old: "seed"]
     
     //Have all the section collapsed to begin with except devices
-    state.show = [Devices: true, Report: false, Filter: false, Design: true, Publish: false, More: false]
+    state.show = [Devices: true, Report: true, Filter: false, Design: true, Publish: false, More: false]
     
 }
 
