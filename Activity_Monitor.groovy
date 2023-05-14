@@ -1,25 +1,3 @@
-/* groovylint-disable LineLength */
-/**
-*  Activity Monitor & Attribute Monitor (Tile Builder Child)
-*  Version: See ChangeLog
-*  Download: See importUrl in definition
-*  Description: Apps that generates tabular HTML\CSS reports on device attributes and publishes them to a dashboard.
-*
-*  Copyright 2022 Gary J. Milne  
-*  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed
-*  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
-*  for the specific language governing permissions and limitations under the License.
-
-*  License:
-*  You are free to use this software in an un-modified form. Software cannot be modified or redistributed.
-*  You may use the code for educational purposes or for use within other applications as long as they are unrelated to the 
-*  production of tabular data in HTML form, unless you have the prior consent of the author.
-*  You are granted a license to use Tile Builder in its standard configuration without limits.
-*  Use of Tile Builder in it's Advanced requires a license key that must be issued to you by the original developer. TileBuilderApp@gmail.com
-*
-*  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the
-*  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-
 *  Authors Notes:
 *  For more information on Activity Monitor & Attribute Monitor check out these resources.
 *  Original posting on Hubitat Community forum: TBD
@@ -49,6 +27,7 @@
 *  Version 1.2.5 - Splits Overrides Helper examples into categories for easier navigation.
 *  Version 1.2.6 - Expanded Keywords and Thresholds to 5 values. Added 'isCompactDisplay' to free up some screen space.
 *  Version 1.2.7 - Fixed bug in applyStyle not handling "textArea" data type introduced in 1.2.3 
+*  Version 1.2.8 - Cleaned up handling of some style settings.
 *
 *  Gary Milne - May 14th, 2023
 *
@@ -61,9 +40,9 @@
 **/
 
 import groovy.transform.Field
-@Field static final Version = "<b>Tile Builder Activity Monitor v1.2.7 (5/14/23)</b>"
-@Field static final moduleName = "Activity Monitor"
-//@Field static final moduleName = "Attribute Monitor"
+@Field static final Version = "<b>Tile Builder Activity Monitor v1.2.8 (5/14/23)</b>"
+//@Field static final moduleName = "Activity Monitor"
+@Field static final moduleName = "Attribute Monitor"
 
 @Field static final unitsMap = ["None", "°F", "_°F", "°C", "_°C", "%", "_%", "A", "_A", "V", "_V", "W", "_W", "kWh", "_kWH", "K", "_K", "ppm", "_ppm", "lx", "_lx"]
 @Field static final comparators = ["<=", "==", ">="]
@@ -1220,10 +1199,10 @@ void makeHTML(data, int myRows){
     //Configure all of the HTML template lines.
     String HTMLCOMMENT = "<!--#comment#-->"
     String HTMLSTYLE1 = "<head><style>#class1# #class2# #class3# #class4# #class5# #iFrame1#table.#id#{border-collapse:#bm#;width:#tw#%;height:#th#%;margin:Auto;font-family:#tff#;background-color:#tbc#;#table#;}"    //Table Style - Always included.  
-    String HTMLSTYLE2 = ".#id# tr{color:#rtc#;text-align:#rta#;#row#}.#id# td{background-color:#rbc#;font-size:#rts#%;padding:#rtp#px;#data#}</style>"    //End of the Table Style block - Always included.
+    String HTMLSTYLE2 = ".#id# tr{color:#rtc#;text-align:#rta#;#row#}.#id# td{background-color:#rbc#;font-size:#rts#%;padding:#rp#px;#data#}</style>"    //End of the Table Style block - Always included.
     String HTMLBORDERSTYLE = "<style>.#id# th,.#id# td{border:#bs# #bw#px #bc#;padding:#bp#px;border-radius:#br#px;#border#}</style>"    //End of the Table Style block. Sets border style for TD and TH elements. - Always included.
     String HTMLTITLESTYLE = "<style>ti#id#{display:block;color:#tc#;font-size:#ts#%;font-family:#tff#;text-align:#ta#;#titleShadow#;padding:#tp#px;#title#}</style>"        //This is the row for the Title Style - May be omitted.
-    String HTMLHEADERSTYLE = "<style>.#id# th{background:#hbc#;color:#htc#;text-align:#hta#;font-size:#hts#%;padding:#htp#px;#header#}</style>"        //This is the row for Header Style - Will be ommitted 
+    String HTMLHEADERSTYLE = "<style>.#id# th{background:#hbc#;color:#htc#;text-align:#hta#;font-size:#hts#%;padding:#hp#px;#header#}</style>"        //This is the row for Header Style - Will be ommitted 
     String HTMLARSTYLE = "<style>.#id# tr:nth-child(even){color:#ratc#;background-color:#rabc#;#alternaterow#;}</style>"                            //This is the row for Alternating Row Style - May be omitted.
     String HTMLHIGHLIGHT1STYLE = "<style>h#id#1{color:#hc1#;font-size:#hts1#%;#high1#}</style>"                                                        //Highlighting Styles - May be ommitted.
     String HTMLHIGHLIGHT2STYLE = "<style>h#id#2{color:#hc2#;font-size:#hts2#%;#high2#}</style>"                                                        //Highlighting Styles - May be ommitted.
@@ -1889,8 +1868,8 @@ def fillStyle(){
     
     rgbaColorScheme = ["#tc#":mytc,"#hbc#":myhbc, "#htc#":myhtc,"#rbc#":myrbc, "#rtc#":myrtc, "#bc#":mybc]    
     titleScheme = ["#tt#":tt, "#ts#":ts, "#tc#":tc, "#tp#":tp, "#ta#":ta, "#to#":to, "#shcolor#":shcolor, "#shver#":shver, "#shhor#":shhor, "#shblur#":shblur, "#titleShadow#":myTitleShadow]
-    headerScheme = ["#A00#":A0, "#B00#":B0, "#hbc#":hbc, "#hbo#":hbo, "#htc#":htc, "#hto#":hto, "#hts#":hts, "#hta#":hta , "#htp#":myHP]         
-    rowScheme = ["#rbc#":rbc, "#rtc#":rtc, "#rts#":rts, "#rta#":rta ,"#rabc#":rabc, "#ratc#":ratc, "#rtp#":myRP, "#rto#":rto, "#rbo#":rbo]            
+    headerScheme = ["#A00#":A0, "#B00#":B0, "#hbc#":hbc, "#hbo#":hbo, "#htc#":htc, "#hto#":hto, "#hts#":hts, "#hta#":hta , "#hp#":myHP]         
+    rowScheme = ["#rbc#":rbc, "#rtc#":rtc, "#rts#":rts, "#rta#":rta ,"#rabc#":rabc, "#ratc#":ratc, "#rp#":myRP, "#rto#":rto, "#rbo#":rbo]            
     //Add a temporary class ID of 'qq'. A double qq is not used in the english language. The final one will be assigned by the Tile Builder Storage Device when the Tile is published.
     tableScheme = ["#id#":"qq", "#th#":th,"#tw#":tw, "#tbc#":tbc]        
     borderScheme = ["#bw#":bw, "#bc#":bc, "#bs#":bs, "#br#":br, "#bp#":bp, "#bo#":bo ]
