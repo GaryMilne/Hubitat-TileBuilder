@@ -1,4 +1,4 @@
-/*  Authors Notes:
+/**  Authors Notes:
 *  For more information on Activity Monitor & Attribute Monitor check out these resources.
 *  Original posting on Hubitat Community forum: TBD
 *  Tile Builder Documentation: https://github.com/GaryMilne/Hubitat-TileBuilder/blob/main/Tile%20Builder%20Help.pdf
