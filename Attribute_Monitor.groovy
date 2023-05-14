@@ -48,8 +48,9 @@
 *  Version 1.2.4 - Update screen handling for > 1024. Eliminate #pre# and #post#, add animation examples to overrides helper.
 *  Version 1.2.5 - Splits Overrides Helper examples into categories for easier navigation.
 *  Version 1.2.6 - Expanded Keywords and Thresholds to 5 values. Added 'isCompactDisplay' to free up some screen space.
+*  Version 1.2.7 - Fixed bug in applyStyle not handling "textArea" data type introduced in 1.2.3 
 *
-*  Gary Milne - May 12th, 2023
+*  Gary Milne - May 14th, 2023
 *
 *  This code is Activity Monitor and Attribute Monitor combined.
 *  The personality is dictated by @Field static moduleName a few lines ahead of this.
@@ -60,7 +61,7 @@
 **/
 
 import groovy.transform.Field
-@Field static final Version = "<b>Tile Builder Attribute Monitor v1.2.6 (5/12/23)</b>"
+@Field static final Version = "<b>Tile Builder Attribute Monitor v1.2.7 (5/14/23)</b>"
 //@Field static final moduleName = "Activity Monitor"
 @Field static final moduleName = "Attribute Monitor"
 
@@ -1812,6 +1813,7 @@ def applyStyle(style){
         if (myClass == "enum" ) app.updateSetting(mySetting, [value:myValue.toString(), type:"enum"]) 
         if (myClass == "bool" ) app.updateSetting(mySetting, [value:myValue.toString(), type:"bool"]) 
         if (myClass == "text" ) app.updateSetting(mySetting, [value:myValue.toString(), type:"text"]) 
+        if (myClass == "textarea" ) app.updateSetting(mySetting, [value:myValue.toString(), type:"textarea"]) 
         if (myClass == null ) log.warn ("Found setting: ${mySetting} in style with value: ${myValue} but no such setting exists. This is not harmful and does not affect the operation of the program.")
     }    
 }
@@ -2010,7 +2012,7 @@ def initialize(){
     if ( useList == null ) app.updateSetting("useList","1")
     
     app.updateSetting("inactivityThreshold", 24)
-    app.updateSetting("myDeviceLimit", 5)
+    app.updateSetting("myDeviceLimit", 30)
     app.updateSetting("myTruncateLength", 20)
     app.updateSetting("mySortOrder", 1)
     app.updateSetting("myDecimalPlaces", 1)

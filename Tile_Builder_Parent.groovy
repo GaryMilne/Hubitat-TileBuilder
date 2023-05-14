@@ -40,12 +40,13 @@
 *  Version 1.2.3 - Adds a footer to the main screen containing versioning information.
 *  Version 1.2.4 - Split Overrides Helper examples into multiple categories for easier navigation. Add new examples.
 *  Version 1.2.6 - Round up version to match child Apps.
+*  Version 1.2.7 - Fixed a few errors in styles.
 *
-*  Gary Milne - May 12th, 2023
+*  Gary Milne - May 14th, 2023
 *
 **/
 import groovy.transform.Field
-@Field static final Version = "<b>Tile Builder Parent v1.2.6 (5/12/23)</b>"
+@Field static final Version = "<b>Tile Builder Parent v1.2.7 (5/14/23)</b>"
 
 //These are the data for the pickers used on the child forms.
 def elementSize() { return ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20'] }
@@ -692,10 +693,10 @@ def makeDefaultStyles() {
     state.'*Style-AM Pastel Swirl' = style
 	
     styleA = convertStyleStringToMap('#isCustomSize#=false, #tbc#=#ffffff, #tc#=#b2e0de, #isKeyword1#=false, #isKeyword2#=false, #bp#=10, #isHeaders#=false, #htp#=5, #hta#=Center, #ts#=140, #shcolor#=#000000, #fc#=#000000, #to#=1, #rabc#=#dff8aa, #hbc#=#9ec1eb, #shblur#=3, #hts#=100, #bm#=Seperate, #rtc#=#000000, #hbo#=1, #iFrameColor#=#888686, #shver#=0, #tff#=Comic Sans MS, #isTitleShadow#=false, #rtp#=10, #comment#=?, #tp#=15, #th#=Auto, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=1, #isFrame#=true, #shhor#=0, #htc#=#000000, #rbc#=#b2e0de, #tilePreview#=5, #fa#=Center, #rts#=90, #isBorder#=false, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=1, #fs#=60, #fbc#=#624141, #rta#=Center, #isFooter#=false, #tw#=90, #bfs#=18, #bc#=#000000, #ratc#=#000000, #bw#=2, #bs#=Solid')
-    styleB = ['overrides':'#Class1#=@keyframes me {0% {opacity: 1;box-shadow: 0px 0px 1px 1px #624141}100% {opacity: 1;box-shadow: 0px 0px 10px 10px #f3a183}} | #Table#=animation: me 10s linear 0s infinite alternate-reverse']
+    styleB = ['overrides':'#Table#=box-shadow: 0px 0px 10px 10px #E8DD95;']
     style = styleA + styleB
     state.'*Style-AM Sea Foam Glow' = style
-	
+   
     styleA = convertStyleStringToMap('#isCustomSize#=false, #tbc#=#ffffff, #tc#=#000000, #isKeyword1#=false, #isKeyword2#=false, #bp#=0, #isHeaders#=true, #htp#=6, #hta#=Center, #ts#=150, #shcolor#=#7a7a7a, #fc#=#3be800, #to#=1, #rabc#=#dff8aa, #hbc#=#000000, #shblur#=10, #hts#=60, #bm#=Collapse, #rtc#=#41ff00, #hbo#=1, #iFrameColor#=#929090, #shver#=2, #tff#=Lucida, #isTitleShadow#=false, #rtp#=6, #comment#=?, #tp#=3, #th#=Auto, #isAlternateRows#=false, #isTitle#=false, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.5, #isFrame#=false, #shhor#=2, #htc#=#41ff00, #rbc#=#000000, #tilePreview#=1, #fa#=Center, #rts#=50, #isBorder#=false, #isScrubHTML#=true, #rto#=0.7, #hto#=1, #isOverrides#=true, #bo#=0, #fs#=50, #fbc#=#000000, #rta#=Center, #isFooter#=true, #tw#=100, #bfs#=18, #bc#=#ffffff, #ratc#=#000000, #bw#=5, #bs#=Solid')
     styleB = ['overrides':'#Table#=background: linear-gradient(180deg, #060606 0%, #11610B 100%)']
     style = styleA + styleB
@@ -938,7 +939,7 @@ def getOverrideAnimationList(){
     'Fade: Fades in an object on refresh.' : '#Class1#=@keyframes fade {0% {opacity: 0}100% {opacity: 1}} | #Table#=animation: fade 5s linear 0s 1 normal forwards;',
     'Hue: Constantly change the background hue between two color values.' : '#Class1#=@keyframes hue {50%{background-color: #cc2b5e} 100%{background-color:#753a88}} | #Table#=animation: hue 10s ease 0s infinite alternate-reverse forwards;',
     'Ping: Performs a ping effect on an object' : '#Class1#=@keyframes ping {0% {opacity: 0.8;transform: scale(0.2);} 90% {opacity: .5;transform: scale(1.2);} 100% {opacity: 1;transform: scale(1.0);}} | #Table#=animation: ping 1s ease 0s 1 normal forwards;' ,
-    'Pulse: Causes an object to pulsate' : '#Class1#=@keyframes pulse {0% {transform: scale(0.8);} 100% {transform: scale(1);}} | #Table#=animation: pulse 1s linear 0s 2 alternate-reverse forwards;}',
+    'Pulse: Causes an object to pulsate' : '#Class1#=@keyframes pulse {0% {transform: scale(0.8);} 100% {transform: scale(1);}} | #Table#=animation: pulse 1s linear 0s 2 alternate-reverse forwards;',
     'Roll: Causes an object to roll into place. ' : '#Class1#=@keyframes roll {0% {opacity: 0;transform: translateX(-125px) rotate(-500deg);}100% {opacity: 1;transform: translateX(0px) rotate(0deg);}} | #Table#=animation: roll 1s linear 0s 1 alternate forwards;',
     'Slide: Slide an object back and forth continuously' : '#Class1#=@keyframes slide {0% {transform: translateX(-20px);} 100% {transform: translateX(20px);}} | #Table#=animation:slide 2s linear 0s 2 alternate-reverse; ',
     'Spin: Spin an object on a refresh.' : '#Class1#=@keyframes spin {0% {opacity: 0;transform: rotate(-540deg) scale(0);}100% {opacity: 1;transform: rotate(0) scale(1);}} | #Row#=animation: spin 2s ease 0s 1 normal forwards;',
