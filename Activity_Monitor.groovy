@@ -41,8 +41,8 @@
 
 import groovy.transform.Field
 @Field static final Version = "<b>Tile Builder Activity Monitor v1.2.8 (5/14/23)</b>"
-//@Field static final moduleName = "Activity Monitor"
-@Field static final moduleName = "Attribute Monitor"
+@Field static final moduleName = "Activity Monitor"
+//@Field static final moduleName = "Attribute Monitor"
 
 @Field static final unitsMap = ["None", "°F", "_°F", "°C", "_°C", "%", "_%", "A", "_A", "V", "_V", "W", "_W", "kWh", "_kWH", "K", "_K", "ppm", "_ppm", "lx", "_lx"]
 @Field static final comparators = ["<=", "==", ">="]
