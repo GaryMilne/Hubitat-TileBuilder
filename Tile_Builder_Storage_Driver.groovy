@@ -4,20 +4,20 @@
 *  Download: See importUrl in definition
 *  Description: Used in conjunction with Tile Builder app to store tileps to generate tabular reports on device data and publishes them to a dashboard.
 *
-*  Copyright 2022 Gary J. Milne  
+*  Copyright 2022 Gary J. Milne
 *  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed
 *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
 *  for the specific language governing permissions and limitations under the License.
 
 *  License:
 *  You are free to use this software in an un-modified form. Software cannot be modified or redistributed.
-*  You may use the code for educational purposes or for use within other applications as long as they are unrelated to the 
+*  You may use the code for educational purposes or for use within other applications as long as they are unrelated to the
 *  production of tabular data in HTML form, unless you have the prior consent of the author.
 *  You are granted a license to use Tile Builder in its standard configuration without limits.
 *  Use of Tile Builder in it's Advanced requires a license key that must be issued to you by the original developer. TileBuilderApp@gmail.com
 *
 *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the
-*  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+*  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 *
 *  Authors Notes:
 *  For more information on Activity Monitor & Attribute Monitor check out these resources.
@@ -28,7 +28,7 @@
 *  Version 1.0.1 - Internal Only
 *  Version 1.0.2 - Converted all logging to use the log() function and added settingoption.
 *  Version 1.2.0 - Revved version to match other components for initial public release.
-*  Version 1.2.1 - Changed allocation of classIdDigit to be automatic based upon the device network ID. 
+*  Version 1.2.1 - Changed allocation of classIdDigit to be automatic based upon the device network ID.
 *  Version 1.2.6 - Version revved to match Tile Builder Modules.
 *  Gary Milne - May 12th, 2023
 *
@@ -38,7 +38,7 @@ metadata {
 	definition (name: "Tile Builder Storage Driver", namespace: "garyjmilne", author: "garymilne", importUrl: "https://raw.githubusercontent.com/GaryMilne/Hubitat-TileBuilder/main/Tile_Builder_Storage_Driver.groovy", singleThreaded: true ) {
         //capability "Variable"
     }
-    
+
 	capability "Refresh"
 	attribute "test", "string"
     attribute "tile1", "string"
@@ -66,7 +66,7 @@ metadata {
     attribute "tile23", "string"
     attribute "tile24", "string"
     attribute "tile25", "string"
-    
+
 	//command "test"
     command "initialize"
     command "createTile", [ [name:"The tile number.*" , type: "NUMBER" , description: "Valid entries are '1 - 25'", range: 1..25], [name:"The tile content.*" , type: "STRING", description: "Usually HTML created by Tile Builder" ], [name:"Tile Description." , type: "STRING" , description: "i.e. 'Battery Activity'"] ]
@@ -75,8 +75,8 @@ metadata {
 }
 
     section("Configure the Inputs"){
-        input name: "logging_level", type: "number", title: bold("Level of detail displayed in log. Higher number is more verbose."), description: italic("Enter log level 0-2. (Default is 0.)"), defaultValue: "0", required:true, displayDuringSetup: false            
-        } 
+        input name: "logging_level", type: "number", title: bold("Level of detail displayed in log. Higher number is more verbose."), description: italic("Enter log level 0-2. (Default is 0.)"), defaultValue: "0", required:true, displayDuringSetup: false
+        }
 
 void installed() {
    log.debug "installed()"
@@ -89,7 +89,11 @@ void updated() {
 
 void test(){
 	sendEvent(name: test, value: "Empty")
-    
+
+}
+
+void refresh() {
+    return
 }
 
 //Returns a list of classIDs presently in use.
@@ -102,25 +106,25 @@ void createTile(tileNumber, HTML, description) {
     log("createTile", "Publishing tile: $tileNumber - $description", 0)
     tileName = "tile" + tileNumber.toString()
     if (state.tileDescriptions == null) state.tileDescriptions = [:]
-    
+
     //Set the initial digit of the classID based on the device driver instance.
     classIdDigit = ""
     if (device.deviceNetworkId == "Tile_Builder_Storage_Device_1") classIdDigit = "A"
     if (device.deviceNetworkId == "Tile_Builder_Storage_Device_2") classIdDigit = "B"
     if (device.deviceNetworkId == "Tile_Builder_Storage_Device_3") classIdDigit = "C"
-    
+
 	//Calculates a character for the second digit of the class ID. Using a=1, b=2 etc. This gives us a 2 digit classID in the range of aa to az or 26 unique values. This should be sufficient for the Tile Builder which is contructed for 25 tiles.
 	myChar = (char)(96 + tileNumber.toInteger())
 	//log.info("ascii val is: ${myChar}")
 	myClassID = classIdDigit + myChar.toString()
-    
+
 	//Replace the temporary classID with the permanent one.
 	HTML = HTML.replace("qq", myClassID)
     attrHTML = 	toHTML(HTML)
     sendEvent(name: tileName, value: attrHTML)
     state.tileDescriptions."${tileName}" = description
 	updated(tileName)
-	
+
 	myUnHTML = 	unHTML(HTML)
 	state."${tileName}" = myUnHTML
 }
@@ -138,16 +142,16 @@ void deleteTile(tileNumber) {
     tileName = "tile" + tileNumber.toString()
 	log("deleteTile", "Deleting ${tileName}", 0)
     device.deleteCurrentState(tileName)
-	
+
     state.tileDescriptions.remove (tileName)
     state.lastUpdate.remove (tileName)
     state.remove (tileName)
-    
+
     state.remove ("descriptions")
 }
 
 //Make note of the last update to each tile.
-void updated(tileName){    
+void updated(tileName){
 	log("updated", "Updated tile: ${tileName}", 1)
 	if (tileName.size() < 5 ) return
 	now = new Date()
@@ -159,41 +163,41 @@ List getTileList(){
     def tileList = []
     i = 1
     description = ""
-    
+
     try{
     while (i <= 25){
         tileName = "tile" + i
         myHTML = device.currentValue(tileName)
         if (myHTML == null ) mySize = 0
         else mySize = myHTML.size()
-        
+
         if (state.tileDescriptions."${tileName}" != null) description = state.tileDescriptions.get(tileName)
         else ( description = "None" )
-        
+
         tileList.add(tileName + ": ${description} : (${mySize} bytes).")
 		log("getTileList", "tileName is: ${tileName.toString()} with Description: ${description}", 2)
 		//if (logging_level.toInteger() >= 2) log.info ()
         i++
     	}
     }
-    
+
     catch(ex) {
         log.error("Error")
         }
-        
+
 	//log.info ("tileList is: ${tileList}")
 	return tileList
 }
 
 //Returns a list of tiles as a list with compounded tile name, description and size.
 List getTileListByActivity(){
-    
+
     def tileActivityList = []
     def tileActivity = state.lastUpdate
     def temp = [:]
     def sortedActivity = [:]
     def pattern = "EEE MMM d HH:mm:ss z yyyy"
-    
+
     tileActivity.each{ it, value ->
         lastActivity = value
         def lastActivityDate = Date.parse(pattern, lastActivity)
@@ -204,9 +208,9 @@ List getTileListByActivity(){
     sortedActivity.each{ it, value ->
         description = "None"
         if ( state.tileDescriptions."${it}"  != null ) description = state?.tileDescriptions."${it}"
-        tileActivityList.add(it + " @ " + value + " ($description)")    
+        tileActivityList.add(it + " @ " + value + " ($description)")
     }
-    
+
     //log.info ("tileActivityList is: ${tileActivityList.sort()}")
 	return tileActivityList
 }
@@ -239,9 +243,9 @@ def unHTML(HTML){
 def initialize(){
     //The device is not created instantly and calls to state may fail if made too soon.
     pauseExecution(1000)
-    
+
     if (state.tileDescriptions == null) state.tileDescriptions = [:] // ["tile1":"None"]
-    if (state.lastUpdate == null) state.lastUpdate = [:]  //["tile1":"none"]  
+    if (state.lastUpdate == null) state.lastUpdate = [:]  //["tile1":"none"]
 }
 
 
@@ -253,11 +257,11 @@ def initialize(){
 //*****************************************************************************************************************************************************************************************************
 
 private log(name, message, int loglevel){
-    
+
     //This is a quick way to filter out messages based on loglevel
     int threshold = settings.logging_level
     if (loglevel > threshold) {return}
-   
+
     if ( loglevel <= 1 ) { log.info ( message)  }
     if ( loglevel >= 2 ) { log.debug ( message) }
 }
