@@ -30,6 +30,7 @@
 *  Version 1.2.0 - Revved version to match other components for initial public release.
 *  Version 1.2.1 - Changed allocation of classIdDigit to be automatic based upon the device network ID.
 *  Version 1.2.6 - Version revved to match Tile Builder Modules.
+*  Version 1.2.7 - Added refresh() function for capability of 'Refresh'.
 *  Gary Milne - May 12th, 2023
 *
 **/
