@@ -42,12 +42,13 @@
 *  Version 1.2.6 - Round up version to match child Apps.
 *  Version 1.2.7 - Fixed a few errors in styles.
 *  Version 1.2.8 - Cleaned up some built-in style values.
+*  Version 1.3.0 - Removed isThreshold* and isKeyword* from styles in favor of myThresholdCount and myKeywordCount. Added sendMessageToTile function for child recovery. Moved unitsMap and comparators to parent. Added style Battery Meters.
 *
-*  Gary Milne - May 14th, 2023
+*  Gary Milne - Jun 2nd, 2023
 *
 **/
 import groovy.transform.Field
-@Field static final Version = "<b>Tile Builder Parent v1.2.8 (5/14/23)</b>"
+@Field static final Version = "<b>Tile Builder Parent v1.3.0 (6/2/23)</b>"
 
 //These are the data for the pickers used on the child forms.
 def elementSize() { return ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20'] }
@@ -71,6 +72,9 @@ def storageDevices() { return ['Tile Builder Storage Device 1', 'Tile Builder St
 def allTileList() { return [1:'tile1', 2:'tile2', 3:'tile3', 4:'tile4', 5:'tile5', 6:'tile6', 7:'tile7', 8:'tile8', 9:'tile9', 10:'tile10', 11:'tile11', 12:'tile12', 13:'tile13', 14:'tile14', 15:'tile15', 16:'tile16', 17:'tile17', 18:'tile18', 19:'tile19', 20:'tile20', 21:'tile21', 22:'tile22', 23:'tile23', 24:'tile24', 25:'tile25'] }
 def filterList() { return [0:'No Filter', 1:'String ==', 2:'String !=', 3:'Numeric ==', 4:'Numeric <=', 5:'Numeric >='] }
 def overrideCategory() { return ['Animation', 'Field Replacement', 'Text', 'Border', 'Background', 'Misc', 'Classes', 'Margin & Padding', 'Transform'] }
+def messageList() { return ['clearOverrides', 'disableKeywords', 'disableThresholds', 'clearDeviceList'] }
+def unitsMap() { return ['None', '°F', '_°F', '°C', '_°C', '%', '_%', 'A', '_A', 'V', '_V', 'W', '_W', 'kWh', '_kWH', 'K', '_K', 'ppm', '_ppm', 'lx', '_lx'] }
+def comparators() { return [0:'None', 1:'<=', 2:'==', 3:'>='] }
 
 definition(
     name: 'Tile Builder',
@@ -143,10 +147,10 @@ def mainPage() {
                     input(name: 'btnShowLicense', type: 'button', title: 'Licensing ▼', backgroundColor: 'navy', textColor: 'white', submitOnChange: true, width: 2, newLineBefore: true, newLineAfter: false)  //▼ ◀ ▶ ▲
                     myString = "<b>Tile Builder Standard is free</b> and provides a highly functional addition to the basic Hubitat Dashboard capabilities.<br>"
                     myString += "<b>Tile Builder Advanced</b> adds Filters, Highlights, Styles and a range of powerful customizations options. "
-			        myString += "Click <a href='https://github.com/GaryMilne/Hubitat-TileBuilder/blob/main/Tile%20Builder%20Help.pdf'>here</a> for more information.</br></br>"
+			        myString += 'Click <a href="https://github.com/GaryMilne/Hubitat-TileBuilder/blob/main/Tile%20Builder%20Help.pdf" target="_blank">here</a> for more information.</br></br>'
             
                     myString = myString + "To purchase the license for <b>Tile Builder Advanced</b> you must do the following:<br>"
-                    myString += "<b>1)</b> Donate at least <b>\$5</b> to ongoing development via PayPal using this <a href='https://www.paypal.com/donate/?business=YEAFRPFHJCTFA&no_recurring=1&item_name=A+donation+of+\$5+or+more+grants+you+license+to+Tile+Builder+Advanced.+Please+leave+your+Hubitat+Community+ID.&currency_code=USD'>link.</a></br>"			
+                    myString += '<b>1)</b> Donate at least <b>\$5</b> to ongoing development via PayPal using this <a href="https://www.paypal.com/donate/?business=YEAFRPFHJCTFA&no_recurring=1&item_name=A+donation+of+\$5+or+more+grants+you+license+to+Tile+Builder+Advanced.+Please+leave+your+Hubitat+Community+ID.&currency_code=USD" target="_blank">link.</a></br>'			
                     myString += "<b>2)</b> Forward the paypal eMail receipt along with your ID (<b>" + getID() + "</b>) to <b>TileBuilderApp@gmail.com</b>. Please include your Hubitat community ID for future notifications.<br>"
                     myString += "<b>3)</b> Wait for license key eMail notification (usually within 24 hours).<br>"
                     myString += "<b>4)</b> Apply license key using the input box below.<br>"
@@ -157,12 +161,12 @@ def mainPage() {
                         input (name: "licenseKey", title: "<b>Enter Advanced License Key</b>", type: "string", submitOnChange:true, width:3, defaultValue: "?")
                         input (name: 'activateLicense', type: 'button', title: 'Activate Advanced License', backgroundColor: 'orange', textColor: 'black', submitOnChange: true, width: 2)
                         myString = '<b>Activation State: ' + red(state.activationState) + '</b><br>'
-                        myString = myString + 'You are running ' + dodgerBlue('<b><u>Tile Builder Standard</u></b>')
+                        myString = myString + 'You are running ' + dodgerBlue('<b>Tile Builder Standard</b>')
                         paragraph myString
                     }
                     else {
                         myString = '<b>Activation State: ' + green(state.activationState) + '</b><br>'
-                        myString = myString + 'You are running ' + green('<b><u>Tile Builder Advanced</u></b>')
+                        myString = myString + 'You are running ' + green('<b>Tile Builder Advanced</b>')
                         paragraph myString
                     }
                 }
@@ -176,8 +180,8 @@ def mainPage() {
             //Device
             if (state.showDevice == true ) {
                 input(name: 'btnShowDevice', type: 'button', title: 'Storage Device ▼', backgroundColor: 'navy', textColor: 'white', submitOnChange: true, width: 2, newLineBefore: true)  //▼ ◀ ▶ ▲
-                paragraph "<b>Tile Builder</b> stores generated tiles on a special purpose <u>Tile Builder Storage Device</u>. You must <b>create a device and attach</b> to it using the controls below.<br>"                 
-                paragraph note('Note: ', "Each instance of <b>Tile Builder</b> must have it's own unique storage device.")
+                paragraph "<b>Tile Builder</b> stores generated tiles on a special purpose <b>Tile Builder Storage Device</b>. You must <b>create a device and attach</b> to it using the controls below.<br>"                 
+                paragraph note('Note: ', "Each instance of <b>Tile Builder</b> must have its own unique storage device.")
                     
                 if (state.isStorageConnected == false ) {
                     paragraph red('❌ - A Tile Builder Storage Device is not connected.')
@@ -245,10 +249,10 @@ def mainPage() {
                 if (state.showManage == true ) {
                     input(name: 'btnShowManage', type: 'button', title: 'Manage Tiles ▼', backgroundColor: 'navy', textColor: 'white', submitOnChange: true, width: 2, newLineBefore: true, newLineAfter: false)  //▼ ◀ ▶ ▲
                     myString = 'Here you can view information about the tiles on this storage device, which tiles are in use, the last time those tiles were updated and delete obsolete tiles.<br>'
-                    myString += 'In the <b>Tile Builder Storage Device</b> you can preview also the tiles, add descriptions and delete tiles as neccessary.'
+                    myString += 'In the <b>Tile Builder Storage Device</b> you can also preview the tiles, add descriptions and delete tiles as necessary.'
                     paragraph note('Note: ', myString)
                     input name: 'tilesInUse', type: 'enum', title: bold('List Tiles in Use'), options: getTileList(), required: false, defaultValue: 'Tile List', submitOnChange: false, width: 4, newLineAfter:false
-                    input name: 'tilesInUseByActivity', type: 'enum', title: bold('List Tiles in Use By Activity'), options: getTileListByActivity(), required: false, defaultValue: 'Tile List By Activity', submitOnChange: true, width: 4, newLineAfter:true
+                    input name: 'tilesInUseByActivity', type: 'enum', title: bold('List Tiles By Activity'), options: getTileListByActivity(), required: false, defaultValue: 'Tile List By Activity', submitOnChange: true, width: 4, newLineAfter:true
 		    		input(name: 'deleteTile', type: 'button', title: '↑ Delete ↑ Selected ↑ Tile ↑', backgroundColor: 'Maroon', textColor: 'yellow', submitOnChange: true, width: 2)
 			    	paragraph note('Note: ', 'Deleting a tile does not delete the <b>Tile Builder</b> child app that generates the tile. Delete the child app first and then delete the tile.')
                 }
@@ -264,7 +268,9 @@ def mainPage() {
             if (state.setupState == 99) {
                 if (state.showMore == true) {
                     input(name: 'btnShowMore', type: 'button', title: 'More ▼', backgroundColor: 'navy', textColor: 'white', submitOnChange: true, width: 2, newLineBefore: true, newLineAfter: true)  //▼ ◀ ▶ ▲
-                    label title: bold('Enter a name for this Tile Builder parent instance (optional)'), required: false, width: 4
+                    label title: bold('Enter a name for this Tile Builder parent instance (optional)'), required: false, width: 4, newLineAfter: true
+                    
+                    paragraph body('<b>Logging Functions</b>')
                     input (name: "isLogInfo",  type: "bool", title: "<b>Enable info logging?</b>", defaultValue: false, submitOnChange: false, width: 2)
                     input (name: "isLogTrace", type: "bool", title: "<b>Enable trace logging?</b>", defaultValue: false, submitOnChange: false, width: 2)
                     input (name: "isLogDebug", type: "bool", title: "<b>Enable debug logging?</b>", defaultValue: false, submitOnChange: false, width: 2)
@@ -274,8 +280,9 @@ def mainPage() {
                     
                     paragraph body('<b>Support Functions</b>')
                     input(name: 'defaultStyles'  , type: 'button', title: 'Rebuild Default Styles', backgroundColor: '#27ae61', textColor: 'white', submitOnChange: true, width: 2)
-                    input(name: 'removeLicense'  , type: 'button', title: 'De-Activate Software License', backgroundColor: '#27ae61', textColor: 'white', submitOnChange: true, width: 3)
-                    input (name: "supportCode", title: "<b>Support Code</b>", type: "string", submitOnChange:true, width:3, defaultValue: "?")
+                    input(name: 'removeLicense'  , type: 'button', title: 'De-Activate Software License', backgroundColor: '#27ae61', textColor: 'white', submitOnChange: true, width: 3, newLineAfter: true)
+                    input (name: "sendMessageToTile", title: "<b>Send Message to Tile</b>", type: "enum", options: getTileList(), submitOnChange:true, width:3, defaultValue: "?")
+                    input (name: "message", type: 'enum', title: bold('Select Message to Send'), options: messageList(), required: false, submitOnChange: true, width: 3)
                 }
                 else {
                     input(name: 'btnShowMore', type: 'button', title: 'More ▶', backgroundColor: 'DodgerBlue', textColor: 'white', submitOnChange: true, width: 2)  //▼ ◀ ▶ ▲
@@ -309,6 +316,15 @@ def test(){
     state.hasMessage= ""
 }
 
+//A function for sending a message to a child app whenever it runs if the "sendMessageToTile control matches the child tile.
+def messageForTile( childLabel ){
+    //log.info "childLabel is: $childLabel" 
+    //log.info "sendMessageToTile is: $sendMessageToTile"
+    if ( childLabel == null || sendMessageToTile == null ) return 0
+    boolean match = sendMessageToTile.contains(childLabel.toString())
+    if ( match == true ) { return message } 
+    else { return 0 }
+}
 
 //Returns a short version of the Storage Device Name for this instance.
 def getStorageShortName(){
@@ -623,101 +639,108 @@ def checkLicense() {
 def makeDefaultStyles() {
     if (isLogTrace) log.trace ('makeDefaultStyles: Entering makeDefaultStyles')
 
-    styleA = convertStyleStringToMap('#isCustomSize#=false, #tbc#=#ffffff, #tilePreview#=5, #isFrame#=true, #fbc#=#000000, #tc#=#f6cd00, #isKeyword1#=false, #isKeyword2#=false, #bp#=3, #isHeaders#=true, #hp#=0, #hta#=Center, #ts#=140, #shcolor#=#f6cd00, #fc#=#000000, #to#=1, #rabc#=#dff8aa, #hbc#=#f6cd00, #shblur#=2, #hts#=100, #bm#=Collapse, #rtc#=#000000, #hbo#=1, #iFrameColor#=#fffada, #shver#=2, #tff#=Comic Sans MS, #isTitleShadow#=false, #rp#=0, #comment#=?, #tp#=3, #th#=Auto, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.8, #shhor#=2, #htc#=#000000, #rbc#=#fbed94, #fa#=Center, #rts#=80, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=1, #fs#=60, #rta#=Center, #isFooter#=false, #tw#=90, #bfs#=18, #bc#=#000000, #ratc#=#000000, #bw#=2, #bs#=Solid')
+    styleA = convertStyleStringToMap('#myKeywordCount#=0, #myThresholdCount#=0, #isCustomSize#=false, #tbc#=#ffffff, #isFrame#=true, #fbc#=#000000, #tc#=#f6cd00, #bp#=3, #isHeaders#=true, #hp#=0, #hta#=Center, #ts#=140, #shcolor#=#f6cd00, #fc#=#000000, #to#=1, #rabc#=#dff8aa, #hbc#=#f6cd00, #shblur#=2, #hts#=100, #bm#=Collapse, #rtc#=#000000, #hbo#=1, #iFrameColor#=#fffada, #shver#=2, #tff#=Comic Sans MS, #isTitleShadow#=false, #rp#=0, #comment#=?, #tp#=3, #th#=Auto, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.8, #shhor#=2, #htc#=#000000, #rbc#=#fbed94, #fa#=Center, #rts#=80, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=1, #fs#=60, #rta#=Center, #isFooter#=false, #tw#=90, #bfs#=18, #bc#=#000000, #ratc#=#000000, #bw#=2, #bs#=Solid')
     styleB = ['overrides':'#Class1#=@keyframes A{0%{transform:rotate(-360deg)}100% {transform:rotate(0)}}|#Row#=animation:A 2s ease 0s 1 normal forwards| #title#=font-weight:900']
     style = styleA + styleB
     state.'*Style-AM Banana' = style
-
-	styleA = convertStyleStringToMap('#isCustomSize#=false, #tbc#=#ffffff, #tc#=#000000, #isKeyword1#=false, #isKeyword2#=false, #bp#=10, #isHeaders#=false, #hp#=0, #hta#=Center, #ts#=150, #shcolor#=#7a7a7a, #fc#=#000000, #to#=1, #rabc#=#dff8aa, #hbc#=#000000, #shblur#=10, #hts#=100, #bm#=Collapse, #rtc#=#ffffff, #hbo#=1, #iFrameColor#=#fcfcfc, #shver#=2, #tff#=Comic Sans MS, #isTitleShadow#=true, #rp#=0, #comment#=?, #tp#=3, #th#=Auto, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.3, #isFrame#=false, #shhor#=2, #htc#=#000000, #rbc#=#292929, #tilePreview#=5, #fa#=Center, #rts#=110, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=1, #fs#=90, #fbc#=#000000, #rta#=Center, #isFooter#=true, #tw#=90, #bfs#=18, #bc#=#ffffff, #ratc#=#000000, #bs#=Solid')
+    
+    //IMPORTANT: This line uses ═ (Alt 205) instead of = within #ttr values to simplify parsing.  They are converted to regular = in the convertStyleStringToMap function.
+    styleA = convertStyleStringToMap('#tc#=#000000, #bp#=5, #ktr2#=?, #tbo#=0, #k4#=?, #isHeaders#=true, #hp#=0, #hta#=Left, #ts#=150, #shcolor#=#000000, #top4#=0, #tbc#=#000000, #fc#=#000000, #hc2#=#CA6F1E, #ttr1#=[meter low═70 high═80 max═100 optimum═100 value═%value%][/meter] (%value%%), #to#=1, #tcv4#=70, #rabc#=#dff8aa, #hts3#=100, #myKeywordCount#=0, #hbc#=#282828, #shblur#=5, #hts#=100, #isCustomSize#=false, #myThresholdCount#=1, #bm#=Seperate, #ktr3#=?, #rtc#=#ffffff, #k5#=?, #customWidth#=200, #k1#=?, #hbo#=1, #iFrameColor#=#705c5c, #ttr3#=?, #shver#=0, #top5#=0, #tff#=Roboto, #ttr2#=?, #isTitleShadow#=false, #rp#=0, #hc3#=#00FF00, #top1#=1, #comment#=?, #tp#=5, #customHeight#=190, #tcv5#=70, #hts2#=100, #th#=Auto, #tcv1#=100, #isAlternateRows#=false, #isTitle#=false, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0, #ktr4#=?, #k2#=?, #isFrame#=false, #ttr4#=?, #hc4#=#0000FF, #shhor#=0, #htc#=#ffffff, #rbc#=#ff0000, #top2#=0, #fa#=Center, #rts#=90, #isBorder#=false, #isScrubHTML#=true, #rto#=1, #hts5#=100, #hto#=1, #isOverrides#=false, #tcv2#=70, #hts1#=100, #bo#=1, #fs#=80, #fbc#=#000000, #rta#=Left, #ktr5#=?, #isFooter#=false, #k3#=?, #ktr1#=?, #tw#=100, #bfs#=18, #hc1#=#ffffff, #bc#=#050505, #ratc#=#000000, #ttr5#=?, #hc5#=#FF0000, #top3#=0, #bw#=2, #hts4#=100, #bs#=Solid, #tcv3#=70')
+    styleB = ['overrides':'?']
+    style = styleA + styleB
+    state.'*Style-AM Battery Meter' = style
+    
+	styleA = convertStyleStringToMap('#myKeywordCount#=0, #myThresholdCount#=0, #isCustomSize#=false, #tbc#=#ffffff, #tc#=#000000, #bp#=10, #isHeaders#=false, #hp#=0, #hta#=Center, #ts#=150, #shcolor#=#7a7a7a, #fc#=#000000, #to#=1, #rabc#=#dff8aa, #hbc#=#000000, #shblur#=10, #hts#=100, #bm#=Collapse, #rtc#=#ffffff, #hbo#=1, #iFrameColor#=#fcfcfc, #shver#=2, #tff#=Comic Sans MS, #isTitleShadow#=true, #rp#=0, #comment#=?, #tp#=3, #th#=Auto, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.3, #isFrame#=false, #shhor#=2, #htc#=#000000, #rbc#=#292929, #fa#=Center, #rts#=110, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=1, #fs#=90, #fbc#=#000000, #rta#=Center, #isFooter#=true, #tw#=90, #bfs#=18, #bc#=#ffffff, #ratc#=#000000, #bs#=Solid')
     styleB = ['overrides':'#Data#=transform: rotateX(10deg) rotateY(15deg);background: linear-gradient(45deg, #fff 0%, #000 50%,#fff 100%);']
     style = styleA + styleB
     state.'*Style-AM Black and White' = style
 
-    styleA = convertStyleStringToMap('#tc#=#050505, #isKeyword1#=false, #bp#=5, #ktr2#=?, #isHeaders#=true, #hp#=0, #hta#=Center, #ts#=140, #shcolor#=#d7dce0, #tbc#=#908989, #fc#=#000000, #hc2#=#CA6F1E, #ttr1#=?, #to#=1, #rabc#=#b71a3b, #hbc#=#0063b1, #shblur#=2, #hts#=100, #isCustomSize#=false, #bm#=Seperate, #rtc#=#050505, #customWidth#=200, #k1#=?, #hbo#=1, #iFrameColor#=#908989, #shver#=2, #tff#=Arial Black, #isThreshold1#=false, #ttr2#=?, #isTitleShadow#=false, #rp#=0, #top1#=[1], #comment#=?, #tp#=5, #customHeight#=190, #hts2#=125, #th#=85, #tcv1#=100, #isAlternateRows#=false, #isTitle#=true, #br#=25, #ta#=Center, #isComment#=false, #rbo#=0.6, #k2#=?, #isFrame#=false, #isThreshold2#=false, #shhor#=2, #htc#=#cbcbc8, #rbc#=#7fb2e7, #top2#=[3], #fa#=Left, #rts#=80, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #tcv2#=30, #hts1#=125, #isKeyword2#=false, #bo#=1, #fs#=80, #fbc#=#000000, #rta#=Center, #isFooter#=false, #ktr1#=?, #tw#=90, #bfs#=18, #hc1#=#008000, #bc#=#1e1e20, #ratc#=#ffffff, #bw#=3, #bs#=Solid')
+    styleA = convertStyleStringToMap('#myKeywordCount#=0, #myThresholdCount#=0, #tc#=#050505, #bp#=5, #ktr2#=?, #isHeaders#=true, #hp#=0, #hta#=Center, #ts#=140, #shcolor#=#d7dce0, #tbc#=#908989, #fc#=#000000, #hc2#=#CA6F1E, #ttr1#=?, #to#=1, #rabc#=#b71a3b, #hbc#=#0063b1, #shblur#=2, #hts#=100, #isCustomSize#=false, #bm#=Seperate, #rtc#=#050505, #customWidth#=200, #k1#=?, #hbo#=1, #iFrameColor#=#908989, #shver#=2, #tff#=Arial Black, #ttr2#=?, #isTitleShadow#=false, #rp#=0, #comment#=?, #tp#=5, #customHeight#=190, #hts2#=125, #th#=85, #tcv1#=100, #isAlternateRows#=false, #isTitle#=true, #br#=25, #ta#=Center, #isComment#=false, #rbo#=0.6, #k2#=?, #isFrame#=false, #shhor#=2, #htc#=#cbcbc8, #rbc#=#7fb2e7, #fa#=Left, #rts#=80, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #tcv2#=30, #hts1#=125, #bo#=1, #fs#=80, #fbc#=#000000, #rta#=Center, #isFooter#=false, #ktr1#=?, #tw#=90, #bfs#=18, #hc1#=#008000, #bc#=#1e1e20, #ratc#=#ffffff, #bw#=3, #bs#=Solid')
     styleB = ['overrides':'#Title#=text-shadow: 1px 1px 2px LightSkyBlue, 0 0 25px DodgerBlue, 0 0 5px darkblue']
     style = styleA + styleB
     state.'*Style-AM Blue Buttons' = style
 	
-	styleA = convertStyleStringToMap('#tc#=#222f3c, #isKeyword1#=false, #bp#=5, #ktr2#=?, #isHeaders#=true, #hp#=0, #hta#=Center, #ts#=120, #shcolor#=#ffffff, #tbc#=#aaa9ad, #fc#=#66cbe0, #hc2#=#CA6F1E, #ttr1#=?, #to#=1, #rabc#=#dff8aa, #hbc#=#23303e, #shblur#=4, #hts#=100, #isCustomSize#=false, #bm#=Seperate, #rtc#=#d5d5d7, #customWidth#=200, #k1#=?, #hbo#=1, #iFrameColor#=#696969, #shver#=0, #tff#=Arial Black, #isThreshold1#=false, #ttr2#=?, #isTitleShadow#=true, #rp#=0, #top1#=[1], #comment#=?, #tp#=3, #customHeight#=290, #hts2#=125, #th#=Auto, #tcv1#=100, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0, #k2#=?, #isFrame#=false, #isThreshold2#=false, #shhor#=0, #htc#=#c0c0c0, #rbc#=#5b6db2, #top2#=[3], #fa#=Center, #rts#=80, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #tcv2#=30, #hts1#=125, #isKeyword2#=false, #bo#=1, #fs#=100, #fbc#=#000000, #rta#=Center, #isFooter#=false, #ktr1#=?, #tw#=90, #bfs#=18, #hc1#=#008000, #bc#=#ada9a9, #ratc#=#000000, #bw#=2, #bs#=Solid')
+	styleA = convertStyleStringToMap('#myKeywordCount#=0, #myThresholdCount#=0, #tc#=#222f3c, #bp#=5, #ktr2#=?, #isHeaders#=true, #hp#=0, #hta#=Center, #ts#=120, #shcolor#=#ffffff, #tbc#=#aaa9ad, #fc#=#66cbe0, #hc2#=#CA6F1E, #ttr1#=?, #to#=1, #rabc#=#dff8aa, #hbc#=#23303e, #shblur#=4, #hts#=100, #isCustomSize#=false, #bm#=Seperate, #rtc#=#d5d5d7, #customWidth#=200, #k1#=?, #hbo#=1, #iFrameColor#=#696969, #shver#=0, #tff#=Arial Black, #ttr2#=?, #isTitleShadow#=true, #rp#=0, #comment#=?, #tp#=3, #customHeight#=290, #hts2#=125, #th#=Auto, #tcv1#=100, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0, #k2#=?, #isFrame#=false, #shhor#=0, #htc#=#c0c0c0, #rbc#=#5b6db2, #fa#=Center, #rts#=80, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #tcv2#=30, #hts1#=125, #bo#=1, #fs#=100, #fbc#=#000000, #rta#=Center, #isFooter#=false, #ktr1#=?, #tw#=90, #bfs#=18, #hc1#=#008000, #bc#=#ada9a9, #ratc#=#000000, #bw#=2, #bs#=Solid')
     styleB = ['overrides':'#Table#=background: linear-gradient(0deg, #bdc3c7 0%, #2c3e50 40%)']
     style = styleA + styleB
     state.'*Style-AM Blue Grey' = style
 	
-	styleA = convertStyleStringToMap('#tc#=#fffafa, #isKeyword1#=false, #bp#=3, #ktr2#=?, #isHeaders#=false, #hp#=0, #hta#=Center, #ts#=100, #shcolor#=#7a7a7a, #tbc#=#282828, #fc#=#ffffff, #hc2#=#CA6F1E, #ttr1#=?, #to#=1, #rabc#=#dff8aa, #hbc#=#000000, #shblur#=10, #hts#=100, #bm#=Collapse, #rtc#=#ffffff, #k1#=?, #hbo#=1, #iFrameColor#=#282828, #shver#=2, #tff#=Comic Sans MS, #isThreshold1#=false, #ttr2#=?, #isTitleShadow#=false, #rp#=0, #top1#=1, #comment#=?, #tp#=3, #hts2#=125, #th#=Auto, #tcv1#=70, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.3, #k2#=?, #isFrame#=false, #isThreshold2#=false, #shhor#=2, #htc#=#000000, #rbc#=#292929, #top2#=3, #fa#=Center, #rts#=75, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #tcv2#=30, #hts1#=125, #isKeyword2#=false, #bo#=1, #fs#=75, #fbc#=#000000, #rta#=Center, #isFooter#=true, #ktr1#=?, #tw#=90, #bfs#=18, #hc1#=#008000, #bc#=#ffffff, #ratc#=#000000, #bw#=2, #bs#=Solid')
+	styleA = convertStyleStringToMap('#myKeywordCount#=0, #myThresholdCount#=0, #tc#=#fffafa, #bp#=3, #ktr2#=?, #isHeaders#=false, #hp#=0, #hta#=Center, #ts#=100, #shcolor#=#7a7a7a, #tbc#=#282828, #fc#=#ffffff, #hc2#=#CA6F1E, #ttr1#=?, #to#=1, #rabc#=#dff8aa, #hbc#=#000000, #shblur#=10, #hts#=100, #bm#=Collapse, #rtc#=#ffffff, #k1#=?, #hbo#=1, #iFrameColor#=#282828, #shver#=2, #tff#=Comic Sans MS, #ttr2#=?, #isTitleShadow#=false, #rp#=0, #comment#=?, #tp#=3, #hts2#=125, #th#=Auto, #tcv1#=70, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.3, #k2#=?, #isFrame#=false, #shhor#=2, #htc#=#000000, #rbc#=#292929, #fa#=Center, #rts#=75, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #tcv2#=30, #hts1#=125, #bo#=1, #fs#=75, #fbc#=#000000, #rta#=Center, #isFooter#=true, #ktr1#=?, #tw#=90, #bfs#=18, #hc1#=#008000, #bc#=#ffffff, #ratc#=#000000, #bw#=2, #bs#=Solid')
     styleB = ['overrides':'#Row#=transform: rotate(1deg) | #Title#=transform: rotate(-1deg); | #ts#=160 | #footer#=padding:3px | #Data#=text-shadow: 1px 1px 3px #FFFFFF | #Title#=text-shadow: 1px 1px 3px #FFFFFF']
     style = styleA + styleB
     state.'*Style-AM Chalkboard' = style
 	
-    styleA = convertStyleStringToMap('#isCustomSize#=false, #tbc#=#ffffff, #tc#=#000000, #isKeyword1#=false, #isKeyword2#=false,#bp#=5, #isHeaders#=false, #hp#=0, #hta#=Center, #ts#=150, #shcolor#=#000000, #fc#=#000000, #to#=1, #rabc#=#dff8aa, #hbc#=#ffffff, #shblur#=5, #hts#=100, #bm#=Seperate, #rtc#=#000000, #hbo#=1, #iFrameColor#=#bbbbbb, #shver#=0, #tff#=Roboto, #isTitleShadow#=false, #rp#=0, #comment#=?, #tp#=5, #th#=Auto, #isAlternateRows#=false, #isTitle#=false, #br#=0, #ta#=Center, #isComment#=false, #rbo#=1, #isFrame#=false, #shhor#=0, #htc#=#000000, #rbc#=#e7e4e4, #tilePreview#=2, #fa#=Center, #rts#=100, #isBorder#=false, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=false, #bo#=1, #fs#=80, #fbc#=#000000, #rta#=Left, #isFooter#=false, #tw#=100, #bfs#=18, #bc#=#050505, #ratc#=#000000, #bw#=2, #bs#=Solid')
+    styleA = convertStyleStringToMap('#myKeywordCount#=0, #myThresholdCount#=0, #isCustomSize#=false, #tbc#=#ffffff, #tc#=#000000, #bp#=5, #isHeaders#=false, #hp#=0, #hta#=Center, #ts#=150, #shcolor#=#000000, #fc#=#000000, #to#=1, #rabc#=#dff8aa, #hbc#=#ffffff, #shblur#=5, #hts#=100, #bm#=Seperate, #rtc#=#000000, #hbo#=1, #iFrameColor#=#bbbbbb, #shver#=0, #tff#=Roboto, #isTitleShadow#=false, #rp#=0, #comment#=?, #tp#=5, #th#=Auto, #isAlternateRows#=false, #isTitle#=false, #br#=0, #ta#=Center, #isComment#=false, #rbo#=1, #isFrame#=false, #shhor#=0, #htc#=#000000, #rbc#=#e7e4e4, #fa#=Center, #rts#=100, #isBorder#=false, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=false, #bo#=1, #fs#=80, #fbc#=#000000, #rta#=Left, #isFooter#=false, #tw#=100, #bfs#=18, #bc#=#050505, #ratc#=#000000, #bw#=2, #bs#=Solid')
     styleB = ['overrides':'?']
     style = styleA + styleB
     state.'*Style-AM Everything Off' = style
 
-    styleA = convertStyleStringToMap('#isCustomSize#=false, #tbc#=#ffffff, #tilePreview#=5, #isFrame#=false, #fbc#=#000000, #isKeyword1#=false, #isKeyword2#=false, #bs#=Solid, #bm#=Collapse, #ft#=%time%, #isHeaders#=true, #hp#=0, #fc#=#000000, #hta#=Center, #ts#=140, #shcolor#=#bfe373, #bc#=#000000, #fs#=80, #rabc#=#E9F5CF, #hbc#=#90c226, #shblur#=4, #hts#=100, #br#=0, #ta#=Center, #rtc#=#000000, #tp#=0, #hbo#=1, #iFrameColor#=#908989, #shver#=0, #tff#=Verdana, #isTitleShadow#=true, #rp#=0, #comment#=?, #th#=Auto, #isAlternateRows#=true, #bw#=2, #isTitle#=true, #isComment#=false, #fa#=Center, #shhor#=0, #htc#=#000000, #rbc#=#BFE373, #rts#=90, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=false, #tc#=#000000, #rta#=Center, #bp#=10, #isFooter#=true, #tw#=100, #bfs#=18, #ratc#=#000000')
+    styleA = convertStyleStringToMap('#myKeywordCount#=0, #myThresholdCount#=0, #isCustomSize#=false, #tbc#=#ffffff, #isFrame#=false, #fbc#=#000000, #bs#=Solid, #bm#=Collapse, #ft#=%time%, #isHeaders#=true, #hp#=0, #fc#=#000000, #hta#=Center, #ts#=140, #shcolor#=#bfe373, #bc#=#000000, #fs#=80, #rabc#=#E9F5CF, #hbc#=#90c226, #shblur#=4, #hts#=100, #br#=0, #ta#=Center, #rtc#=#000000, #tp#=0, #hbo#=1, #iFrameColor#=#908989, #shver#=0, #tff#=Verdana, #isTitleShadow#=true, #rp#=0, #comment#=?, #th#=Auto, #isAlternateRows#=true, #bw#=2, #isTitle#=true, #isComment#=false, #fa#=Center, #shhor#=0, #htc#=#000000, #rbc#=#BFE373, #rts#=90, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=false, #tc#=#000000, #rta#=Center, #bp#=10, #isFooter#=true, #tw#=100, #bfs#=18, #ratc#=#000000')
     styleB = ['overrides':'?']
     style = styleA + styleB
     state.'*Style-AM Greens' = style
 
-	styleA = convertStyleStringToMap('#isCustomSize#=false, #tbc#=#ffffff, #tc#=#de5b00, #isKeyword1#=false, #isKeyword2#=false, #bp#=10, #isHeaders#=true, #hp#=10, #hta#=Center, #ts#=200, #shcolor#=#ff1d00, #fc#=#000000, #to#=1, #rabc#=#f69612, #hbc#=#c64a10, #shblur#=2, #hts#=100, #bm#=Seperate, #rtc#=#ffff00, #hbo#=1, #iFrameColor#=#8d8686, #shver#=2, #tff#=Comic Sans MS, #isTitleShadow#=false, #rp#=6, #comment#=?, #tp#=5, #th#=Auto, #isAlternateRows#=true, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.7, #isFrame#=true, #shhor#=2, #htc#=#000000, #rbc#=#f69612, #tilePreview#=5, #fa#=Center, #rts#=100, #isBorder#=false, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=0.7, #fs#=80, #fbc#=#000000, #rta#=Center, #isFooter#=false, #tw#=Auto, #bfs#=18, #bc#=#050505, #ratc#=#000000, #bw#=2, #bs#=Solid')
+	styleA = convertStyleStringToMap('#myKeywordCount#=0, #myThresholdCount#=0, #isCustomSize#=false, #tbc#=#ffffff, #tc#=#de5b00, #bp#=10, #isHeaders#=true, #hp#=10, #hta#=Center, #ts#=200, #shcolor#=#ff1d00, #fc#=#000000, #to#=1, #rabc#=#f69612, #hbc#=#c64a10, #shblur#=2, #hts#=100, #bm#=Seperate, #rtc#=#ffff00, #hbo#=1, #iFrameColor#=#8d8686, #shver#=2, #tff#=Comic Sans MS, #isTitleShadow#=false, #rp#=6, #comment#=?, #tp#=5, #th#=Auto, #isAlternateRows#=true, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.7, #isFrame#=true, #shhor#=2, #htc#=#000000, #rbc#=#f69612, #fa#=Center, #rts#=100, #isBorder#=false, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=0.7, #fs#=80, #fbc#=#000000, #rta#=Center, #isFooter#=false, #tw#=Auto, #bfs#=18, #bc#=#050505, #ratc#=#000000, #bw#=2, #bs#=Solid')
     styleB = ['overrides':'#Table#=box-shadow: #FFF 0 -1px 4px, #ff0 0 -2px 10px, #ff8000 0 -10px 20px, red 0 -18px 40px, 5px 5px 15px 5px rgba(0,0,0,0)']
     style = styleA + styleB
     state.'*Style-AM Halloween' = style
 	
-	styleA = convertStyleStringToMap('#isCustomSize#=false, #tc#=#e5e826, #isKeyword1#=true, #bp#=0, #ktr2#=[div classXglow]📬[/div], #isHeaders#=false, #hp#=6, #hta#=Center, #ts#=150, #shcolor#=#7a7a7a, #tbc#=#696969, #fc#=#3be800, #hc2#=#ca6f1e, #ttr1#=?, #to#=1, #rabc#=#dff8aa, #hbc#=#000000, #shblur#=10, #hts#=60, #bm#=Collapse, #rtc#=#41ff00, #k1#=off, #hbo#=1, #iFrameColor#=#696969, #shver#=2, #tff#=Lucida, #isThreshold1#=false, #ttr2#=?, #isTitleShadow#=false, #rp#=0, #top1#=[1], #comment#=?, #tp#=3, #hts2#=300, #th#=Auto, #tcv1#=70, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=1, #k2#=on, #isFrame#=false, #isThreshold2#=false, #shhor#=2, #htc#=#41ff00, #rbc#=#696969, #top2#=[3], #fa#=Center, #rts#=150, #isBorder#=false, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #tcv2#=30, #hts1#=300, #isKeyword2#=true, #bo#=1, #fs#=50, #fbc#=#000000, #rta#=Left, #isFooter#=false, #ktr1#=📭, #tw#=100, #bfs#=18, #hc1#=#f5f90b, #bc#=#c52b2b, #ratc#=#000000, #bw#=5, #bs#=Solid')
+	styleA = convertStyleStringToMap('#myKeywordCount#=2, #myThresholdCount#=0, #isCustomSize#=false, #tc#=#e5e826, #bp#=0, #ktr2#=[div classXglow]📬[/div], #isHeaders#=false, #hp#=6, #hta#=Center, #ts#=150, #shcolor#=#7a7a7a, #tbc#=#696969, #fc#=#3be800, #hc2#=#ca6f1e, #ttr1#=?, #to#=1, #rabc#=#dff8aa, #hbc#=#000000, #shblur#=10, #hts#=60, #bm#=Collapse, #rtc#=#41ff00, #k1#=off, #hbo#=1, #iFrameColor#=#696969, #shver#=2, #tff#=Lucida, #ttr2#=?, #isTitleShadow#=false, #rp#=0, #comment#=?, #tp#=3, #hts2#=300, #th#=Auto, #tcv1#=70, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=1, #k2#=on, #isFrame#=false, #shhor#=2, #htc#=#41ff00, #rbc#=#696969, #fa#=Center, #rts#=150, #isBorder#=false, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #tcv2#=30, #hts1#=300, #bo#=1, #fs#=50, #fbc#=#000000, #rta#=Left, #isFooter#=false, #ktr1#=📭, #tw#=100, #bfs#=18, #hc1#=#f5f90b, #bc#=#c52b2b, #ratc#=#000000, #bw#=5, #bs#=Solid')
     styleB = ['overrides':'#Class1#= .glow {animation: glow 3s ease-in-out infinite alternate;} @keyframes glow {from {text-shadow: 0 0 10px #fff, 0 0 20px #fff, 0 0 35px #e60073;}to {text-shadow: 0 0 10px #fff, 0 0 15px #ff4da6;}} | #row#=text-align: center |#rp#=0 | #bp#=-5| #row#=text-align: center |#rp#=0 | #bp#=-5']
     style = styleA + styleB
     state.'*Style-AM Mailbox (See Docs)' = style
 	
-	styleA = convertStyleStringToMap('#tc#=#751f2e, #isKeyword1#=false, #bp#=5, #ktr2#=?, #isHeaders#=true, #hp#=0, #hta#=Center, #ts#=120, #shcolor#=#ffffff, #tbc#=#ffffff, #fc#=#66cbe0, #hc2#=#CA6F1E, #ttr1#=?, #to#=1, #rabc#=#dff8aa, #hbc#=#832333, #shblur#=4, #hts#=100, #isCustomSize#=false, #bm#=Seperate, #rtc#=#f4b53b, #customWidth#=200, #k1#=?, #hbo#=1, #iFrameColor#=#696969, #shver#=0, #tff#=Comic Sans MS, #isThreshold1#=false, #ttr2#=?, #isTitleShadow#=true, #rp#=0, #top1#=[1], #comment#=?, #tp#=3, #customHeight#=290, #hts2#=125, #th#=Auto, #tcv1#=100, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.9, #k2#=?, #isFrame#=false, #isThreshold2#=false, #shhor#=0, #htc#=#f4b53b, #rbc#=#832333, #top2#=[3], #fa#=Center, #rts#=80, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #tcv2#=30, #hts1#=125, #isKeyword2#=false, #bo#=1, #fs#=100, #fbc#=#000000, #rta#=Center, #isFooter#=false, #ktr1#=?, #tw#=100, #bfs#=18, #hc1#=#008000, #bc#=#d9b784, #ratc#=#000000, #bw#=2, #bs#=Solid')
+	styleA = convertStyleStringToMap('#myKeywordCount#=0, #myThresholdCount#=0, #tc#=#751f2e, #bp#=5, #ktr2#=?, #isHeaders#=true, #hp#=0, #hta#=Center, #ts#=120, #shcolor#=#ffffff, #tbc#=#ffffff, #fc#=#66cbe0, #hc2#=#CA6F1E, #ttr1#=?, #to#=1, #rabc#=#dff8aa, #hbc#=#832333, #shblur#=4, #hts#=100, #isCustomSize#=false, #bm#=Seperate, #rtc#=#f4b53b, #customWidth#=200, #k1#=?, #hbo#=1, #iFrameColor#=#696969, #shver#=0, #tff#=Comic Sans MS, #ttr2#=?, #isTitleShadow#=true, #rp#=0, #comment#=?, #tp#=3, #customHeight#=290, #hts2#=125, #th#=Auto, #tcv1#=100, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.9, #k2#=?, #isFrame#=false, #shhor#=0, #htc#=#f4b53b, #rbc#=#832333, #fa#=Center, #rts#=80, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #tcv2#=30, #hts1#=125, #bo#=1, #fs#=100, #fbc#=#000000, #rta#=Center, #isFooter#=false, #ktr1#=?, #tw#=100, #bfs#=18, #hc1#=#008000, #bc#=#d9b784, #ratc#=#000000, #bw#=2, #bs#=Solid')
     styleB = ['overrides':'#Class1#=@keyframes myAnim {0% {opacity: 0;transform: rotate(-540deg) scale(0);}100% {opacity: 1;transform: rotate(0) scale(1);}} | #Header#=animation: myAnim 2s ease 0s 1 normal backwards; | #Row#=animation: myAnim 2s ease 0s 1 normal forwards;']
     style = styleA + styleB
     state.'*Style-AM Marooned' = style
-	
-	styleA = convertStyleStringToMap('#isCustomSize#=false, #tc#=#b2e0de, #isKeyword1#=false, #bp#=10, #isHeaders#=false, #hp#=5, #hta#=Center, #ts#=200, #shcolor#=#000000, #tbc#=#ffffff, #fc#=#000000, #hc2#=#CA6F1E, #to#=1, #rabc#=#dff8aa, #hbc#=#9ec1eb, #shblur#=3, #hts#=100, #bm#=Collapse, #rtc#=#282828, #hbo#=1, #iFrameColor#=#282828, #shver#=0, #tff#=Comic Sans MS, #isThreshold1#=false, #ttr2#=?, #isTitleShadow#=true, #rp#=10, #top1#=[1], #comment#=?, #tp#=15, #hts2#=125, #th#=Auto, #tcv1#=70, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=1, #k2#=?, #isFrame#=true, #isThreshold2#=false, #shhor#=0, #htc#=#000000, #rbc#=#282828, #top2#=[3], #fa#=Center, #rts#=90, #isBorder#=false, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #tcv2#=30, #hts1#=125, #isKeyword2#=false, #bo#=1, #fs#=60, #fbc#=#282828, #rta#=Center, #isFooter#=false, #tw#=90, #bfs#=18, #hc1#=#008000, #bc#=#000000, #ratc#=#000000, #bw#=2, #bs#=Solid')
+
+	styleA = convertStyleStringToMap('#myKeywordCount#=0, #myThresholdCount#=0, #isCustomSize#=false, #tc#=#b2e0de, #bp#=10, #isHeaders#=false, #hp#=5, #hta#=Center, #ts#=200, #shcolor#=#000000, #tbc#=#ffffff, #fc#=#000000, #hc2#=#CA6F1E, #to#=1, #rabc#=#dff8aa, #hbc#=#9ec1eb, #shblur#=3, #hts#=100, #bm#=Collapse, #rtc#=#282828, #hbo#=1, #iFrameColor#=#282828, #shver#=0, #tff#=Comic Sans MS, #ttr2#=?, #isTitleShadow#=true, #rp#=10, #comment#=?, #tp#=15, #hts2#=125, #th#=Auto, #tcv1#=70, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=1, #k2#=?, #isFrame#=true, #shhor#=0, #htc#=#000000, #rbc#=#282828, #fa#=Center, #rts#=90, #isBorder#=false, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #tcv2#=30, #hts1#=125, #bo#=1, #fs#=60, #fbc#=#282828, #rta#=Center, #isFooter#=false, #tw#=90, #bfs#=18, #hc1#=#008000, #bc#=#000000, #ratc#=#000000, #bw#=2, #bs#=Solid')
     styleB = ['overrides' : '#Title#=margin-top: 0px; font-size: 70px; font-weight: bold; color: #CFC547; text-align: center; letter-spacing: 5px; text-shadow: 16px 22px 11px rgba(168,158,32,0.8)']
     style = styleA + styleB
     state.'*Style-AM Menu Bar (See Docs)' = style
 	
-	styleA = convertStyleStringToMap('#tc#=#cfc547, #isKeyword1#=false, #bp#=10, #ktr2#=?, #isHeaders#=true, #hp#=0, #hta#=Center, #ts#=200, #shcolor#=#000000, #tbc#=#282828, #fc#=#000000, #hc2#=#CA6F1E, #ttr1#=?, #to#=1, #rabc#=#dff8aa, #hbc#=#c74343, #shblur#=3, #hts#=125, #bm#=Seperate, #rtc#=#282828, #k1#=?, #hbo#=0.2, #iFrameColor#=#696969, #shver#=0, #tff#=Comic Sans MS, #isThreshold1#=false, #ttr2#=?, #isTitleShadow#=false, #rp#=10, #top1#=[1], #comment#=?, #tp#=0, #hts2#=125, #th#=Auto, #tcv1#=70, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=1, #k2#=?, #isFrame#=false, #isThreshold2#=false, #shhor#=0, #htc#=#c5bc44, #rbc#=#696969, #top2#=[3], #fa#=Center, #rts#=90, #isBorder#=false, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #tcv2#=30, #hts1#=125, #isKeyword2#=false, #bo#=1, #fs#=60, #fbc#=#282828, #rta#=Center, #isFooter#=false, #ktr1#=?, #tw#=100, #bfs#=18, #hc1#=#008000, #bc#=#000000, #ratc#=#000000, #bw#=2, #bs#=Solid')
+	styleA = convertStyleStringToMap('#myKeywordCount#=0, #myThresholdCount#=0, #tc#=#cfc547, #bp#=10, #ktr2#=?, #isHeaders#=true, #hp#=0, #hta#=Center, #ts#=200, #shcolor#=#000000, #tbc#=#282828, #fc#=#000000, #hc2#=#CA6F1E, #ttr1#=?, #to#=1, #rabc#=#dff8aa, #hbc#=#c74343, #shblur#=3, #hts#=125, #bm#=Seperate, #rtc#=#282828, #k1#=?, #hbo#=0.2, #iFrameColor#=#696969, #shver#=0, #tff#=Comic Sans MS, #ttr2#=?, #isTitleShadow#=false, #rp#=10, #comment#=?, #tp#=0, #hts2#=125, #th#=Auto, #tcv1#=70, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=1, #k2#=?, #isFrame#=false, #shhor#=0, #htc#=#c5bc44, #rbc#=#696969, #fa#=Center, #rts#=90, #isBorder#=false, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #tcv2#=30, #hts1#=125, #bo#=1, #fs#=60, #fbc#=#282828, #rta#=Center, #isFooter#=false, #ktr1#=?, #tw#=100, #bfs#=18, #hc1#=#008000, #bc#=#000000, #ratc#=#000000, #bw#=2, #bs#=Solid')
     styleB = ['overrides':'#Title#= letter-spacing: 5px; text-shadow: 16px 22px 11px rgba(168,158,32,0.8); background-color: #282828, ']
     style = styleA + styleB
     state.'*Style-AM Menu Bar Dual (See Docs)' = style
 	
-	styleA = convertStyleStringToMap('#isCustomSize#=false, #tc#=#66cbe0, #isKeyword1#=false, #bp#=5, #ktr2#=?, #isHeaders#=true, #hp#=0, #hta#=Center, #ts#=150, #shcolor#=#7a7a7a, #tbc#=#ffffff, #fc#=#66cbe0, #hc2#=#CA6F1E, #ttr1#=?, #to#=1, #rabc#=#dff8aa, #hbc#=#66cbe0, #shblur#=10, #hts#=140, #bm#=Collapse, #rtc#=#eb822e, #k1#=?, #hbo#=0.8, #iFrameColor#=#696969, #shver#=2, #tff#=Comic Sans MS, #isThreshold1#=false, #ttr2#=?, #isTitleShadow#=false, #rp#=0, #top1#=[1], #comment#=?, #tp#=3, #hts2#=125, #th#=Auto, #tcv1#=70, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=1, #k2#=?, #isFrame#=false, #isThreshold2#=false, #shhor#=2, #htc#=#eb822e, #rbc#=#d9ddc6, #top2#=[3], #fa#=Center, #rts#=110, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=false, #tcv2#=30, #hts1#=125, #isKeyword2#=false, #bo#=1, #fs#=100, #fbc#=#000000, #rta#=Center, #isFooter#=false, #ktr1#=?, #tw#=90, #bfs#=18, #hc1#=#008000, #bc#=#eb822e, #ratc#=#000000, #bw#=2, #bs#=Solid')
+	styleA = convertStyleStringToMap('#myKeywordCount#=0, #myThresholdCount#=0, #isCustomSize#=false, #tc#=#66cbe0, #bp#=5, #ktr2#=?, #isHeaders#=true, #hp#=0, #hta#=Center, #ts#=150, #shcolor#=#7a7a7a, #tbc#=#ffffff, #fc#=#66cbe0, #hc2#=#CA6F1E, #ttr1#=?, #to#=1, #rabc#=#dff8aa, #hbc#=#66cbe0, #shblur#=10, #hts#=140, #bm#=Collapse, #rtc#=#eb822e, #k1#=?, #hbo#=0.8, #iFrameColor#=#696969, #shver#=2, #tff#=Comic Sans MS, #ttr2#=?, #isTitleShadow#=false, #rp#=0, #comment#=?, #tp#=3, #hts2#=125, #th#=Auto, #tcv1#=70, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=1, #k2#=?, #isFrame#=false, #shhor#=2, #htc#=#eb822e, #rbc#=#d9ddc6, #fa#=Center, #rts#=110, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=false, #tcv2#=30, #hts1#=125, #bo#=1, #fs#=100, #fbc#=#000000, #rta#=Center, #isFooter#=false, #ktr1#=?, #tw#=90, #bfs#=18, #hc1#=#008000, #bc#=#eb822e, #ratc#=#000000, #bw#=2, #bs#=Solid')
     styleB = ['overrides':'?']
     style = styleA + styleB
     state.'*Style-AM Palm Springs' = style
 	
-	styleA = convertStyleStringToMap('#isCustomSize#=false, #tbc#=#ffffff, #tc#=#000000, #isKeyword1#=false, #isKeyword2#=false, #bp#=10, #isHeaders#=true, #hp#=0, #hta#=Center, #ts#=140, #shcolor#=#bfe373, #fc#=#000000, #to#=1, #rabc#=#e9f5cf, #hbc#=#9bdbe8, #shblur#=4, #hts#=100, #bm#=Collapse, #rtc#=#fe7868, #hbo#=0.5, #iFrameColor#=#908989, #shver#=0, #tff#=Verdana, #isTitleShadow#=false, #rp#=0, #comment#=?, #tp#=0, #th#=Auto, #isAlternateRows#=false, #isTitle#=false, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.5, #isFrame#=false, #shhor#=0, #htc#=#650606, #rbc#=#ffffa0, #tilePreview#=5, #fa#=Center, #rts#=90, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=1, #fs#=80, #fbc#=#000000, #rta#=Center, #isFooter#=true, #tw#=100, #bfs#=18, #bc#=#000000, #ratc#=#000000, #bw#=2, #bs#=Solid')
+	styleA = convertStyleStringToMap('#myKeywordCount#=0, #myThresholdCount#=0, #isCustomSize#=false, #tbc#=#ffffff, #tc#=#000000, #bp#=10, #isHeaders#=true, #hp#=0, #hta#=Center, #ts#=140, #shcolor#=#bfe373, #fc#=#000000, #to#=1, #rabc#=#e9f5cf, #hbc#=#9bdbe8, #shblur#=4, #hts#=100, #bm#=Collapse, #rtc#=#fe7868, #hbo#=0.5, #iFrameColor#=#908989, #shver#=0, #tff#=Verdana, #isTitleShadow#=false, #rp#=0, #comment#=?, #tp#=0, #th#=Auto, #isAlternateRows#=false, #isTitle#=false, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.5, #isFrame#=false, #shhor#=0, #htc#=#650606, #rbc#=#ffffa0, #fa#=Center, #rts#=90, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=1, #fs#=80, #fbc#=#000000, #rta#=Center, #isFooter#=true, #tw#=100, #bfs#=18, #bc#=#000000, #ratc#=#000000, #bw#=2, #bs#=Solid')
     styleB = ['overrides':'#Table#=background-image: repeating-radial-gradient(#0000 0% 6%,#c39f76 7% 13% ); background-size:40px 40px | #Row#=font-weight:bold']
     style = styleA + styleB
     state.'*Style-AM Pastel Swirl' = style
 	
-    styleA = convertStyleStringToMap('#isCustomSize#=false, #tbc#=#ffffff, #tc#=#b2e0de, #isKeyword1#=false, #isKeyword2#=false, #bp#=10, #isHeaders#=false, #hp#=5, #hta#=Center, #ts#=140, #shcolor#=#000000, #fc#=#000000, #to#=1, #rabc#=#dff8aa, #hbc#=#9ec1eb, #shblur#=3, #hts#=100, #bm#=Seperate, #rtc#=#000000, #hbo#=1, #iFrameColor#=#888686, #shver#=0, #tff#=Comic Sans MS, #isTitleShadow#=false, #rp#=10, #comment#=?, #tp#=15, #th#=Auto, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=1, #isFrame#=true, #shhor#=0, #htc#=#000000, #rbc#=#b2e0de, #tilePreview#=5, #fa#=Center, #rts#=90, #isBorder#=false, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=1, #fs#=60, #fbc#=#624141, #rta#=Center, #isFooter#=false, #tw#=90, #bfs#=18, #bc#=#000000, #ratc#=#000000, #bw#=2, #bs#=Solid')
+    styleA = convertStyleStringToMap('#myKeywordCount#=0, #myThresholdCount#=0, #isCustomSize#=false, #tbc#=#ffffff, #tc#=#b2e0de, #bp#=10, #isHeaders#=false, #hp#=5, #hta#=Center, #ts#=140, #shcolor#=#000000, #fc#=#000000, #to#=1, #rabc#=#dff8aa, #hbc#=#9ec1eb, #shblur#=3, #hts#=100, #bm#=Seperate, #rtc#=#000000, #hbo#=1, #iFrameColor#=#888686, #shver#=0, #tff#=Comic Sans MS, #isTitleShadow#=false, #rp#=10, #comment#=?, #tp#=15, #th#=Auto, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=1, #isFrame#=true, #shhor#=0, #htc#=#000000, #rbc#=#b2e0de, #fa#=Center, #rts#=90, #isBorder#=false, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=1, #fs#=60, #fbc#=#624141, #rta#=Center, #isFooter#=false, #tw#=90, #bfs#=18, #bc#=#000000, #ratc#=#000000, #bw#=2, #bs#=Solid')
     styleB = ['overrides':'#Table#=box-shadow: 0px 0px 10px 10px #E8DD95;']
     style = styleA + styleB
     state.'*Style-AM Sea Foam Glow' = style
    
-    styleA = convertStyleStringToMap('#isCustomSize#=false, #tbc#=#ffffff, #tc#=#000000, #isKeyword1#=false, #isKeyword2#=false, #bp#=0, #isHeaders#=true, #hp#=6, #hta#=Center, #ts#=150, #shcolor#=#7a7a7a, #fc#=#3be800, #to#=1, #rabc#=#dff8aa, #hbc#=#000000, #shblur#=10, #hts#=60, #bm#=Collapse, #rtc#=#41ff00, #hbo#=1, #iFrameColor#=#929090, #shver#=2, #tff#=Lucida, #isTitleShadow#=false, #rp#=6, #comment#=?, #tp#=3, #th#=Auto, #isAlternateRows#=false, #isTitle#=false, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.5, #isFrame#=false, #shhor#=2, #htc#=#41ff00, #rbc#=#000000, #tilePreview#=1, #fa#=Center, #rts#=50, #isBorder#=false, #isScrubHTML#=true, #rto#=0.7, #hto#=1, #isOverrides#=true, #bo#=0, #fs#=50, #fbc#=#000000, #rta#=Center, #isFooter#=true, #tw#=100, #bfs#=18, #bc#=#ffffff, #ratc#=#000000, #bw#=5, #bs#=Solid')
+    styleA = convertStyleStringToMap('#myKeywordCount#=0, #myThresholdCount#=0, #isCustomSize#=false, #tbc#=#ffffff, #tc#=#000000, #bp#=0, #isHeaders#=true, #hp#=6, #hta#=Center, #ts#=150, #shcolor#=#7a7a7a, #fc#=#3be800, #to#=1, #rabc#=#dff8aa, #hbc#=#000000, #shblur#=10, #hts#=60, #bm#=Collapse, #rtc#=#41ff00, #hbo#=1, #iFrameColor#=#929090, #shver#=2, #tff#=Lucida, #isTitleShadow#=false, #rp#=6, #comment#=?, #tp#=3, #th#=Auto, #isAlternateRows#=false, #isTitle#=false, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.5, #isFrame#=false, #shhor#=2, #htc#=#41ff00, #rbc#=#000000, #fa#=Center, #rts#=50, #isBorder#=false, #isScrubHTML#=true, #rto#=0.7, #hto#=1, #isOverrides#=true, #bo#=0, #fs#=50, #fbc#=#000000, #rta#=Center, #isFooter#=true, #tw#=100, #bfs#=18, #bc#=#ffffff, #ratc#=#000000, #bw#=5, #bs#=Solid')
     styleB = ['overrides':'#Table#=background: linear-gradient(180deg, #060606 0%, #11610B 100%)']
     style = styleA + styleB
     state.'*Style-AM Terminal' = style
 	
-	styleA = convertStyleStringToMap('#tc#=#000000, #isKeyword1#=false, #bp#=0, #ktr2#=?, #isHeaders#=true, #hp#=0, #hta#=Center, #ts#=120, #shcolor#=#f6cd00, #tbc#=#696969, #fc#=#000000, #hc2#=#ca6f1e, #ttr1#=?, #to#=1, #rabc#=#a8c171, #hbc#=#f9e66c, #shblur#=2, #hts#=85, #isCustomSize#=false, #bm#=Seperate, #rtc#=#000000, #customWidth#=200, #k1#=?, #hbo#=1, #iFrameColor#=#696969, #shver#=2, #tff#=Comic Sans MS, #isThreshold1#=false, #ttr2#=?, #isTitleShadow#=false, #rp#=0, #top1#=[1], #comment#=?, #tp#=0, #customHeight#=190, #hts2#=125, #th#=Auto, #tcv1#=100, #isAlternateRows#=false, #isTitle#=false, #br#=10, #ta#=Center, #isComment#=false, #rbo#=1, #k2#=?, #isFrame#=false, #isThreshold2#=false, #shhor#=2, #htc#=#000000, #rbc#=#d1dd2c, #top2#=[3], #fa#=Left, #rts#=70, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #tcv2#=30, #hts1#=125, #isKeyword2#=false, #bo#=1, #fs#=80, #fbc#=#282828, #rta#=Center, #isFooter#=true, #ktr1#=?, #tw#=100, #bfs#=18, #hc1#=#008000, #bc#=#000000, #ratc#=#000000, #bw#=3, #bs#=Dotted')
+	styleA = convertStyleStringToMap('#myKeywordCount#=0, #myThresholdCount#=0, #tc#=#000000, #bp#=0, #ktr2#=?, #isHeaders#=true, #hp#=0, #hta#=Center, #ts#=120, #shcolor#=#f6cd00, #tbc#=#696969, #fc#=#000000, #hc2#=#ca6f1e, #ttr1#=?, #to#=1, #rabc#=#a8c171, #hbc#=#f9e66c, #shblur#=2, #hts#=85, #isCustomSize#=false, #bm#=Seperate, #rtc#=#000000, #customWidth#=200, #k1#=?, #hbo#=1, #iFrameColor#=#696969, #shver#=2, #tff#=Comic Sans MS, #ttr2#=?, #isTitleShadow#=false, #rp#=0, #comment#=?, #tp#=0, #customHeight#=190, #hts2#=125, #th#=Auto, #tcv1#=100, #isAlternateRows#=false, #isTitle#=false, #br#=10, #ta#=Center, #isComment#=false, #rbo#=1, #k2#=?, #isFrame#=false, #shhor#=2, #htc#=#000000, #rbc#=#d1dd2c, #fa#=Left, #rts#=70, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #tcv2#=30, #hts1#=125, #bo#=1, #fs#=80, #fbc#=#282828, #rta#=Center, #isFooter#=true, #ktr1#=?, #tw#=100, #bfs#=18, #hc1#=#008000, #bc#=#000000, #ratc#=#000000, #bw#=3, #bs#=Dotted')
     styleB = ['overrides':'#Table#=transform: rotate(2deg) translate(0px,8px)']
     style = styleA + styleB
     state.'*Style-AM Tickets' = style
 	
-	styleA = convertStyleStringToMap('#isCustomSize#=false, #tc#=#412f86, #isKeyword1#=false, #bp#=5, #ktr2#=?, #isHeaders#=true, #hp#=0, #hta#=Center, #ts#=175, #shcolor#=#ffc62f, #tbc#=#e3b994, #fc#=#000000, #hc2#=#ca6f1e, #ttr1#=?, #to#=1, #rabc#=#f7c104, #hbc#=#4c247e, #shblur#=4, #hts#=140, #bm#=Collapse, #rtc#=#f7f7f7, #k1#=open, #hbo#=0.9, #iFrameColor#=#dbc0a9, #shver#=0, #tff#=Brush Script MT, #isThreshold1#=false, #ttr2#=?, #isTitleShadow#=true, #rp#=0, #top1#=[1], #comment#=?, #tp#=3, #hts2#=125, #th#=Auto, #tcv1#=70, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.7, #k2#=?, #isFrame#=false, #isThreshold2#=false, #shhor#=0, #htc#=#f7c104, #rbc#=#4d2081, #top2#=[3], #fa#=Center, #rts#=110, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=false, #tcv2#=30, #hts1#=125, #isKeyword2#=false, #bo#=0.6, #fs#=90, #fbc#=#000000, #rta#=Center, #isFooter#=false, #ktr1#=[div class=cl99]Open[/div], #tw#=90, #bfs#=18, #hc1#=#008000, #bc#=#f7c104, #ratc#=#000000, #bw#=2, #bs#=Solid')
+	styleA = convertStyleStringToMap('#myKeywordCount#=0, #myThresholdCount#=0, #isCustomSize#=false, #tc#=#412f86, #bp#=5, #ktr2#=?, #isHeaders#=true, #hp#=0, #hta#=Center, #ts#=175, #shcolor#=#ffc62f, #tbc#=#e3b994, #fc#=#000000, #hc2#=#ca6f1e, #ttr1#=?, #to#=1, #rabc#=#f7c104, #hbc#=#4c247e, #shblur#=4, #hts#=140, #bm#=Collapse, #rtc#=#f7f7f7, #k1#=open, #hbo#=0.9, #iFrameColor#=#dbc0a9, #shver#=0, #tff#=Brush Script MT, #ttr2#=?, #isTitleShadow#=true, #rp#=0, #comment#=?, #tp#=3, #hts2#=125, #th#=Auto, #tcv1#=70, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.7, #k2#=?, #isFrame#=false, #shhor#=0, #htc#=#f7c104, #rbc#=#4d2081, #fa#=Center, #rts#=110, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=false, #tcv2#=30, #hts1#=125, #bo#=0.6, #fs#=90, #fbc#=#000000, #rta#=Center, #isFooter#=false, #ktr1#=[div class=cl99]Open[/div], #tw#=90, #bfs#=18, #hc1#=#008000, #bc#=#f7c104, #ratc#=#000000, #bw#=2, #bs#=Solid')
     styleB = ['overrides':'?']
     style = styleA + styleB
     state.'*Style-AM Vikings' = style
 
-    styleA = convertStyleStringToMap('#isCustomSize#=false, #tc#=#d6ae7b, #isKeyword1#=false, #bp#=6, #ktr2#=?, #isHeaders#=false, #hp#=0, #hta#=Center, #ts#=200, #shcolor#=#000000, #tbc#=#ffffff, #fc#=#d6ae7b, #hc2#=#CA6F1E, #ttr1#=?, #to#=1, #rabc#=#dff8aa, #hbc#=#9ec1eb, #shblur#=10, #hts#=100, #bm#=Collapse, #rtc#=#786854, #k1#=?, #hbo#=1, #iFrameColor#=#000000, #shver#=2, #tff#=Brush Script MT, #isThreshold1#=false, #ttr2#=?, #isTitleShadow#=true, #rp#=0, #top1#=[1], #comment#=?, #tp#=3, #hts2#=125, #th#=Auto, #tcv1#=70, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.6, #k2#=?, #isFrame#=true, #isThreshold2#=false, #shhor#=2, #htc#=#000000, #rbc#=#ba8c63, #top2#=[3], #fa#=Center, #rts#=150, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #tcv2#=30, #hts1#=125, #isKeyword2#=false, #bo#=1, #fs#=90, #fbc#=#560b0b, #rta#=Center, #isFooter#=true, #ktr1#=?, #tw#=90, #bfs#=18, #hc1#=#008000, #bc#=#786854, #ratc#=#000000, #bw#=2, #bs#=Solid')
+    styleA = convertStyleStringToMap('#myKeywordCount#=0, #myThresholdCount#=0, #isCustomSize#=false, #tc#=#d6ae7b, #bp#=6, #ktr2#=?, #isHeaders#=false, #hp#=0, #hta#=Center, #ts#=200, #shcolor#=#000000, #tbc#=#ffffff, #fc#=#d6ae7b, #hc2#=#CA6F1E, #ttr1#=?, #to#=1, #rabc#=#dff8aa, #hbc#=#9ec1eb, #shblur#=10, #hts#=100, #bm#=Collapse, #rtc#=#786854, #k1#=?, #hbo#=1, #iFrameColor#=#000000, #shver#=2, #tff#=Brush Script MT, #ttr2#=?, #isTitleShadow#=true, #rp#=0, #comment#=?, #tp#=3, #hts2#=125, #th#=Auto, #tcv1#=70, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.6, #k2#=?, #isFrame#=true, #shhor#=2, #htc#=#000000, #rbc#=#ba8c63, #fa#=Center, #rts#=150, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #tcv2#=30, #hts1#=125, #bo#=1, #fs#=90, #fbc#=#560b0b, #rta#=Center, #isFooter#=true, #ktr1#=?, #tw#=90, #bfs#=18, #hc1#=#008000, #bc#=#786854, #ratc#=#000000, #bw#=2, #bs#=Solid')
     styleB = ['overrides':'#Row#=text-shadow:3px 3px 8px #660000']
     style = styleA + styleB
     state.'*Style-AM Wood' = style
 
+    log.info("Default Styles have been rebuilt.")
 	return
 }
 
@@ -733,17 +756,22 @@ def convertStyleStringToMap(String style) {
 	//log.debug ("myArr is: ${myArr}")
     myArr.each {
         details = it.tokenize('=')
-        if (isLogDebug) log.debug ("Details is: ${details}")
+        //if (isLogDebug) 
+        //log.debug ("Details is: ${details}")
         if (details[0] != null ) d0 = details[0].trim()
 		//log.debug ("d0 is: ${d0}")
         if (details[1] != null ) d1 = details[1].trim()
-		//log.debug ("d1 is: ${d1}")
-		//If the style string has an embedded = sign like class=abc it will result in a third item in the details array.
-		if (details[2] != null ) {
-			//In which case we concatenate details[1] + "=" + details[2] to restore the substring that was split up by the earlier tokenize '='
-			d1 = d1 + "=" + details[2].trim()
-			//log.debug ("d1 is now: ${d1}")
-		}
+		//log.debug ("details is: ${details}")
+        //log.debug ("details1 is: ${details[1]}")
+        //log.debug ("details2 is: ${details[2]}")
+        //log.debug ("details3 is: ${details[3]}")
+		//If the style string has an embedded = sign like class=abc.
+        //In which case we concatenate details[1] + "=" + details[2] to restore the substring that was split up by the earlier tokenize '='
+		if (details[2] != null ) { d1 = d1 + "=" + details[2].trim() }
+        //Replace any Alt 205 characters
+        //log.debug ("d1 before is: ${d1}")
+        d1 = d1.replace('═', '=')
+        //log.debug ("d1 after is: ${d1}")
 	    if (d0 != null && d1 != null ) myStyle."${d0}" = d1
     }
     if (isLogDebug) log.debug ("myStyle is: ${myStyle}")
@@ -810,7 +838,7 @@ String orange(s) { return '<g style="color:orange">' + s + '</g>' }
 
 //Set the titles to a consistent style.
 def titleise(title) {
-    title = "<span style='color:#1962d7;text-align:left; margin-top:0em; font-size:20px'><b><u>${title}</u></b></span>"
+    title = "<span style='color:#1962d7;text-align:left; margin-top:0em; font-size:20px'><b>${title}</b></span>"
 }
 
 //Set the titles to a consistent style without underline
@@ -1015,6 +1043,7 @@ def getOverrideClassList(){
 def getOverrideTextList(){
     return [
     'Text - Alignment: Sets the alignment of text.' : '#Header#=text-align: left;',
+    'Text - Alignment Data: Set the alignment of the data column differently than the device column' : '#Class1#=td:nth-child(2){text-align: right;}',
 	'Text - Bold: Sets text to a font-weight equivalent of bold.' : '#Data#=font-weight:700',
 	'Text - Decoration: Sets decorative elements for text such as underlining.' : '#Header#=text-decoration: underline wavy #C34E4E;',
 	'Text - Letter Spacing: Change the letter spacing of text.' : '#Data#=letter-spacing:5px',
@@ -1090,7 +1119,7 @@ def generalNotes() {
     myText += 'You can use overrides to specify an alternate font not included in the menu system, for example: <b>#tff#:Helvetica or #tff#:Blackadder ITC</b> are examples of overrides to specify an alternate device font.<br>'
     myText +=  'A <b>frame adds about 65 bytes</b> plus any other settings that may be added via overrides. Frame padding is set to 20px. With the Advanced version you can override this with #Frame#=padding:20px;.'
     myText += 'If your frame shows as top and bottom stripes it means you have a background color applied to the table, but a table width of 100%. Reduce the table width for proper border appearance.</br>'
-    myText += '<b>Use Custom Preview Size:</b> If you use a Hubitat dashboard tile size other than the default of 200 x 190 you can match that by enabling this setting and entering your planned tile size. Preview is still an approximation dependant on Hubitat dashboard padding.<br>'
+    myText += '<b>Use Custom Preview Size:</b> If you use a Hubitat dashboard tile size other than the default of 200 x 190 you can match that by enabling this setting and entering your planned tile size. Preview is still an approximation dependent on Hubitat dashboard padding.<br>'
     myText +=  'A <b>comment adds 11 bytes</b> plus the comment text. Comments are saved within the HTML but are not visible.<br>'
     return myText
 }
@@ -1151,7 +1180,7 @@ def highlightNotes() {
 def styleNotes() {
     myText = 'Styles are a collection of settings for quickly and consistently modifying how data is displayed. Here you can apply built-in styles, create new styles or retrieve styles that you have created previously and apply them to the current table. '
     myText += 'Styles are stored in the parent app so a style created here will be available in other field compatible child apps. The same holds true of deletions.<br>'
-    myText += "<b>Style Names:</b> Style names are <u>automatically</u> pre-fixed with 'Style-AM '. A style with a leading * is a built-in style that will always sort to the top of the list. You can delete Built-In styles but they will be restored if the <b>Tile Builder</b> parent app is re-installed.<br>"
+    myText += "<b>Style Names:</b> Style names are <b>automatically</b> pre-fixed with 'Style-AM '. A style with a leading * is a built-in style that will always sort to the top of the list. You can delete Built-In styles but they will be restored if the <b>Tile Builder</b> parent app is re-installed.<br>"
     myText += "<b>Important:</b> When saving a new style <b>you must hit enter or tab</b> to leave the 'Save as Style' field and save that value. Then you can click the 'Save Current Style' button.<br>"
     myText += '<b>Import\\Export</b> allows you to easily share styles that you create with other Hubitat users by simply cutting and pasting the displayed strings to\\from Hubitat community forums.'
     return myText
@@ -1159,7 +1188,7 @@ def styleNotes() {
 
 def advancedNotes() {
     myText = '<b>Scrubbing:</b> Removes unneccessary content and shrinks the final HTML size by about 20%. Leave on unless your Tile Preview does not render correctly.<br>'
-    myText += "<b>Enable Overrides:</b> Turns on\\off the processing of the contents of the '<u>Settings Overrides</u>' field. Using overrides you can achieve many styles and effects not available through the 'Customize Table' interface.<br>"
+    myText += "<b>Enable Overrides:</b> Turns on\\off the processing of the contents of the '<b>Settings Overrides</b>' field. Using overrides you can achieve many styles and effects not available through the 'Customize Table' interface.<br>"
     myText += '<b>Show Effective settings:</b> Displays the merged result of the basic settings with the overrides applied. It is primarily a diagnostic tool and will normally be left off.<br>'
     myText += "<b>Show Pseudo HTML:</b> Displays the HTML generated with any '<' or '>' tags replaced with '[' and ']'. This can be helpful in visualizing the HTML for the purposes of optimization. Normally this will be turned off.<br>"
     return myText
@@ -1175,7 +1204,7 @@ def overrideNotes() {
     myText += "<b>Style Enhancements:</b> These are very powerful enhancements that allow the user to extend the properties of different elements such as 'Table', 'Border', 'Title' to add capabilities such as adding animations, shadows, gradients and transformations. "
     myText += "You can see examples of these in the <b>'Overrides Helper'</b>. A full discussion of the properties can be found in the documentation at link below.<br>"
     myText += "<b>Show Overrides Helper:</b> Overrides are very powerful, but not intuitive. To reduce the learning curve the <b>Overrides Helper</b> provides 40+ examples to perform a variety of operations on different components of the table."
-    myText += "The best thing to do is just try them out. Simply pick a <u>Sample Override</u> to try out, click the <b>Copy to Overrides</b> and then click <b>Refresh Table</b> to apply them. Most efects will be visible right away, some might only be visible during a browser refresh."
+    myText += "The best thing to do is just try them out. Simply pick a <b>Sample Override</b> to try out, click the <b>Copy to Overrides</b> and then click <b>Refresh Table</b> to apply them. Most efects will be visible right away, some might only be visible during a browser refresh."
     myText += 'In some cases an effect may not be visible at all. For example setting the table background to a gradient will only be visible if the table rows and\\or the table header have an opacity less than 1.<br>'
 	myText += '<b>#Class1#</b> names are: #Table#, #Title#, #Header#, #Row#, #Data#, #Footer# and #Border#. See documentation for others.<br>'
     myText += "See the full <b>Tile Builder</b> documentation at this <a href='https://github.com/GaryMilne/Documentation/blob/main/Tile%20Builder%20Help.pdf'>link.</a> There are multiple web resources for building these CSS strings but here is an easy one to get you started: https://webcode.tools/generators/css"

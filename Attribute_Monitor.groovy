@@ -1,6 +1,6 @@
 /**  Authors Notes:
 *  For more information on Activity Monitor & Attribute Monitor check out these resources.
-*  Original posting on Hubitat Community forum: TBD
+*  Original posting on Hubitat Community forum: https://community.hubitat.com/t/release-tile-builder-build-beautiful-tiles-of-tabular-data-for-your-dashboard/118822
 *  Tile Builder Documentation: https://github.com/GaryMilne/Hubitat-TileBuilder/blob/main/Tile%20Builder%20Help.pdf
 *
 *  CHANGELOG
@@ -28,8 +28,10 @@
 *  Version 1.2.6 - Expanded Keywords and Thresholds to 5 values. Added 'isCompactDisplay' to free up some screen space.
 *  Version 1.2.7 - Fixed bug in applyStyle not handling "textArea" data type introduced in 1.2.3 
 *  Version 1.2.8 - Cleaned up handling of some style settings.
-*
-*  Gary Milne - May 14th, 2023
+*  Version 1.3.0 - Multiple updates and fixes. Implements %value% macro, use search and replace strings vs just strip strings. Added button type to Activity Monitor list, added valve, healthStatus and variable types, added padding to floats, \
+                   reduced floating point options to 0 or 1. Added opacity option to table background. Converted Thresholds to use numbered comparators. Changed storage of #top variables. Implemented supportFunction for child recovery.
+* 
+*  Gary Milne - June 2nd, 2023
 *
 *  This code is Activity Monitor and Attribute Monitor combined.
 *  The personality is dictated by @Field static moduleName a few lines ahead of this.
@@ -40,20 +42,16 @@
 **/
 
 import groovy.transform.Field
-@Field static final Version = "<b>Tile Builder Attribute Monitor v1.2.8 (5/14/23)</b>"
-//@Field static final moduleName = "Activity Monitor"
-@Field static final moduleName = "Attribute Monitor"
-
-@Field static final unitsMap = ["None", "°F", "_°F", "°C", "_°C", "%", "_%", "A", "_A", "V", "_V", "W", "_W", "kWh", "_kWH", "K", "_K", "ppm", "_ppm", "lx", "_lx"]
-@Field static final comparators = ["<=", "==", ">="]
-
-//These are supported capabilities. Layout is "device.selector":"attribute".  Keeping them in 3 seperate maps makes it easier to identify the sort criteria.
+//These are supported capabilities. Layout is "device.selector":"attribute".  Keeping them in 3 seperate maps makes it more readable and easier to identify the sort criteria.
 @Field static final capabilitiesInteger = ["airQuality":"airQualityIndex", "battery":"battery", "colorTemperature":"colorTemperature","illuminanceMeasurement":"illuminance","signalStrength":"rssi"]
-@Field static final capabilitiesString = ["carbonDioxideDetector":"carbonMonoxide", "contactSensor":"contact", "lock":"lock", "motionSensor":"motion", "presenceSensor":"presence", "smokeDetector":"smoke", "switch":"switch", "waterSensor":"water", "windowBlind":"windowBlind"]
+@Field static final capabilitiesString = ["*":"variable", "carbonDioxideDetector":"carbonMonoxide", "contactSensor":"contact", "healthCheck":"healthStatus", "lock":"lock", "motionSensor":"motion", "presenceSensor":"presence", "smokeDetector":"smoke", "switch":"switch", "valve":"valve", "waterSensor":"water", "windowBlind":"windowBlind"]
 @Field static final capabilitiesFloat = ["currentMeter": "amperage", "energyMeter":"energy", "powerMeter":"power", "relativeHumidityMeasurement":"humidity", "temperatureMeasurement":"temperature","voltageMeasurement":"voltage"]
 //These are unknown as to whether they report integer or float values.
 //capabilitiesUnknown = [" "carbonDioxideMeasurement":"carbonDioxide","pressureMeasurement":"pressure","relativeHumidityMeasurement":"humidity", "ultravioletIndex":"ultravioletIndex"]
 
+@Field static final Version = "<b>Tile Builder Attribute Monitor v1.3.0 (6/2/23)</b>"
+//@Field static final moduleName = "Activity Monitor"
+@Field static final moduleName = "Attribute Monitor"
 
 definition(
     //name: "Tile Builder - Activity Monitor",
@@ -79,10 +77,18 @@ preferences {
 }
 
 def mainPage() {
-    
+    //Basic initialization for the initial release
     if (state.initialized == null ) initialize()
+    //Handles the initialization of new variables added after the original release.
+    updateVariables( )
+    
+    //Legacy compatibility - remove line July 31st
     if (state.show == null) state.show=[:]
-    //initialize()
+    
+    //Checks to see if there are any messages for this child app. This is used to recover broken child apps from certain error conditions
+    //Although this function is complete I'm leaving it dormant for the present release - 1.3.0
+    myMessage = parent.messageForTile( app.label )
+    if ( myMessage != "" ) supportFunction ( myMessage )
     
     if (moduleName == "Attribute Monitor") {
         //See if the user has selected a different capability. If so a flag is set and the device list is cleared on the refresh.
@@ -113,7 +119,7 @@ def mainPage() {
         
             if (moduleName == "Activity Monitor"){
                 input(name: 'btnShowDevices', type: 'button', title: 'Select Attribute and Devices ▼', backgroundColor: 'navy', textColor: 'white', submitOnChange: true, width: 3, newLineAfter: true)  //▼ ◀ ▶ ▲
-                input (name: "useList", title: "<b>Use List</b>", type: "enum", options: [1:"All Devices", 2:"Battery Devices", 3:"Motion Devices", 4:"Presence Sensors", 5:"Switches", 6:"Contact Sensors", 7:"Temperature Sensors"], required:true, state: selectOk?.devicePage ? "complete" : null, submitOnChange:true, width:2, defaultValue: 1)
+                input (name: "useList", title: "<b>Use List</b>", type: "enum", options: [1:"All Devices", 2:"Battery Devices", 3:"Motion Devices", 4:"Presence Sensors", 5:"Switches", 6:"Contact Sensors", 7:"Temperature Sensors", 8:"Buttons"], required:true, state: selectOk?.devicePage ? "complete" : null, submitOnChange:true, width:2, defaultValue: 1)
                 if (useList == "1" ) input "devices1", "capability.*", title: "All Devices to be monitored" , multiple: true, required: false, defaultValue: null, width: 6
                 if (useList == "2" ) input "devices2", "capability.battery", title: "Battery Devices to be Monitored" , multiple: true, required: false, defaultValue: null, width: 6
                 if (useList == "3" ) input "devices3", "capability.motionSensor", title: "Motion Detectors to be Monitored" , multiple: true, required: false, defaultValue: null, width: 6
@@ -121,6 +127,7 @@ def mainPage() {
                 if (useList == "5" ) input "devices5", "capability.switch", title: "Switches to be Monitored" , multiple: true, required: false, defaultValue: null, width: 6
                 if (useList == "6" ) input "devices6", "capability.contactSensor", title: "Contacts to be monitored" , multiple: true, required: false, defaultValue: null, width: 6
                 if (useList == "7" ) input "devices7", "capability.temperatureMeasurement", title: "Temperature Sensors to be monitored" , multiple: true, required: false, defaultValue: null, width: 6
+                if (useList == "8" ) input "devices8", "capability.button", title: "Buttons to be monitored" , multiple: true, required: false, defaultValue: null, width: 6
                 if (isLogInfo) log.info ("devicePage: useList is:*${useList}*")
             }                                                                                                                                                                                               
         }
@@ -134,22 +141,33 @@ def mainPage() {
             input (name: "myDeviceLimit", title: "<b>Device Limit Threshold</b>", type: "enum", options: parent.deviceLimit(), submitOnChange:true, width:2, defaultValue: 20)
             input (name: "myTruncateLength", title: "<b>Truncate Device Name</b>", type: "enum", options: parent.truncateLength(), submitOnChange:true, width:2, defaultValue: 20)
             input (name: "mySortOrder", title: "<b>Sort Order</b>", type: "enum", options: sortOrder(), submitOnChange:true, width:2, defaultValue: 1 )  //Sort alphabetically by device name
-            if (moduleName == "Attribute Monitor") input (name: "myDecimalPlaces", title: "<b>Decimal Places</b>", type: "enum", options: [0,1,2], submitOnChange:true, width:2, defaultValue: 1)
-            if (moduleName == "Attribute Monitor") input (name: "myUnits", title: "<b>Units</b>", type: "enum", options: unitsMap , submitOnChange:true, width:2, defaultValue: "None")                                                                                                                                                
-            input (name: "myReplacementText1", title: "<b>Strip Device Text #1</b>", type: "string", submitOnChange:true, width:2, defaultValue: "?", newLine:true)
-            input (name: "myReplacementText2", title: "<b>Strip Device Text #2</b>", type: "string", submitOnChange:true, width:2, defaultValue: "?")
-            input (name: "isAbbreviations", type: "bool", title: "<b>Use Abbreviations in Device Names</b>", required: false, multiple: false, defaultValue: false, submitOnChange: true, width: 4 )    
+            if (moduleName == "Attribute Monitor") input (name: "myDecimalPlaces", title: "<b>Decimal Places</b>", type: "enum", options: [0,1], submitOnChange:true, width:2, defaultValue: 1)
+            if (moduleName == "Attribute Monitor") input (name: "myUnits", title: "<b>Units</b>", type: "enum", options: parent.unitsMap() , submitOnChange:true, width:2, defaultValue: "None")                                                                                                                                                
+            
+            input (name: "isShowDeviceNameModification", type: "bool", title: "<b>Show Device Name Modification</b>", required: false, multiple: false, defaultValue: false, submitOnChange: true, width: 3, newLine:true )    
+            input (name: "isAbbreviations", type: "bool", title: "<b>Use Abbreviations in Device Names</b>", required: false, multiple: false, defaultValue: false, submitOnChange: true, width: 3 )    
+            
+            if (isShowDeviceNameModification == true) {
+                input (name: "mySearchText1", title: "<b>Search Device Text #1</b>", type: "string", submitOnChange:true, width:2, defaultValue: "?", newLine:true)
+                input (name: "myReplaceText1", title: "<b>Replace Device Text #1</b>", type: "string", submitOnChange:true, width:2, defaultValue: "")
+            
+                input (name: "mySearchText2", title: "<b>Search Device Text #2</b>", type: "string", submitOnChange:true, width:2, defaultValue: "?", newLine:true)
+                input (name: "myReplaceText2", title: "<b>Replace Device Text #2</b>", type: "string", submitOnChange:true, width:2, defaultValue: "")
+            
+                input (name: "mySearchText3", title: "<b>Search Device Text #3</b>", type: "string", submitOnChange:true, width:2, defaultValue: "?", newLine:true)
+                input (name: "myReplaceText3", title: "<b>Replace Device Text #3</b>", type: "string", submitOnChange:true, width:2, defaultValue: "")
+            }
         
             if (moduleName == "Activity Monitor") myText = "<b>Inactivity Threshold:</b> Only devices without activity since the threshold are eligible to be reported on. Using an inactivity time of 0 can be used to generate a most recently active list.<br>"
             if (moduleName == "Attribute Monitor") myText = ""
                 myText += "<b>Device Threshold Limit:</b> This limits the maximum number of devices that can appear in the table. The actual number of devices may be less depending on other parameters. Lowering the number of devices is one way to reduce the size of the table but usually less effective " +\
                     "than eliminating some of the formatting elements available in the table customization options.<br>"
                 myText += "<b>Truncate Device Name:</b> This can shorten the name of the device to improve table formatting as well as reduce the size of the overall data.<br>"
-                myText += "<b>Sort Order:</b> Changes the sort order of the results allowing the creation of reports that show most active devices as well as least active. Longest inactivity would be good for detecting down devices, perhaps with failed batteries. Shortest inactivity would be useful " +\
+                myText += "<b>Sort Order:</b> Changes the sort order of the results allowing the creation of reports that show most active devices as well as least active. Longest inactivity would be good for detecting down devices, perhaps with failed batteries. Shortest inactivity would be useful for " +\
                     "activity monitoring such as contacts, motion sensors or switches.<br>"
                 myText += "<b>Decimal Places:</b> Allows you to format floating point data. Saves space and has neater presentation. This value does not affect any of the comparisons performed in filtering or highlighting.<br>"
                 myText += "<b>Units:</b> You can append units to the data in the table. Unit options with a leading '_' places a space between the numeric value and the unit.<br>"
-                myText += "<b>Strip Device Text:</b> Allows you to strip unwanted strings from the device name, such as ' on Office' for meshed hubs or a ' -' after truncating at the second space for a hyphenated name."
+                myText += "<b>Replace Device Text:</b> Allows you to strip\\replace unwanted strings from the device name, such as ' on Office' for meshed hubs or a ' -' after truncating at the second space for a hyphenated name."
                 paragraph summary("Report Notes", myText)    
         }
         else input(name: 'btnShowReport', type: 'button', title: 'Select Report Options ▶', backgroundColor: 'dodgerBlue', textColor: 'white', submitOnChange: true, width: 3)  //▼ ◀ ▶ ▲
@@ -189,10 +207,11 @@ def mainPage() {
                 
                 //General Properties
                 if (activeButton == 1){ 
-                    //if (isCompactDisplay == false) paragraph titleise("General Properties")
+                    if (isCompactDisplay == false) paragraph titleise("General Properties")
                     input (name: "tw", type: "enum", title: bold("Width %"), options: parent.tableSize(), required: false, defaultValue: "90", submitOnChange: true, width: 2)
                     input (name: "th", type: "enum", title: bold("Height %"), options: parent.tableSize(), required: false, defaultValue: "auto", submitOnChange: true, width: 2)
                     input (name: "tbc", type: "color", title: bold2("Table Background Color", tbc), required:false, defaultValue: "#ffffff", width:2, submitOnChange: true)
+                    input (name: "tbo", type: "enum", title: bold("Table Background Opacity"), options: parent.opacity(), required: false, defaultValue: "1", submitOnChange: true, width: 2)
                     input (name: "tff", type: "enum", title: bold("Font"), options: parent.fontFamily(), required: false, defaultValue: "Roboto", submitOnChange: true, width: 2, newLineAfter: true)
                     input (name: "bm", type: "enum", title: bold("Border Mode"), options: parent.tableStyle(), required: false, defaultValue: "collapse",  submitOnChange: true, width: 2)
                     input (name: "bfs", type: "enum", title: bold("Base Font Size"), options: parent.baseFontSize(), required: false, defaultValue: "18", submitOnChange: true, width: 2)
@@ -209,8 +228,8 @@ def mainPage() {
                     input (name: "tilePreview", type: "enum", title: bold("Select Tile Preview Size"), options: parent.tilePreviewList(), required: false, defaultValue: 2, submitOnChange: true, width: 3, newLine: true)
                     input (name: "isCustomSize", type: "bool", title: "<b>Use Custom Preview Size?</b>", required: false, multiple: false, defaultValue: false, submitOnChange: true, width: 2)
                     if (isCustomSize == true){
-                        input (name: "customWidth", type: "text", title: bold("Column Width"), required:false, defaultValue: "200", submitOnChange: true, width: 1)
-                        input (name: "customHeight", type: "text", title: bold("Row Height"), required:false, defaultValue: "190", submitOnChange: true, width: 1)
+                        input (name: "customWidth", type: "text", title: bold("Tile Width"), required:false, defaultValue: "200", submitOnChange: true, width: 1)
+                        input (name: "customHeight", type: "text", title: bold("Tile Height"), required:false, defaultValue: "190", submitOnChange: true, width: 1)
                     }
                     input (name: "iFrameColor", type: "color", title: bold2("Dashboard Color", iFrameColor ), required: false, defaultValue: "#000000", submitOnChange: true, width: 3)
 
@@ -317,7 +336,7 @@ def mainPage() {
 
                 //Footer Properties
                 if (activeButton == 6){
-                    //if (isCompactDisplay == false) paragraph titleise("Footer Properties")
+                    if (isCompactDisplay == false) paragraph titleise("Footer Properties")
                     input (name: "isFooter", type: "bool", title: "<b>Display Footer?</b>", required: false, multiple: false, defaultValue: true, submitOnChange: true, width: 2, newLineAfter:true)
                     if (isFooter == true) {
                         input (name: "ft", type: "text", title: bold("Footer Text"), required: false, defaultValue: "%time%", width:3, submitOnChange: true)
@@ -335,97 +354,76 @@ def mainPage() {
                 if (activeButton == 7){
                     if (isCompactDisplay == false) paragraph titleise("Highlights")
                     if (moduleName == "Attribute Monitor"){
-                        input (name: "isKeyword1", type: "bool", title: bold("Enable Keyword #1"), required: false, multiple: false, defaultValue: false, submitOnChange: true, width: 2, newLine:true)
-                        
+                        input (name: "myKeywordCount", title: "<b>How Many Keywords?</b>", type: "enum", options: [0,1,2,3,4,5], submitOnChange:true, width:2, defaultValue: 0)
                         //Keywords
-                        if (isKeyword1 == true ){
-                            input (name: "k1", type: "text", title: bold("Enter Keyword #1"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2)
+                        if (myKeywordCount.toInteger() >= 1 ){
+                            input (name: "k1", type: "text", title: bold("Enter Keyword #1"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2, newLine:true)
                             input (name: "ktr1", type: "text", title: bold("Replacement Text #1"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2)
                             input (name: "hc1", type: "color", title: bold2("Highlight 1 Color", hc1), required: false, defaultValue: "#008000", submitOnChange: true, width: 2)    //Default as green shade
                             input (name: "hts1", type: "enum", title: bold("Highlight 1 Text Scale"), options: parent.textScale(), required: false, submitOnChange: true, defaultValue: "125", width: 2)
                         }
-                        //else { isKeyword2 = false ; isKeyword3 = false ; isKeyword4 = false ; isKeyword5 = false }
-                    
-                        if (isKeyword1 == true) input (name: "isKeyword2", type: "bool", title: bold("Enable Keyword #2"), required: false, multiple: false, defaultValue: false, submitOnChange: true, width: 2, newLine:true)
-                        if (isKeyword2 == true ){    
-                            input (name: "k2", type: "text", title: bold("Enter Keyword #2"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2)
+                        
+                        if (myKeywordCount.toInteger() >= 2 ){
+                            input (name: "k2", type: "text", title: bold("Enter Keyword #2"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2, newLine:true)
                             input (name: "ktr2", type: "text", title: bold("Replacement Text #2"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2)
                             input (name: "hc2", type: "color", title: bold2("Highlight 2 Color", hc2), required: false, defaultValue: "#CA6F1E", submitOnChange: true, width: 2)    //Default as orange shade
                             input (name: "hts2", type: "enum", title: bold("Highlight 2 Text Scale"), options: parent.textScale(), required: false, submitOnChange: true, defaultValue: "125", width: 2)
                         }
-                        //else { isKeyword3 = false ; isKeyword4 = false ; isKeyword5 = false }
                         
-                        if (isKeyword2 == true) input (name: "isKeyword3", type: "bool", title: bold("Enable Keyword #3"), required: false, multiple: false, defaultValue: false, submitOnChange: true, width: 2, newLine:true)
-                        if (isKeyword3 == true ){    
-                            input (name: "k3", type: "text", title: bold("Enter Keyword #3"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2)
+                        if (myKeywordCount.toInteger() >= 3 ){
+                            input (name: "k3", type: "text", title: bold("Enter Keyword #3"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2, newLine:true)
                             input (name: "ktr3", type: "text", title: bold("Replacement Text #3"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2)
                             input (name: "hc3", type: "color", title: bold2("Highlight 3 Color", hc3), required: false, defaultValue: "#00FF00", submitOnChange: true, width: 2)    //Default as red shade
                             input (name: "hts3", type: "enum", title: bold("Highlight 3 Text Scale"), options: parent.textScale(), required: false, submitOnChange: true, defaultValue: "125", width: 2)
                         }
-                        //else { isKeyword4 = false ; isKeyword5 = false }
                         
-                        if (isKeyword3 == true) input (name: "isKeyword4", type: "bool", title: bold("Enable Keyword #4"), required: false, multiple: false, defaultValue: false, submitOnChange: true, width: 2, newLine:true)
-                        if (isKeyword4 == true ){    
-                            input (name: "k4", type: "text", title: bold("Enter Keyword #4"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2)
+                        if (myKeywordCount.toInteger() >= 4 ){
+                            input (name: "k4", type: "text", title: bold("Enter Keyword #4"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2, newLine:true)
                             input (name: "ktr4", type: "text", title: bold("Replacement Text #4"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2)
                             input (name: "hc4", type: "color", title: bold2("Highlight 4 Color", hc4), required: false, defaultValue: "#0000FF", submitOnChange: true, width: 2)    //Default as blue shade
                             input (name: "hts4", type: "enum", title: bold("Highlight 4 Text Scale"), options: parent.textScale(), required: false, submitOnChange: true, defaultValue: "125", width: 2)
                         }
-                        //else { isKeyword5 = false }
                         
-                        if (isKeyword4 == true) input (name: "isKeyword5", type: "bool", title: bold("Enable Keyword #5"), required: false, multiple: false, defaultValue: false, submitOnChange: true, width: 2, newLine:true)
-                        if (isKeyword5 == true ){    
-                            input (name: "k5", type: "text", title: bold("Enter Keyword #5"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2)
+                        if (myKeywordCount.toInteger() >= 5 ){
+                            input (name: "k5", type: "text", title: bold("Enter Keyword #5"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2, newLine:true)
                             input (name: "ktr5", type: "text", title: bold("Replacement Text #5"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2)
                             input (name: "hc5", type: "color", title: bold2("Highlight 5 Color", hc5), required: false, defaultValue: "#FF0000", submitOnChange: true, width: 2)    //Default as orange shade
                             input (name: "hts5", type: "enum", title: bold("Highlight 5 Text Scale"), options: parent.textScale(), required: false, submitOnChange: true, defaultValue: "125", width: 2)
                         }
-                              
-                        
+                               
                         //Thresholds
-                        input (name: "isThreshold1", type: "bool", title: bold("Enable Threshold #1"), required: false, multiple: false, defaultValue: false, submitOnChange: true, width: 2, newLine: true) 
-                        if (isThreshold1 == true ){    
-                            input (name: "top1", type: "enum", title: bold("Operator #1"), required: false, options: comparators, displayDuringSetup: true, defaultValue: 1, submitOnChange: true, width: 1)
+                        input (name: "myThresholdCount", title: "<b>How Many Thresholds?</b>", type: "enum", options: [0,1,2,3,4,5], submitOnChange:true, width:2, defaultValue: 0, newLine: true)
+                        if (myThresholdCount.toInteger() >= 1 ){
+                            input (name: "top1", type: "enum", title: bold("Operator #1"), required: false, options: parent.comparators(), displayDuringSetup: true, defaultValue: 0, submitOnChange: true, width: 1, newLine: true)
                             input (name: "tcv1", type: "number", title: bold("Comparison Value #1"), required: false, displayDuringSetup: true, defaultValue: 1, submitOnChange: true, width: 2)
                             input (name: "ttr1", type: "text", title: bold("Replacement Text #1"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2)
                             input (name: "hc1", type: "color", title: bold2("Highlight 1 Color", hc1), required: false, defaultValue: "#008000", submitOnChange: true, width: 2)    //Default as green shade
                             input (name: "hts1", type: "enum", title: bold("Highlight 1 Text Scale"), options: parent.textScale(), required: false, submitOnChange: true, defaultValue: "125", width: 2)
                         }
-                        //else { isThreshold2 = false ; isThreshold3 = false ; isThreshold4 = false ; isThreshold5 = false }
-                    
-                        if (isThreshold1 == true) input (name: "isThreshold2", type: "bool", title: bold("Enable Threshold #2"), required: false, multiple: false, defaultValue: false, submitOnChange: true, width: 2, newLine: true) 
-                        if (isThreshold2 == true ){    
-                            input (name: "top2", type: "enum", title: bold("Operator #2"), required: false, options: comparators, displayDuringSetup: true, defaultValue: 1, submitOnChange: true, width: 1)
+                        
+                        if (myThresholdCount.toInteger() >= 2 ){
+                            input (name: "top2", type: "enum", title: bold("Operator #2"), required: false, options: parent.comparators(), displayDuringSetup: true, defaultValue: "None", submitOnChange: true, width: 1, newLine: true)
                             input (name: "tcv2", type: "number", title: bold("Comparison Value #2"), required: false, displayDuringSetup: true, defaultValue: 1, submitOnChange: true, width: 2)
                             input (name: "ttr2", type: "text", title: bold("Replacement Text #2"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2)
                             input (name: "hc2", type: "color", title: bold2("Highlight 2 Color", hc2), required: false, defaultValue: "#CA6F1E", submitOnChange: true, width: 2)    //Default as orange shade
                             input (name: "hts2", type: "enum", title: bold("Highlight 2 Text Scale"), options: parent.textScale(), required: false, submitOnChange: true, defaultValue: "125", width: 2)
                         }
-                        //else { isThreshold3 = false ; isThreshold4 = false ; isThreshold5 = false }
-                        
-                        if (isThreshold2 == true) input (name: "isThreshold3", type: "bool", title: bold("Enable Threshold #3"), required: false, multiple: false, defaultValue: false, submitOnChange: true, width: 2, newLine: true)
-                        if (isThreshold3 == true ){    
-                            input (name: "top3", type: "enum", title: bold("Operator #3"), required: false, options: comparators, displayDuringSetup: true, defaultValue: 1, submitOnChange: true, width: 1)
+                        if (myThresholdCount.toInteger() >= 3 ){
+                            input (name: "top3", type: "enum", title: bold("Operator #3"), required: false, options: parent.comparators(), displayDuringSetup: true, defaultValue: 0, submitOnChange: true, width: 1, newLine: true)
                             input (name: "tcv3", type: "number", title: bold("Comparison Value #3"), required: false, displayDuringSetup: true, defaultValue: 1, submitOnChange: true, width: 2)
                             input (name: "ttr3", type: "text", title: bold("Replacement Text #3"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2)
                             input (name: "hc3", type: "color", title: bold2("Highlight 3 Color", hc3), required: false, defaultValue: "#00FF00", submitOnChange: true, width: 2)    //Default as red shade
                             input (name: "hts3", type: "enum", title: bold("Highlight 3 Text Scale"), options: parent.textScale(), required: false, submitOnChange: true, defaultValue: "125", width: 2)
                         }
-                        //else {isThreshold4 = false ; isThreshold5 = false }
-                        
-                        if (isThreshold3 == true) input (name: "isThreshold4", type: "bool", title: bold("Enable Threshold #4"), required: false, multiple: false, defaultValue: false, submitOnChange: true, width: 2, newLine: true) else { isThreshold4 = false ; isThreshold5 = false }
-                        if (isThreshold4 == true ){    
-                            input (name: "top4", type: "enum", title: bold("Operator #4"), required: false, options: comparators, displayDuringSetup: true, defaultValue: 1, submitOnChange: true, width: 1)
+                        if (myThresholdCount.toInteger() >= 4 ){
+                            input (name: "top4", type: "enum", title: bold("Operator #4"), required: false, options: parent.comparators(), displayDuringSetup: true, defaultValue: 0, submitOnChange: true, width: 1, newLine: true)
                             input (name: "tcv4", type: "number", title: bold("Comparison Value #4"), required: false, displayDuringSetup: true, defaultValue: 1, submitOnChange: true, width: 2)
                             input (name: "ttr4", type: "text", title: bold("Replacement Text #4"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2)
                             input (name: "hc4", type: "color", title: bold2("Highlight 4 Color", hc4), required: false, defaultValue: "#0000FF", submitOnChange: true, width: 2)    //Default as blue shade
                             input (name: "hts4", type: "enum", title: bold("Highlight 4 Text Scale"), options: parent.textScale(), required: false, submitOnChange: true, defaultValue: "125", width: 2)
                         }
-                        //else { isThreshold5 = false }
-                        
-                        if (isThreshold4 == true) input (name: "isThreshold5", type: "bool", title: bold("Enable Threshold #5"), required: false, multiple: false, defaultValue: false, submitOnChange: true, width: 2, newLine: true) else { isThreshold5 = false }
-                        if (isThreshold5 == true ){    
-                            input (name: "top5", type: "enum", title: bold("Operator #5"), required: false, options: comparators, displayDuringSetup: true, defaultValue: 1, submitOnChange: true, width: 1)
+                        if (myThresholdCount.toInteger() >= 5 ){
+                            input (name: "top5", type: "enum", title: bold("Operator #5"), required: false, options: parent.comparators(), displayDuringSetup: true, defaultValue: 0, submitOnChange: true, width: 1, newLine: true)
                             input (name: "tcv5", type: "number", title: bold("Comparison Value #5"), required: false, displayDuringSetup: true, defaultValue: 1, submitOnChange: true, width: 2)
                             input (name: "ttr5", type: "text", title: bold("Replacement Text #5"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2)
                             input (name: "hc5", type: "color", title: bold2("Highlight 5 Color", hc5), required: false, defaultValue: "#FF0000", submitOnChange: true, width: 2)    //Default as orange shade
@@ -653,6 +651,7 @@ def mainPage() {
 void refreshUIbefore(){
     //Get the oveerrides helper selection and look it up in the global map and use the key pair value as an on-screen guide.
     state.currentHelperCommand = ""
+    //app.updateSetting("top1", [value:"2", type:"enum"])
     
     overridesHelperMap = parent.getOverridesListAll()
     state.currentHelperCommand = overridesHelperMap.get(overridesHelperSelection)
@@ -716,6 +715,24 @@ void refreshUIafter(){
     }
 }
 
+//Runs recovery functions when messaged from the parent app. This can be used to recoved a child app when an error condidtion arises.
+def supportFunction ( supportCode ){
+    log.info "Running supportFunction with code: $supportCode" 
+    switch(supportCode) {
+           case "clearOverrides":
+               app.updateSetting("overrides", [value:"", type:"textarea"])  //Works
+               break
+            case "disableKeywords":
+                app.updateSetting("myKeywordCount", 0)
+                break
+            case "disableThresholds":
+                app.updateSetting("myThresholdCount", 0)
+                break
+            case "clearDeviceList":
+                app.updateSetting("myDeviceList",[type:"capability",value:[]])
+                break
+    }
+}
 
 //Generic placeholder for test function.
 void test(){   
@@ -914,10 +931,18 @@ def getDeviceMapActMon(){
         lastActivity = it.getLastActivity()
         deviceName = it.toString()
         if (isLogDebug) log.debug("getDeviceMapActMon: deviceName is: $deviceName, it is: $it, and lastActivity is: $lastActivity")
-        //Removes any undesireable characters from the devicename
-        if (myReplacementText1 != null) deviceName = deviceName.replace(myReplacementText1, "")
-        if (myReplacementText2 != null) deviceName = deviceName.replace(myReplacementText2, "")
+                
+        //Handle any null values.
+        if (myReplaceText1 == null || myReplaceText1 == "?" ) myReplaceText1 = ""
+        if (myReplaceText2 == null || myReplaceText2 == "?" ) myReplaceText2 = ""
+        if (myReplaceText3 == null || myReplaceText3 == "?" ) myReplaceText3 = ""
+        
+        //Replaces any undesireable characters in the devicename - Case Sensitive
+        if (mySearchText1 != null  && mySearchText1 != "?") deviceName = deviceName.replace(mySearchText1, myReplaceText1)
+        if (mySearchText2 != null  && mySearchText2 != "?") deviceName = deviceName.replace(mySearchText2, myReplaceText2)
+        if (mySearchText3 != null  && mySearchText3 != "?") deviceName = deviceName.replace(mySearchText3, myReplaceText3)
         if (isAbbreviations == true) deviceName = abbreviate(deviceName)
+        
         def diff
         def hours
         if (lastActivity == null) {
@@ -976,24 +1001,36 @@ def getDeviceMapActMon(){
 //Returns a map of device activity using the parameters provided by the selection boxes.
 //This function is used exclusively by Attribute Monitor
 def getDeviceMapAttrMon(){
+    
     if (isLogTrace) log.trace("getDeviceMapAttrMon: Entering.")
     def myMap = [:] //["My Fake":"not present"]    
-    
+        
     deviceType = state.myAttribute
     if (isLogDebug) log.debug ("DeviceType = $deviceType")
         
     //Go through each of the results in the result set.
     myDeviceList.each { it ->
-        //log.info("getDeviceMapAttrMon: it is: $it.")
+        //log.info("1) getDeviceMapAttrMon: it is: $it.")
         deviceName = it.toString()
-        //Removes any undesireable characters from the devicename - Case Sensitive
-        if (myReplacementText1 != null) deviceName = deviceName.replace(myReplacementText1, "")
-        if (myReplacementText2 != null) deviceName = deviceName.replace(myReplacementText2, "")
+        
+        //Handle any null values.
+        if (myReplaceText1 == null || myReplaceText1 == "?" ) myReplaceText1 = ""
+        if (myReplaceText2 == null || myReplaceText2 == "?" ) myReplaceText2 = ""
+        if (myReplaceText3 == null || myReplaceText3 == "?" ) myReplaceText3 = ""
+        
+        //Replaces any undesireable characters in the devicename - Case Sensitive
+        if (mySearchText1 != null  && mySearchText1 != "?") deviceName = deviceName.replace(mySearchText1, myReplaceText1)
+        if (mySearchText2 != null  && mySearchText2 != "?") deviceName = deviceName.replace(mySearchText2, myReplaceText2)
+        if (mySearchText3 != null  && mySearchText3 != "?") deviceName = deviceName.replace(mySearchText3, myReplaceText3)
         if (isAbbreviations == true) deviceName = abbreviate(deviceName)
         
         myVal = it."current${deviceType}"
         dataType = getDataType(myVal.toString())
-        if (isLogInfo) ("myFilterType is: $myFilterType. myFilterText is: $myFilterText. dataType is: $dataType. myFilterTextDataType is: $myFilterTextDataType")
+        
+        //Force any drivers reporting temperature as an integer to be treated as a float.
+        if (myCapability == "temperatureMeasurement") dataType = "Float"
+        
+        if (isLogInfo) log.info ("2) myFilterType is: $myFilterType. myFilterText is: $myFilterText. dataType is: $dataType. myFilterTextDataType is: $myFilterTextDataType")
         myFilterTextDataType = getDataType(myFilterText)
         
         includeResult = false
@@ -1001,12 +1038,14 @@ def getDeviceMapAttrMon(){
         //Determine whether the result should be filtered out.
         if (myFilterType != null && myFilterText != null && myFilterType.toInteger() >= 1 && myFilterText != "?" ){
             if (dataType == "String" && myFilterTextDataType == "String") {
+                //log.info ("myString is: ")
                 if (myFilterType == "1" && myVal == settings.myFilterText) myMap["${deviceName}"] = myVal
                 if (myFilterType == "2" && myVal != settings.myFilterText) myMap["${deviceName}"] = myVal
-                 if (myFilterType != "1" && myFilterType != "2") myMap["${deviceName}"] = myVal
+                if (myFilterType != "1" && myFilterType != "2") myMap["${deviceName}"] = myVal
             }
         
             if (dataType == "Integer" && myFilterTextDataType != "String") {
+                //log.info ("myInt is: ")
                 if (myFilterType == "3" && myVal.toInteger() == settings.myFilterText.toInteger() ) myMap["${deviceName}"] = myVal.toInteger()    
                 if (myFilterType == "4" && myVal.toInteger() <= settings.myFilterText.toInteger() ) myMap["${deviceName}"] = myVal.toInteger()    
                 if (myFilterType == "5" && myVal.toInteger() >= settings.myFilterText.toInteger() ) myMap["${deviceName}"] = myVal.toInteger()    
@@ -1015,8 +1054,9 @@ def getDeviceMapAttrMon(){
         
             if (dataType == "Float"){ // && myFilterTextDataType == "Float") {
                 float myFloat = myVal.toFloat()
-                if (isLogInfo) log.info ("myFloat is: $myFloat, $myDecimalPlaces, $myFilterType ")
                 
+                if (isLogInfo) log.info ("2 - Filter) myFloat is: $myFloat, $myDecimalPlaces, $myFilterType ")
+                                
                 if (myFilterType == "3" && Float.compare(myFloat, settings.myFilterText.toFloat()) == 0 ){
                     //log.info ("== Match $myFloat")
                     includeResult = true
@@ -1046,13 +1086,9 @@ def getDeviceMapAttrMon(){
             //log.info("Not filtering")
             if (dataType == "Float") {
                 float myFloat = myVal.toFloat()
-                //log.info ("myVal is: $myVal")
-                //log.info ("myDecimal is: $myDecimalPlaces")
-                //myFloat = myFloat.round(myDecimalPlaces.toInteger())
-                myFloat = myFloat.round(1)
                 if (myDecimalPlaces.toInteger() == 0) myMap["${deviceName}"] = myFloat.toInteger()
                 else myMap["${deviceName}"] = myFloat.round(myDecimalPlaces.toInteger())
-            }
+             }
             else myMap["${deviceName}"] = myVal
         }
     }
@@ -1143,7 +1179,9 @@ Map reverseSortMap(Map sortedMap) {
 void refreshTable(){
     if (isLogTrace) log.trace("refreshTable: Entering refreshTable")
     //Create the template for the data
-    def data = ["#A01#":"A01","#B01#":"B01","#A02#":"A02","#B02#":"B02","#A03#":"A03","#B03#":"B03","#A04#":"A04","#B04#":"B04","#A05#":"A05","#B05#":"B05", "#A06#":"A06","#B06#":"B06","#A07#":"A07","#B07#":"B07","#A08#":"A08","#B08#":"B08","#A09#":"A09","#B09#":"B09","#A10#":"A10","#B10#":"B10","#A11#":"A11","#B11#":"B11","#A12#":"A12","#B12#":"B12","#A13#":"A13","#B13#":"B13","#A14#":"A14","#B14#":"B14","#A15#":"A15","#B15#":"B15","#A16#":"A16","#B16#":"B16","#A17#":"A17","#B17#":"B17","#A18#":"A18","#B18#":"B18","#A19#":"A19","#B19#":"B19","#A20#":"A20","#B20#":"B20"]
+    def data = ["#A01#":"A01","#B01#":"B01","#A02#":"A02","#B02#":"B02","#A03#":"A03","#B03#":"B03","#A04#":"A04","#B04#":"B04","#A05#":"A05","#B05#":"B05", "#A06#":"A06","#B06#":"B06","#A07#":"A07","#B07#":"B07","#A08#":"A08","#B08#":"B08","#A09#":"A09","#B09#":"B09","#A10#":"A10",\
+                "#B10#":"B10","#A11#":"A11","#B11#":"B11","#A12#":"A12","#B12#":"B12","#A13#":"A13","#B13#":"B13","#A14#":"A14","#B14#":"B14","#A15#":"A15", "#B15#":"B15","#A16#":"A16","#B16#":"B16","#A17#":"A17","#B17#":"B17","#A18#":"A18","#B18#":"B18","#A19#":"A19","#B19#":"B19","#A20#":"A20","#B20#":"B20",\
+                "#B20#":"B20","#A21#":"A21","#B21#":"B21","#A22#":"A22","#B22#":"B22","#A23#":"A23","#B23#":"B23","#A24#":"A24","#B24#":"B24","#A25#":"A25", "#B25#":"B25","#A26#":"A26","#B26#":"B26","#A27#":"A27","#B27#":"B27","#A28#":"A28","#B28#":"B28","#A29#":"A29","#B29#":"B29","#A30#":"A30","#B30#":"B30"]
 
     if (moduleName == "Activity Monitor") sortedMap = getDeviceMapActMon()
     if (moduleName == "Attribute Monitor") sortedMap = getDeviceMapAttrMon()
@@ -1198,7 +1236,7 @@ void makeHTML(data, int myRows){
     
     //Configure all of the HTML template lines.
     String HTMLCOMMENT = "<!--#comment#-->"
-    String HTMLSTYLE1 = "<head><style>#class1# #class2# #class3# #class4# #class5# #iFrame1#table.#id#{border-collapse:#bm#;width:#tw#%;height:#th#%;margin:Auto;font-family:#tff#;background-color:#tbc#;#table#;}"    //Table Style - Always included.  
+    String HTMLSTYLE1 = "<head><style>#class# #class1# #class2# #class3# #class4# #class5# #iFrame1#table.#id#{border-collapse:#bm#;width:#tw#%;height:#th#%;margin:Auto;font-family:#tff#;background-color:#tbc#;#table#;}"    //Table Style - Always included.  
     String HTMLSTYLE2 = ".#id# tr{color:#rtc#;text-align:#rta#;#row#}.#id# td{background-color:#rbc#;font-size:#rts#%;padding:#rp#px;#data#}</style>"    //End of the Table Style block - Always included.
     String HTMLBORDERSTYLE = "<style>.#id# th,.#id# td{border:#bs# #bw#px #bc#;padding:#bp#px;border-radius:#br#px;#border#}</style>"    //End of the Table Style block. Sets border style for TD and TH elements. - Always included.
     String HTMLTITLESTYLE = "<style>ti#id#{display:block;color:#tc#;font-size:#ts#%;font-family:#tff#;text-align:#ta#;#titleShadow#;padding:#tp#px;#title#}</style>"        //This is the row for the Title Style - May be omitted.
@@ -1221,6 +1259,8 @@ void makeHTML(data, int myRows){
     String HTMLR6 = "<tr><td>#A06#</td><td>#B06#</td></tr>"; String HTMLR7 = "<tr><td>#A07#</td><td>#B07#</td></tr>"; String HTMLR8 = "<tr><td>#A08#</td><td>#B08#</td></tr>"; String HTMLR9 = "<tr><td>#A09#</td><td>#B09#</td></tr>"; String HTMLR10 = "<tr><td>#A10#</td><td>#B10#</td></tr>"
     String HTMLR11 = "<tr><td>#A11#</td><td>#B11#</td></tr>"; String HTMLR12 = "<tr><td>#A12#</td><td>#B12#</td></tr>"; String HTMLR13 = "<tr><td>#A13#</td><td>#B13#</td></tr>"; String HTMLR14 = "<tr><td>#A14#</td><td>#B14#</td></tr>"; String HTMLR15 = "<tr><td>#A15#</td><td>#B15#</td></tr>"
     String HTMLR16 = "<tr><td>#A16#</td><td>#B16#</td></tr>"; String HTMLR17 = "<tr><td>#A17#</td><td>#B17#</td></tr>"; String HTMLR18 = "<tr><td>#A18#</td><td>#B18#</td></tr>"; String HTMLR19 = "<tr><td>#A19#</td><td>#B19#</td></tr>"; String HTMLR20 = "<tr><td>#A20#</td><td>#B20#</td></tr>"
+    String HTMLR21 = "<tr><td>#A21#</td><td>#B21#</td></tr>"; String HTMLR22 = "<tr><td>#A12#</td><td>#B22#</td></tr>"; String HTMLR23 = "<tr><td>#A23#</td><td>#B23#</td></tr>"; String HTMLR24 = "<tr><td>#A24#</td><td>#B24#</td></tr>"; String HTMLR25 = "<tr><td>#A25#</td><td>#B25#</td></tr>"
+    String HTMLR26 = "<tr><td>#A26#</td><td>#B26#</td></tr>"; String HTMLR27 = "<tr><td>#A17#</td><td>#B27#</td></tr>"; String HTMLR28 = "<tr><td>#A28#</td><td>#B28#</td></tr>"; String HTMLR29 = "<tr><td>#A29#</td><td>#B29#</td></tr>"; String HTMLR30 = "<tr><td>#A30#</td><td>#B30#</td></tr>"
     String HTMLTABLEEND = "</tbody></table>"
     String HTMLFOOTER = "<style>ft#id#{display:block;text-align:#fa#;font-size:#fs#%;color:#fc#;#footer#</style><ft#id#>#ft#</ft#id#>"        //Footer Style and Footer - May be omitted
     String HTMLDIVEND = "</div>"    
@@ -1230,23 +1270,25 @@ void makeHTML(data, int myRows){
     if (isComment == false) HTMLCOMMENT = ""
     if (isFrame == false) { HTMLDIVSTYLE = "" ; HTMLDIVSTART = "" ; HTMLDIVEND = "" }
     if (isAlternateRows == false) HTMLARSTYLE = ""
-    if (isKeyword1 == false && isThreshold1 == false) HTMLHIGHLIGHT1STYLE = ""
-    if (isKeyword2 == false && isThreshold2 == false) HTMLHIGHLIGHT2STYLE = ""
-    if (isKeyword3 == false && isThreshold3 == false) HTMLHIGHLIGHT3STYLE = ""
-    if (isKeyword4 == false && isThreshold4 == false) HTMLHIGHLIGHT4STYLE = ""
-    if (isKeyword5 == false && isThreshold5 == false) HTMLHIGHLIGHT5STYLE = ""
+    if ( (myKeywordCount.toInteger() == null || myKeywordCount.toInteger() < 1 ) && ( myThresholdCount.toInteger() == null || myThresholdCount.toInteger() < 1 ) ) HTMLHIGHLIGHT1STYLE = ""
+    if ( (myKeywordCount.toInteger() == null || myKeywordCount.toInteger() < 2 ) && ( myThresholdCount.toInteger() == null || myThresholdCount.toInteger() < 2 ) ) HTMLHIGHLIGHT2STYLE = ""
+    if ( (myKeywordCount.toInteger() == null || myKeywordCount.toInteger() < 3 ) && ( myThresholdCount.toInteger() == null || myThresholdCount.toInteger() < 3 ) ) HTMLHIGHLIGHT3STYLE = ""
+    if ( (myKeywordCount.toInteger() == null || myKeywordCount.toInteger() < 4 ) && ( myThresholdCount.toInteger() == null || myThresholdCount.toInteger() < 4 ) ) HTMLHIGHLIGHT4STYLE = ""
+    if ( (myKeywordCount.toInteger() == null || myKeywordCount.toInteger() < 5 ) && ( myThresholdCount.toInteger() == null || myThresholdCount.toInteger() < 5 ) ) HTMLHIGHLIGHT5STYLE = ""
+    
     if (isFooter == false) HTMLFOOTER = ""
     if (isBorder == false) HTMLBORDERSTYLE = ""
     if (isTitle == false) { HTMLTITLESTYLE = "" ; HTMLTITLE = "" }
     if (isHeaders == false) { HTMLHEADERSTYLE = "" ; HTMLR0 = "" }
         
     //Nullify the non-populated. We allow it to go to zero rows so that by turning off headers we can have just a Title field for a decorative tile.
+    if (myRows <= 29) HTMLR30 = "" ; if (myRows <= 28) HTMLR29 = ""; if (myRows <= 27) HTMLR28 = ""; if (myRows <= 26) HTMLR27 = ""; if (myRows <= 25) HTMLR26 = ""; if (myRows <= 24) HTMLR25 = ""; if (myRows <= 23) HTMLR24 = ""; if (myRows <= 22) HTMLR23 = ""; if (myRows <= 21) HTMLR22 = ""; if (myRows <= 20) HTMLR21 = "";
     if (myRows <= 19) HTMLR20 = "" ; if (myRows <= 18) HTMLR19 = ""; if (myRows <= 17) HTMLR18 = ""; if (myRows <= 16) HTMLR17 = ""; if (myRows <= 15) HTMLR16 = ""; if (myRows <= 14) HTMLR15 = ""; if (myRows <= 13) HTMLR14 = ""; if (myRows <= 12) HTMLR13 = ""; if (myRows <= 11) HTMLR12 = ""; if (myRows <= 10) HTMLR11 = "";
     if (myRows <= 9) HTMLR10 = ""; if (myRows <= 8) HTMLR9 = ""; if (myRows <= 7) HTMLR8 = ""; if (myRows <= 6) HTMLR7 = ""; if (myRows <= 5) HTMLR6 = ""; if (myRows <= 4) HTMLR5 = ""; if (myRows <= 3) HTMLR4 = ""; if (myRows <= 2) HTMLR3 = ""; if (myRows <= 1) HTMLR2 = ""; if (myRows <= 0) HTMLR1 = ""
     
     //Now build the final HTML TEMPLATE string
     def interimHTML = HTMLCOMMENT + HTMLSTYLE1 + HTMLSTYLE2 + HTMLDIVSTYLE + HTMLBORDERSTYLE + HTMLTITLESTYLE + HTMLHEADERSTYLE + HTMLARSTYLE  + HTMLHIGHLIGHT1STYLE + HTMLHIGHLIGHT2STYLE + HTMLHIGHLIGHT3STYLE + HTMLHIGHLIGHT4STYLE + HTMLHIGHLIGHT5STYLE + HTMLDIVSTART + HTMLTITLE + HTMLTABLESTART + HTMLR0 + HTMLTBODY 
-    interimHTML += HTMLR1 + HTMLR2 + HTMLR3 + HTMLR4 + HTMLR5 + HTMLR6 + HTMLR7 + HTMLR8 + HTMLR9 + HTMLR10 + HTMLR11 + HTMLR12 + HTMLR13 + HTMLR14 + HTMLR15 + HTMLR16 + HTMLR17 + HTMLR18 + HTMLR19 + HTMLR20
+    interimHTML += HTMLR1 + HTMLR2 + HTMLR3 + HTMLR4 + HTMLR5 + HTMLR6 + HTMLR7 + HTMLR8 + HTMLR9 + HTMLR10 + HTMLR11 + HTMLR12 + HTMLR13 + HTMLR14 + HTMLR15 + HTMLR16 + HTMLR17 + HTMLR18 + HTMLR19 + HTMLR20 + HTMLR21 + HTMLR22 + HTMLR23 + HTMLR24 + HTMLR25 + HTMLR26 + HTMLR27 + HTMLR28 + HTMLR29 + HTMLR30 
     interimHTML += HTMLTABLEEND + HTMLFOOTER + HTMLDIVEND + HTMLEND
     if (isLogDebug) log.debug ("HTML Template is: ${interimHTML}")
             
@@ -1257,9 +1299,9 @@ void makeHTML(data, int myRows){
     myTemplate = myTemplate + data
     if (isLogDebug) log.debug ("makeHTML: myTemplate with Row Data is : ${myTemplate}")
 
-    //Now replace the placeholders with the actual data values for cells B1 - B15.
+    //Now replace the placeholders with the actual data values for cells B1 - B30.
     myTemplate.each{ it, value ->        
-        //If it's the data colum it will begin #B1# thru #B20#. Anything else we can just process normally.
+        //If it's the data colum it will begin #B1# thru #B30#. Anything else we can just process normally.
             if ( beginsWith(it, "#B") == false || beginsWith(it,"#B00") == true ){
                 interimHTML = interimHTML.replaceAll(it, value.toString())    
             }
@@ -1276,7 +1318,7 @@ void makeHTML(data, int myRows){
         } //end of myTemplate.each
 
     //Get the units we are using, if any.
-    //myUnit = unitsMap.get(myUnits?.toInteger())
+    //myUnit = parent.unitsMap.get(myUnits?.toInteger())
     
     //Replace any %day%, %time%, %units%, %count% fields with the actual value
     //Get the units we are using and corrent the formatting.
@@ -1327,49 +1369,60 @@ void makeHTML(data, int myRows){
 //If any are a match it uses the chosen CSS style to highlight it.
 def highlightValue(attributeValue){
     if (isLogTrace) log.trace("highlightValue: Received attributeValue: ${attributeValue}")
-    
+    //Save a copy of the original value.
+    def originalValue = attributeValue.toString()
     dataType = getDataType(attributeValue.toString())
     //If the data is a string then we must process it for Keywords.
-    if ( dataType == "String" ){    
-        if (isKeyword1 == true && k1 != null && k1 != "") {
+    if ( dataType == "String" ){  
+        if (myKeywordCount.toInteger() >= 1  && k1 != null && k1 != "") {
             if (k1.trim() == attributeValue.toString().trim() ){
                 if (isLogDebug) log.debug("highlightValue: Keyword ${attributeValue} was found and is a match for Keyword1.")
-                if (ktr1 != null && ktr1.size() > 0) attributeValue = ktr1
-                return "[td][hqq1]" + attributeValue + "[/hqq1][/td]"
+                if (ktr1 != null && ktr1.size() > 0) {
+                    returnValue = ktr1.replace ("%value%", attributeValue)
+                    return "[td][hqq1]" + returnValue + "[/hqq1][/td]"
                 }
             }
-    
-        if (isKeyword2 == true && k2 != null && k2 != "") {
+        }
+        
+        if (myKeywordCount.toInteger() >= 2 && k2 != null && k2 != "") {
             if (k2.trim() == attributeValue.toString().trim() ){
                 if (isLogDebug) log.debug("highlightValue: Keyword ${attributeValue} was found and is a match for Keyword2.")
-                if (ktr2 != null && ktr2.size() > 0) attributeValue = ktr2            
-                return "[td][hqq2]" + attributeValue + "[/hqq2][/td]"
+                if (ktr2 != null && ktr2.size() > 0) {
+                    returnValue = ktr2.replace ("%value%", attributeValue)
+                    return "[td][hqq2]" + returnValue + "[/hqq2][/td]"
                 }
             }
+        }
         
-        if (isKeyword3 == true && k3 != null && k3 != "") {
+        if (myKeywordCount.toInteger() >= 3 && k3 != null && k3 != "") {
             if (k3.trim() == attributeValue.toString().trim() ){
                 if (isLogDebug) log.debug("highlightValue: Keyword ${attributeValue} was found and is a match for Keyword3.")
-                if (ktr3 != null && ktr3.size() > 0) attributeValue = ktr3  
-                return "[td][hqq3]" + attributeValue + "[/hqq3][/td]"
+                if (ktr3 != null && ktr3.size() > 0) {
+                    returnValue = ktr3.replace ("%value%", attributeValue)
+                    return "[td][hqq3]" + returnValue + "[/hqq3][/td]"
                 }
             }
+        }
         
-        if (isKeyword4 == true && k4 != null && k4 != "") {
+        if (myKeywordCount.toInteger() >= 4 && k4 != null && k4 != "") {
             if (k4.trim() == attributeValue.toString().trim() ){
                 if (isLogDebug) log.debug("highlightValue: Keyword ${attributeValue} was found and is a match for Keyword4.")
-                if (ktr4 != null && ktr4.size() > 0) attributeValue = ktr4            
-                return "[td][hqq4]" + attributeValue + "[/hqq4][/td]"
+                if (ktr4 != null && ktr4.size() > 0) {
+                    returnValue = ktr4.replace ("%value%", attributeValue)
+                    return "[td][hqq4]" + returnValue + "[/hqq4][/td]"
                 }
             }
+        }
         
-        if (isKeyword5 == true && k5 != null && k5 != "") {
+        if (myKeywordCount.toInteger() >= 5 && k5 != null && k5 != "") {
             if (k5.trim() == attributeValue.toString().trim() ){
                 if (isLogDebug) log.debug("highlightValue: Keyword ${attributeValue} was found and is a match for Keyword5.")
-                if (ktr5 != null && ktr5.size() > 0) attributeValue = ktr5
-                return "[td][hqq5]" + attributeValue + "[/hqq5][/td]"
+                if (ktr5 != null && ktr5.size() > 0) {
+                    returnValue = ktr5.replace ("%value%", attributeValue)
+                    return "[td][hqq5]" + returnValue + "[/hqq5][/td]"
                 }
             }
+        }
         //It's a string but does not match a keyword.
         return "[td]" + attributeValue + "[/td]"
     }
@@ -1385,24 +1438,26 @@ def highlightValue(attributeValue){
         //Use a flag to rememeber the highest threshold with a match.
         def lastThreshold = 0
         
+        //Note: I've tried using evaluate() to process all of this into a single loop and it works, but it's extremely slow.
+        
         //Process the first threshold value.
-        if (isThreshold1 == true && tcv1 != null && tcv1 != "") {
-            switch(settings.top1.toString()) { 
-                case "<=": 
+        if (myThresholdCount.toInteger() >= 1 && tcv1 != null && tcv1 != "") {
+            switch(settings.top1) { 
+                case ["1", "<="]:
                     if (attributeValue.toInteger() <= tcv1.toInteger() ) {
                         if (isLogDebug) log.debug("highlightThreshold: A <= than condition was met.")
-                        if (ttr1 != null && ttr1 != " " && ttr1 != "?") { returnValue = ttr1 ; myUnit = ""}
+                        if (ttr1 != null && ttr1 != " " && ttr1 != "?") { returnValue = ttr1 ; myUnit = "" }
                         lastThreshold = 1
                     }
                     break
-                case "==": 
+                case ["2", "=="]:
                     if (attributeValue.toInteger() == tcv1.toInteger() ) {
                         if (isLogDebug) log.debug("highlightThreshold: An == to condition was met.")
                         if (ttr1 != null && ttr1 != " " && ttr1 != "?") { returnValue = ttr1 ; myUnit = "" }
                         lastThreshold = 1
                     }
                     break
-                case ">=": 
+                case ["3", ">="]:
                     if (attributeValue.toInteger() >= tcv1.toInteger() ) {
                         if (isLogDebug) log.debug("highlightThreshold: A >= than condition was met.")
                         if (ttr1 != null && ttr1 != " "  && ttr1 != "?") { returnValue = ttr1 ; myUnit = "" }
@@ -1412,9 +1467,9 @@ def highlightValue(attributeValue){
                 }
         }
         //Process the second threshold value.
-        if (isThreshold2 == true && tcv2 != null && tcv2 != "") {
+        if (myThresholdCount.toInteger() >= 2  && tcv2 != null && tcv2 != "") {
             switch(settings.top2) { 
-                case "<=": 
+                case ["1", "<="]:
                     if (attributeValue.toInteger() <= tcv2.toInteger() ) {
                         if (isLogDebug) log.debug("highlightThreshold: A <= than condition was met.")
                         if (ttr2 != null && ttr2 != " " && ttr2 != "?") { returnValue = ttr2 ; myUnit = ""}
@@ -1422,14 +1477,14 @@ def highlightValue(attributeValue){
                     }
                     
                     break
-                case "==": 
+                case ["2", "=="]:
                     if (attributeValue.toInteger() == tcv2.toInteger() ) {
                         if (isLogDebug) log.debug("highlightThreshold: An == to condition was met.")
                         if (ttr2 != null && ttr2 != " " && ttr2 != "?") { returnValue = ttr2 ; myUnit = ""}
                         lastThreshold = 2
                     }
                     break
-                case ">=": 
+                case ["3", ">="]:
                     if (attributeValue.toInteger() >= tcv2.toInteger() ) {
                         if (isLogDebug) log.debug("highlightThreshold: A >= than condition was met.")
                         if (ttr2 != null && ttr2 != " " && ttr2 != "?") { returnValue = ttr2 ; myUnit = ""}
@@ -1440,23 +1495,23 @@ def highlightValue(attributeValue){
         }
         
         //Process the third threshold value.
-        if (isThreshold3 == true && tcv3 != null && tcv3 != "") {
+        if (myThresholdCount.toInteger() >= 3  && tcv3 != null && tcv3 != "") {
             switch(settings.top3) { 
-                case "<=": 
+                case ["1", "<="]:
                     if (attributeValue.toInteger() <= tcv3.toInteger() ) {
                         if (isLogDebug) log.debug("highlightThreshold: A <= than condition was met.")
                         if (ttr3 != null && ttr3 != " " && ttr3 != "?") { returnValue = ttr3 ; myUnit = ""}
                         lastThreshold = 3
                     }
                     break
-                case "==": 
+                case ["2", "=="]:
                     if (attributeValue.toInteger() == tcv3.toInteger() ) {
                         if (isLogDebug) log.debug("highlightThreshold: An == to condition was met.")
                         if (ttr3 != null && ttr3 != " " && ttr3 != "?") { returnValue = ttr3 ; myUnit = ""}
                         lastThreshold = 3
                     }
                     break
-                case ">=": 
+                case ["3", ">="]:
                     if (attributeValue.toInteger() >= tcv3.toInteger() ) {
                         if (isLogDebug) log.debug("highlightThreshold: A >= than condition was met.")
                         if (ttr3 != null && ttr3 != " " && ttr3 != "?") { returnValue = ttr3 ; myUnit = ""}
@@ -1467,23 +1522,23 @@ def highlightValue(attributeValue){
         }
         
         //Process the fourth threshold value.
-        if (isThreshold4 == true && tcv4 != null && tcv4 != "") {
+        if (myThresholdCount.toInteger() >= 4  && tcv4 != null && tcv4 != "") {
             switch(settings.top4) { 
-                case "<=": 
+                case ["1", "<="]:
                     if (attributeValue.toInteger() <= tcv4.toInteger() ) {
                         if (isLogDebug) log.debug("highlightThreshold: A <= than condition was met.")
                         if (ttr4 != null && ttr4 != " " && ttr4 != "?") { returnValue = ttr4 ; myUnit = ""}
                         lastThreshold = 4
                     }
                     break
-                case "==": 
+                case ["2", "=="]:
                     if (attributeValue.toInteger() == tcv4.toInteger() ) {
                         if (isLogDebug) log.debug("highlightThreshold: An == to condition was met.")
                         if (ttr4 != null && ttr4 != " " && ttr4 != "?") { returnValue = ttr4 ; myUnit = ""}
                         lastThreshold = 4
                     }
                     break
-                case ">=": 
+                case ["3", ">="]:
                     if (attributeValue.toInteger() >= tcv4.toInteger() ) {
                         if (isLogDebug) log.debug("highlightThreshold: A >= than condition was met.")
                         if (ttr4 != null && ttr4 != " " && ttr4 != "?") { returnValue = ttr4 ; myUnit = ""}
@@ -1494,23 +1549,23 @@ def highlightValue(attributeValue){
         }
         
         //Process the fifth threshold value.
-        if (isThreshold5 == true && tcv5 != null && tcv5 != "") {
+        if (myThresholdCount.toInteger() >= 5  && tcv5 != null && tcv5 != "") {
             switch(settings.top5) { 
-                case "<=": 
+                case ["1", "<="]:
                     if (attributeValue.toInteger() <= tcv5.toInteger() ) {
                         if (isLogDebug) log.debug("highlightThreshold: A <= than condition was met.")
                         if (ttr5 != null && ttr5 != " " && ttr5 != "?") { returnValue = ttr5 ; myUnit = ""}
                         lastThreshold = 5 
                     }
                     break
-                case "==": 
+                case ["2", "=="]:
                     if (attributeValue.toInteger() == tcv5.toInteger() ) {
                         if (isLogDebug) log.debug("highlightThreshold: An == to condition was met.")
                         if (ttr5 != null && ttr5 != " " && ttr5 != "?") { returnValue = ttr5 ; myUnit = ""}
                         lastThreshold = 5 
                     }
                     break
-                case ">=": 
+                case ["3", ">="]:
                     if (attributeValue.toInteger() >= tcv5.toInteger() ) {
                         if (isLogDebug) log.debug("highlightThreshold: A >= than condition was met.")
                         if (ttr5 != null && ttr5 != " " && ttr5 != "?") { returnValue = ttr5 ; myUnit = ""}
@@ -1520,28 +1575,33 @@ def highlightValue(attributeValue){
                 }
         }
         
+        //Configure the Units into variable myUnit
+        if (myUnits == null || myUnits == "None" || isAppendUnits == false ) myUnit = ""
+        else myUnit = myUnits.replace("_"," ")
+        
+        
         switch(lastThreshold) {
             case 0:      //Does not match any threshold
-                //Get the units we are using, if any and append them.
-                if (myUnits == null || myUnits == "None" || isAppendUnits == false ) { return "[td]" + attributeValue + "[/td]"    }
-                else {
-                    myUnit = myUnits.replace("_"," ")
-                    return "[td]" + attributeValue + myUnit + "[/td]"    
-                }
+                return "[td]" + attributeValue + myUnit + "[/td]"    
                 break
             case 1:
+                returnValue = returnValue.replace("%value%", attributeValue.toString()) 
                 return "[td][hqq1]" + returnValue + myUnit +  "[/hqq1][/td]"
                 break
             case 2:
+                returnValue = returnValue.replace("%value%", attributeValue.toString())
                 return "[td][hqq2]" + returnValue + myUnit +  "[/hqq2][/td]"
                 break
             case 3:
+                returnValue = returnValue.replace("%value%", attributeValue.toString())
                 return "[td][hqq3]" + returnValue + myUnit +  "[/hqq3][/td]"
                 break
             case 4:
+                returnValue = returnValue.replace("%value%", attributeValue.toString())
                 return "[td][hqq4]" + returnValue + myUnit +  "[/hqq4][/td]"
                 break
             case 5:
+                returnValue = returnValue.replace("%value%", attributeValue.toString())
                 return "[td][hqq5]" + returnValue + myUnit +  "[/hqq5][/td]"
                 break
         }
@@ -1561,7 +1621,7 @@ def highlightValue(attributeValue){
 
 def getSelectOk()
 {
-    def status = [ devicePage: devices1 ?: devices2 ?: devices3 ?: devices4 ?: devices5 ?: devices6 ?: devices7]
+    def status = [ devicePage: devices1 ?: devices2 ?: devices3 ?: devices4 ?: devices5 ?: devices6 ?: devices7?: devices8]
     status << [all: status.devicePage]
 }
 
@@ -1574,6 +1634,7 @@ def getDeviceList(){
     if (useList == "5" ) {myDeviceList = devices5}
     if (useList == "6" ) {myDeviceList = devices6}
     if (useList == "7" ) {myDeviceList = devices7}
+    if (useList == "8" ) {myDeviceList = devices8}
     if (isLogTrace) log.trace("getDeviceList: myDeviceList is: ${myDeviceList}")
     return myDeviceList
 }
@@ -1622,18 +1683,16 @@ def handler(evt) {
 void publishTable(){
     if (isLogTrace==true) log.trace("publishTable: Entering publishTable.")
     
+    //Handles the initialization of new variables added after the original release.
+    updateVariables()
+    
     //Refresh the table with the new data and then save the HTML to the driver variable.
     refreshTable()
     if (isLogInfo) log.info("publishTable: Tile $myTile ($myTileName) is being refreshed.")
     
     myStorageDevice = parent.getStorageDevice()
-    if (isLogDebug) log.debug("publishTable: myStorageDevice is: $myStorageDevice")
-    
-    if (myStorageDevice != null ) {
-        myStorageDevice.createTile(settings.myTile, state.HTML, settings.myTileName)
-    }
-    else {
-        log.error("publishTable: Unable to connect to the storage device '$myStorageDevice'. Is the device created and available?")
+    if ( myStorageDevice == null ) {
+        log.error("publishTable: myStorageDevice is null. Is the device created and available? This error can occur immediately upon hub startup. Nothing published.")
         return
     }
     
@@ -1855,6 +1914,8 @@ def fillStyle(){
     
     //Color values that support opacity must be converted to rgba.
     //For example hbc = Header Background Color. It is created by combining Header Background Color (hbc) and Header Background Opacity (hbo) to make a composite rgba value.
+    //Table
+    mytbc = getRGBA(tbc, tbo.toString())
     //Title
     mytc = getRGBA(tc, to.toString())
     //Border
@@ -1866,25 +1927,23 @@ def fillStyle(){
     myrbc = getRGBA(rbc, rbo.toString())
     myrtc = getRGBA(rtc, rto.toString())
     
-    rgbaColorScheme = ["#tc#":mytc,"#hbc#":myhbc, "#htc#":myhtc,"#rbc#":myrbc, "#rtc#":myrtc, "#bc#":mybc]    
+    rgbaColorScheme = ["#tbc#":mytbc, "#tc#":mytc,"#hbc#":myhbc, "#htc#":myhtc,"#rbc#":myrbc, "#rtc#":myrtc, "#bc#":mybc]    
     titleScheme = ["#tt#":tt, "#ts#":ts, "#tc#":tc, "#tp#":tp, "#ta#":ta, "#to#":to, "#shcolor#":shcolor, "#shver#":shver, "#shhor#":shhor, "#shblur#":shblur, "#titleShadow#":myTitleShadow]
     headerScheme = ["#A00#":A0, "#B00#":B0, "#hbc#":hbc, "#hbo#":hbo, "#htc#":htc, "#hto#":hto, "#hts#":hts, "#hta#":hta , "#hp#":myHP]         
     rowScheme = ["#rbc#":rbc, "#rtc#":rtc, "#rts#":rts, "#rta#":rta ,"#rabc#":rabc, "#ratc#":ratc, "#rp#":myRP, "#rto#":rto, "#rbo#":rbo]            
     //Add a temporary class ID of 'qq'. A double qq is not used in the english language. The final one will be assigned by the Tile Builder Storage Device when the Tile is published.
-    tableScheme = ["#id#":"qq", "#th#":th,"#tw#":tw, "#tbc#":tbc]        
+    tableScheme = ["#id#":"qq", "#th#":th,"#tw#":tw, "#tbc#":tbc, "#tbo#":tbo ]        
     borderScheme = ["#bw#":bw, "#bc#":bc, "#bs#":bs, "#br#":br, "#bp#":bp, "#bo#":bo ]
     footerScheme = ["#ft#":ft, "#fs#":fs, "#fc#":fc, "#fa#":fa ] 
-    highlightScheme = ["#hc1#":hc1, "#hts1#":hts1, "#hc2#":hc2, "#hts2#":hts2,"#hc3#":hc3, "#hts3#":hts3, "#hc4#":hc4, "#hts4#":hts4, "#hc5#":hc5, "#hts5#":hts5]
-    keywordScheme = ["#k1#":k1, "#ktr1#":ktr1, "#k2#":k2, "#ktr2#":ktr2, "#k3#":k3, "#ktr3#":ktr3, "#k4#":k4, "#ktr4#":ktr4, "#k1#":k5, "#ktr1#":ktr5]
+    highlightScheme = ["#hc1#":compress(hc1), "#hts1#":hts1, "#hc2#":compress(hc2), "#hts2#":hts2,"#hc3#":compress(hc3), "#hts3#":hts3, "#hc4#":compress(hc4), "#hts4#":hts4, "#hc5#":compress(hc5), "#hts5#":hts5]
+    keywordScheme = ["#k1#":k1, "#ktr1#":ktr1, "#k2#":k2, "#ktr2#":ktr2, "#k3#":k3, "#ktr3#":ktr3, "#k4#":k4, "#ktr4#":ktr4, "#k5#":k5, "#ktr5#":ktr5]
     thresholdScheme = ["#top1#":top1, "#tcv1#":tcv1, "#ttr1#":ttr1, "#top2#":top2, "#tcv2#":tcv2, "#ttr2#":ttr2, "#top3#":top3, "#tcv3#":tcv3, "#ttr3#":ttr3, "#top4#":top4, "#tcv4#":tcv4, "#ttr4#":ttr4, "#top5#":top5, "#tcv5#":tcv5, "#ttr5#":ttr5]
-    otherScheme = ["#comment#":comment, "#bm#":bm,"#tff#":tff, "#bfs#":bfs, "#fbc#":fbc, "#customWidth#":customWidth, "#customHeight#":customHeight, "#iFrameColor#":iFrameColor] 
+    otherScheme = ["#comment#":comment, "#bm#":bm,"#tff#":tff, "#bfs#":bfs, "#fbc#":fbc, "#customWidth#":customWidth, "#customHeight#":customHeight, "#iFrameColor#":iFrameColor, "#myKeywordCount#" : myKeywordCount, "#myThresholdCount#" : myThresholdCount] 
         
     //The booleanScheme uses the same configuration but these are not tags that are stored within the HTML. However they are stored in settings as they guide the logic flow of the application.
     booleanScheme1 = ["#isCustomSize#":isCustomSize, "#isFrame#":isFrame, "#isComment#":isComment,"#isTitle#":isTitle,"#isTitleShadow#":isTitleShadow,"#isHeaders#":isHeaders,"#isBorder#":isBorder,"#isAlternateRows#":isAlternateRows,"#isFooter#":isFooter]  
     booleanScheme2 = ["#isOverrides#":isOverrides,"#isScrubHTML#":isScrubHTML]
-    booleanScheme3 = ["#isKeyword1#":isKeyword1, "#isKeyword2#":isKeyword2, "#isKeyword3#":isKeyword3, "#isKeyword4#":isKeyword4, "#isKeyword5#":isKeyword5]
-    booleanScheme4 = ["#isThreshold1#":isThreshold1, "#isThreshold2#":isThreshold2 , "#isThreshold3#":isThreshold3, "#isThreshold4#":isThreshold4, "#isThreshold5#":isThreshold5]
-    
+
     //'myBaseSettingsMap' are those configured through the UI. 'myOverridesMap' are those extracted from the overrides text field and converted to a map. 
     //'myEffectiveSettings' are the result of merging the 'myBaseSettingsMap' settings with the 'myOverrideMap'. 
     def myBaseSettingsMap = [:]
@@ -1904,7 +1963,7 @@ def fillStyle(){
     state.myOverrides = myOverridesMap
     
     //Calculate the base settings map and save it to state. These have HEX colors and can be applied directly to settings.
-    myBaseSettingsMap = titleScheme.clone() + headerScheme.clone() + rowScheme.clone() + tableScheme.clone() + borderScheme.clone() + footerScheme.clone() + highlightScheme.clone() + keywordScheme.clone() + thresholdScheme.clone() + otherScheme.clone() + booleanScheme1.clone() + booleanScheme2.clone() + booleanScheme3.clone() + booleanScheme4.clone()
+    myBaseSettingsMap = titleScheme.clone() + headerScheme.clone() + rowScheme.clone() + tableScheme.clone() + borderScheme.clone() + footerScheme.clone() + highlightScheme.clone() + keywordScheme.clone() + thresholdScheme.clone() + otherScheme.clone() + booleanScheme1.clone() + booleanScheme2.clone()
     
     //For this one we start with the same base and add the RGBA color value which overwrite the HEX values. This result is for use in the display.
     state.myBaseSettingsMap = myBaseSettingsMap.clone()
@@ -1916,6 +1975,7 @@ def fillStyle(){
     
     //Color values that support opacity must be converted to rgba.These must be done AFTER overrides have been applied in case they include a color or opacity.
     //Combine color and opacity. For example hbc = Header Background Color. It is created by combining Header Background Color (hbc) and Header Background Opacity (hbo) to make a composite rgba value called myhbc.
+    mytbc = getRGBA(myBaseSettingsPlusOverrides.get("#tbc#"), myBaseSettingsPlusOverrides.get("#tbo#").toString())    
     mytc = getRGBA(myBaseSettingsPlusOverrides.get("#tc#"), myBaseSettingsPlusOverrides.get("#to#").toString())    
     mybc = getRGBA(myBaseSettingsPlusOverrides.get("#bc#"), myBaseSettingsPlusOverrides.get("#bo#").toString())
     //Table Header
@@ -1924,7 +1984,7 @@ def fillStyle(){
     //Table Rows
     myrbc = getRGBA(myBaseSettingsPlusOverrides.get("#rbc#"), myBaseSettingsPlusOverrides.get("#rbo#").toString())
     myrtc = getRGBA(myBaseSettingsPlusOverrides.get("#rtc#"), myBaseSettingsPlusOverrides.get("#rto#").toString())
-    rgbaColorScheme = ["#tc#":mytc,"#bc#":mybc, "#hbc#":myhbc, "#htc#":myhtc,"#rbc#":myrbc, "#rtc#":myrtc]
+    rgbaColorScheme = ["#tbc#":compress(mytbc),"#tc#":compress(mytc),"#bc#":compress(mybc), "#hbc#":compress(myhbc), "#htc#":compress(myhtc),"#rbc#":compress(myrbc), "#rtc#":compress(myrtc)]
     
     if (isLogDebug) log.debug("myBaseSettingsMap is: ${myBaseSettingsMap}")
     if (isLogDebug) log.debug("myBaseSettingsMapwithRGBA is: ${myBaseSettingsMapRGBA}")
@@ -1944,6 +2004,7 @@ def fillStyle(){
     myStyleMap.overrides = settings.overrides
     
     //Now change the colors back from the current RGBA form to #FFFFFF format for saving.
+    myStyleMap."#tbc#" = tbc  //"#FFFFFF"
     myStyleMap."#tc#" = tc  //"#FFFFFF"
     myStyleMap."#bc#" = bc  //"#FFFFFF"
     myStyleMap."#rbc#" = rbc
@@ -1978,7 +2039,6 @@ void installed() {
 //This allows us to have some parts of the settings not be visible but still have their values initialized.
 //We do this to avoid errors that might occur if a particular setting were referenced but had not been initialized.
 def initialize(){
-    
     if ( state.initialized == true ){
         if (isLogDebug) log.debug ("initialize: Initialize has already been run. Exiting")
         //return
@@ -1997,6 +2057,7 @@ def initialize(){
     app.updateSetting("myDecimalPlaces", 1)
     app.updateSetting("myUnits", [value:"None", type:"String"])
     app.updateSetting("isAbbreviations", false)
+    app.updateSetting("isShowDeviceNameModification", false)
     
     //Filtering
     app.updateSetting("myFilterType", 0)
@@ -2010,6 +2071,7 @@ def initialize(){
     app.updateSetting("isFrame", false)
     app.updateSetting("fbc", [value:"#bbbbbb", type:"color"])
     app.updateSetting("tbc", [value:"#d9ecb1", type:"color"])
+    app.updateSetting("tbo", "1")
     app.updateSetting("isShowSettings", false)
     app.updateSetting("iFrameColor", [value:"#bbbbbb", type:"color"])
     app.updateSetting("isCustomSize", false)
@@ -2099,41 +2161,33 @@ def initialize(){
     app.updateSetting("hts5", "100")
     
     //Keywords
-    app.updateSetting("isKeyword1", false)
+    app.updateSetting("myKeywordCount", 0)
     app.updateSetting("k1", [value:"?", type:"text"])
     app.updateSetting("ktr1", [value:"?", type:"text"])
-    app.updateSetting("isKeyword2", false)
     app.updateSetting("k2", [value:"?", type:"text"])
     app.updateSetting("ktr2", [value:"?", type:"text"])
-    app.updateSetting("isKeyword3", false)
     app.updateSetting("k3", [value:"?", type:"text"])
     app.updateSetting("ktr3", [value:"?", type:"text"])
-    app.updateSetting("isKeyword4", false)
     app.updateSetting("k4", [value:"?", type:"text"])
     app.updateSetting("ktr4", [value:"?", type:"text"])
-    app.updateSetting("isKeyword5", false)
     app.updateSetting("k5", [value:"?", type:"text"])
     app.updateSetting("ktr5", [value:"?", type:"text"])
     
     //Thresholds
-    app.updateSetting("isThreshold1", false)
-    app.updateSetting("top1", [value:1, type:"enum"])
+    app.updateSetting("myThresholdCount", 0)
+    app.updateSetting("top1", [value:"0", type:"enum"])
     app.updateSetting("tcv1", [value:70, type:"number"])
     app.updateSetting("ttr1", [value:"?", type:"text"])
-    app.updateSetting("isThreshold2", false)
-    app.updateSetting("top2", [value:1, type:"enum"])
+    app.updateSetting("top2", [value:"0", type:"enum"])
     app.updateSetting("tcv2", [value:70, type:"number"])
     app.updateSetting("ttr2", [value:"?", type:"text"])
-    app.updateSetting("isThreshold2", false)
-    app.updateSetting("top3", [value:1, type:"enum"])
+    app.updateSetting("top3", [value:"0", type:"enum"])
     app.updateSetting("tcv3", [value:70, type:"number"])
     app.updateSetting("ttr3", [value:"?", type:"text"])
-    app.updateSetting("isThreshold4", false)
-    app.updateSetting("top4", [value:1, type:"enum"])
+    app.updateSetting("top4", [value:"0", type:"enum"])
     app.updateSetting("tcv4", [value:70, type:"number"])
     app.updateSetting("ttr4", [value:"?", type:"text"])
-    app.updateSetting("isThreshold5", false)
-    app.updateSetting("top5", [value:1, type:"enum"])
+    app.updateSetting("top5", [value:"0", type:"enum"])
     app.updateSetting("tcv5", [value:70, type:"number"])
     app.updateSetting("ttr5", [value:"?", type:"text"])
 
@@ -2149,10 +2203,13 @@ def initialize(){
     app.updateSetting("overrides", [value: "?", type:"textarea"])
     
     //Other
-    //app.updateSetting("myTile", 1)
     app.updateSetting("mySelectedTile", "")
-    app.updateSetting("myReplacementText1", "?")
-    app.updateSetting("myReplacementText2", "?")
+    app.updateSetting("myReplaceText1", "")
+    app.updateSetting("myReplaceText2", "")
+    app.updateSetting("myReplaceText3", "")
+    app.updateSetting("mySearchText1", "?")
+    app.updateSetting("mySearchText2", "?")
+    app.updateSetting("mySearchText3", "?")
     app.updateSetting("publishInterval", [value:1, type:"enum"])
     app.updateSetting("isCompactDisplay", false)
     
@@ -2173,6 +2230,88 @@ def initialize(){
     //Have all the section collapsed to begin with except devices
     state.show = [Devices: true, Report: true, Filter: false, Design: true, Publish: false, More: false]
     
+}
+
+
+//Handles the initialization of any variables created after the original creation of the child instance.
+//These are susceptible to change with each rev or feature add.
+def updateVariables( ) {
+    //This will be called with release of version 1.3.0 which added search and replace within device names. Previously only myReplacementText1 and myReplacementText2 should have existed.
+    if (state.variablesVersion == null || state.variablesVersion < 130 ) {
+        log.info ("Updating Variables to Version 1.3.0")
+        
+        //Added background opacity in version 1.3.0
+        if (tbo == null ) app.updateSetting("tbo", "1")
+        
+        //Added option for search and replace display
+        app.updateSetting("isShowDeviceNameModification", false)
+        
+        //Migrate the old Strip text terms to the new search text terms if they exist.
+        if ( myReplacementText1 != null ) app.updateSetting("mySearchText1", "$myReplacementText1")
+        if ( myReplacementText2 != null ) app.updateSetting("mySearchText2", "$myReplacementText2")
+        
+        //Initialize the new settings if they are null.
+        if (mySearchText1 == null ) app.updateSetting("mySearchText1", [value:"?", type:"string"]) 
+        if (mySearchText2 == null ) app.updateSetting("mySearchText2", [value:"?", type:"string"]) 
+        if (mySearchText3 == null ) app.updateSetting("mySearchText3", [value:"?", type:"string"])         
+        
+        if (myReplaceText1 == null ) app.updateSetting("myReplaceText1", [value:"?", type:"string"]) 
+        if (myReplaceText2 == null ) app.updateSetting("myReplaceText2", [value:"?", type:"string"]) 
+        if (myReplaceText3 == null ) app.updateSetting("myReplaceText3", [value:"?", type:"string"]) 
+        
+        app.updateSetting("myKeywordCount", 0)
+        app.updateSetting("myThresholdCount", 0)
+        if (isKeyword1 == true ) app.updateSetting("myKeywordCount", 1)
+        if (isKeyword2 == true ) app.updateSetting("myKeywordCount", 2)
+        if (isKeyword3 == true ) app.updateSetting("myKeywordCount", 3)
+        if (isKeyword4 == true ) app.updateSetting("myKeywordCount", 4)
+        if (isKeyword5 == true ) app.updateSetting("myKeywordCount", 5)
+        
+        if (isThreshold1 == true ) app.updateSetting("myThresholdCount", 1)
+        if (isThreshold2 == true ) app.updateSetting("myThresholdCount", 2)
+        if (isThreshold3 == true ) app.updateSetting("myThresholdCount", 3)
+        if (isThreshold4 == true ) app.updateSetting("myThresholdCount", 4)
+        if (isThreshold5 == true ) app.updateSetting("myThresholdCount", 5)
+        
+        state.variablesVersion = 130
+    }
+    
+    //Next release will use this branch.
+    if (state.variablesVersion == 131 ) {
+        //Place logic to update variables here.
+    }
+
+}
+
+
+//Will be used to remove retired variables at some future time.  
+//They are not deleted immediately upon upgrade to allow falling back to prior code version.
+def removeRetiredVariables(int myVersion){
+    
+    //These variables were retired with Version 1.3.0
+    if ( myVersion == 130 ) {
+        state.remove("updateVariables")
+        
+        //Retired myReplacementText when search and replace was introduced.
+        app.removeSetting("myReplacementText")
+        app.removeSetting("myReplacementText1")
+        app.removeSetting("myReplacementText2")
+        app.removeSetting("myReplacementText3")
+        
+        //Retired isKeyword booleans.
+        app.removeSetting("isKeyword1")
+        app.removeSetting("isKeyword2")
+        app.removeSetting("isKeyword3")
+        app.removeSetting("isKeyword4")
+        app.removeSetting("isKeyword5")
+        
+        //Retired isThreshold booleans.
+        app.removeSetting("isThreshold1")
+        app.removeSetting("isThreshold2")
+        app.removeSetting("isThreshold3")
+        app.removeSetting("isThreshold4")
+        app.removeSetting("isThreshold5")
+    }       
 }
 
 //Determine if the user has selected a different capability. Only used by Activity Monitor
@@ -2213,7 +2352,8 @@ String green(s) { return '<g style="color:green">' + s + '</g>' }
 
 //Set the titles to a consistent style.
 def titleise(title){
-    title = "<span style='color:#1962d7;text-align:left; margin-top:0em; font-size:20px'><b><u>${title}</u></b></span>"
+    //title = "<span style='color:#1962d7;text-align:left; margin-top:0em; font-size:20px; box-shadow: 0px 0px 5px 5px #E8DD95; padding:2px; background-color:#E8DD95;'><b>${title}</b></span>"
+    title = "<span style='color:#1962d7;text-align:left; margin-top:0em; font-size:20px; padding:2px'><b>${title}</b></span>"
 }
 
 //Set the notes to a consistent style.
@@ -2357,6 +2497,9 @@ def scrubHTML(HTML, iFrame){
     myHTML = myHTML.replace("#data#", "")
     myHTML = myHTML.replace("#footer#", "")
     myHTML = myHTML.replace("#titleShadow#", "")
+    //#class# remains in for legacy compatibility but is not referenced in documentation.
+    myHTML = myHTML.replace("#class#", "")
+    myHTML = myHTML.replace("#class1#", "")
     myHTML = myHTML.replace("#class1#", "")
     myHTML = myHTML.replace("#class2#", "")
     myHTML = myHTML.replace("#class3#", "")
@@ -2439,7 +2582,7 @@ def findSpace(String myDevice, int myOccurrence){
 
 //Converts an RGB color and opacity to an RGBA
 def getRGBA(color, opacity){
-    //if (isLogDebug) log.debug ("color is: ${color}, opacity is: ${opacity}" )
+    if (isLogDebug) log.debug ("color is: ${color}, opacity is: ${opacity}" )
     if (opacity == 0 ) {
         //This object is invisible at opacity=0. So we will set the color to 0,0,0,0 and strip it out of the final file.
         return rgba(0,0,0,0)
@@ -2450,6 +2593,8 @@ def getRGBA(color, opacity){
         return myRGBA
     }
 }
+
+
 
 //Converts a RGBA color and opacity into an RGB value. Expecting imput like. rgba(217,236,177,1)
 def getRGB(rgba){
@@ -2468,6 +2613,102 @@ def getRGB(rgba){
     myColor.opacity = d3
     return myColor
     }
+
+
+//Compress any opaque colors to the smallest string value.
+def compress(String myColor){
+    return myColor
+    
+    if ( myColor == null ) return null
+    mySize = myColor.size()
+    log.info ("myColor is: ${myColor} of size: ${mySize}" )
+    isRGBA = false
+    isRGB = false
+    def compColor = ""
+    def myRGB
+    
+    //Can't get any legitimate result smaller than this.
+    if ( myColor.size() == 4 ) return myColor
+    
+    if ( myColor[0] == "#" ) {
+        //It's already in #ffffff format but still eligible for compression
+        isRGB = true
+        myRGB = myColor
+        log.info ("isRGB:true  -  myColor is: $myColor   -   myRGB is: ${myRGB}")
+    }
+    
+    //Test for RGBA
+    if (myColor.contains("rgba") == true) { 
+        isRGBA = true
+        myRGB = getRGB(myColor)
+        log.info ("myRGB is: ${myRGB} " )
+        if ( myRGB.opacity == "1" ) {
+            //This is a fully opaque color so it's eligible for shrinking 
+            //tempColor = [:]
+            //tempColor.rgb = hubitat.helper.ColorUtils.rgbToHEX([d0.toInteger(),d1.toInteger(),d2.toInteger()])
+            myRGB = myRGB.rgb
+            log.info ("isRGBA:true  -  myColor is: $myColor   -   myRGB is: ${myRGB}")
+        }
+        if ( myRGB.opacity == "0" ) {
+            //This is fully transparent color so it is invisible. We will set it to (0,0,0,0) and strip it out later in scrubHTML if enabled.
+            log.info ("Color is RGBA but is fully transparent. Set to (0,0,0,0) and will be stripped by scrubHTML()")
+            return "rgba(0,0,0,0)"
+        }
+    }
+    
+    //Test for RGB
+    if ( isRGB == true || isRGBA == true ) {
+        //Now process the results
+        log.info ("XXXXXX: myColor is: $myColor   -   myRGB is: ${myRGB}")
+        if (myRGB[1] == myRGB[2] && myRGB[3] == myRGB[4] && myRGB[5] == myRGB[6] ) {
+            compColor = "#" + myRGB[1] + myRGB[3] + myRGB[5]
+            if ( isRGB == true ) log.info ("Color is RGB and compressed from ${myColor} to: ${compColor}")
+            if ( isRGBA == true ) log.info ("Color is RGBA and compressed from ${myColor} to: ${compColor}")
+            return compColor
+            }
+        else {
+            if ( isRGB == true ) log.info ("Color is RGB but NOT compressed. Using original: ${myColor}")
+            if ( isRGBA == true ) log.info ("Color is RGBA but NOT compressed. Using original: ${myColor}")
+            return myColor
+            }
+    }
+    
+        log.info ("Color not RGB or RGBA and NOT compressed. Using original: ${myColor}")
+        return myColor
+}
+
+
+//Converts an RGB color and opacity to an RGBA
+def getRGBANew(color, opacity){
+    //if (isLogDebug) 
+    log.debug ("color is: ${color}, opacity is: ${opacity}" )
+    if (opacity == "0" ) {
+        //This object is invisible at opacity=0. So we will set the color to 0,0,0,0 and strip it out of the final file.
+        return "rgba(0,0,0,0)"
+    }
+    
+    else {
+        myRGB = hubitat.helper.ColorUtils.hexToRGB(color)
+        if (opacity == "1") {
+            log.info ("Testing Color")
+            //This object is fully opaque and this color may qualify to be in the form #fff to save space.
+            String pos0 = Integer.toString(myRGB[0], 16) ; pos0 = pos0.padLeft(2, '0')
+            String pos1 = Integer.toString(myRGB[1], 16) ; pos1 = pos1.padLeft(2, '0')
+            String pos2 = Integer.toString(myRGB[2], 16) ; pos2 = pos2.padLeft(2, '0')
+            
+            log.info ("pos0 == ${pos0}")
+            log.info ("pos1 == ${pos1}")
+            log.info ("pos2 == ${pos2}")
+            
+            //See if his color can be represented with 100% fidelity in #fff format to reduce space consumption.
+            if (pos0[0] == pos0[1] && pos1[0] == pos1[1] && pos2[0] == pos2[1] ) return "#" + pos0[0] + pos1[0] + pos2[0]
+        }
+        else {
+            myRGBA = "rgba(" + myRGB[0] + "," + myRGB[1] + "," + myRGB[2] + "," + opacity.toString() + ")"
+            return myRGBA
+        }
+    }
+}
 
 //Receives a string and determines whether it is a float, integer or string value.
 def getDataType(String myVal){
