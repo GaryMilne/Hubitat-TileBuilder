@@ -1,2 +1,2 @@
 # Hubitat-TileBuilder
-This is the initial release of Tile Builder for Hubitat.
+Current Version of Tile Builder is V1.3.0 released on June 4th 2023.
