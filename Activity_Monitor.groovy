@@ -49,17 +49,17 @@ import groovy.transform.Field
 //These are unknown as to whether they report integer or float values.
 //capabilitiesUnknown = [" "carbonDioxideMeasurement":"carbonDioxide","pressureMeasurement":"pressure","relativeHumidityMeasurement":"humidity", "ultravioletIndex":"ultravioletIndex"]
 
-@Field static final Version = "<b>Tile Builder Attribute Monitor v1.3.0 (6/2/23)</b>"
-//@Field static final moduleName = "Activity Monitor"
-@Field static final moduleName = "Attribute Monitor"
+@Field static final Version = "<b>Tile Builder Activity Monitor v1.3.0 (6/2/23)</b>"
+@Field static final moduleName = "Activity Monitor"
+//@Field static final moduleName = "Attribute Monitor"
 
 definition(
-    //name: "Tile Builder - Activity Monitor",
-    //description: "Monitors a list of devices to look for those that are inactive\\overactive and may need attention. Publishes an HTML table of results for a quick and attractive display in the Hubitat Dashboard environment.",
-    //importUrl: "https://raw.githubusercontent.com/GaryMilne/Hubitat-TileBuilder/main/Activity_Monitor.groovy",
-    name: "Tile Builder - Attribute Monitor",
-    description: "Monitors a single attribute for a list of devices. Publishes an HTML table of results for a quick and attractive display in the Hubitat Dashboard environment.",
-    importUrl: "https://raw.githubusercontent.com/GaryMilne/Hubitat-TileBuilder/main/Attribute_Monitor.groovy",
+    name: "Tile Builder - Activity Monitor",
+    description: "Monitors a list of devices to look for those that are inactive\\overactive and may need attention. Publishes an HTML table of results for a quick and attractive display in the Hubitat Dashboard environment.",
+    importUrl: "https://raw.githubusercontent.com/GaryMilne/Hubitat-TileBuilder/main/Activity_Monitor.groovy",
+    //name: "Tile Builder - Attribute Monitor",
+    //description: "Monitors a single attribute for a list of devices. Publishes an HTML table of results for a quick and attractive display in the Hubitat Dashboard environment.",
+    //importUrl: "https://raw.githubusercontent.com/GaryMilne/Hubitat-TileBuilder/main/Attribute_Monitor.groovy",
     namespace: "garyjmilne",
     author: "Gary J. Milne",
     category: "Utilities",
