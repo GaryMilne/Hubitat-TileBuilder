@@ -1,912 +1,1977 @@
-/**
-*  Tile Builder Parent App
-*  Version: See ChangeLog
-*  Download: See importUrl in definition
-*  Description: Used in conjunction with child apps to generate tabular reports on device data and publishes them to a dashboard.
-*
-*  Copyright 2022 Gary J. Milne  
-*  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed
-*  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
-*  for the specific language governing permissions and limitations under the License.
-
-*  License:
-*  You are free to use this software in an un-modified form. Software cannot be modified or redistributed.
-*  You may use the code for educational purposes or for use within other applications as long as they are unrelated to the 
-*  production of tabular data in HTML form, unless you have the prior consent of the author.
-*  You are granted a license to use Tile Builder in its standard configuration without limits.
-*  Use of Tile Builder in it's Advanced requires a license key that must be issued to you by the original developer. TileBuilderApp@gmail.com
-*
-*  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the
-*  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-
-*  Authors Notes:
-*  For more information on Activity Monitor & Attribute Monitor check out these resources.
-*  Original posting on Hubitat Community forum: TBD
+/**  Authors Notes:
+*  For more information on Multi Attribute Monitor check out these resources.
+*  Original posting on Hubitat Community forum: https://community.hubitat.com/t/release-tile-builder-build-beautiful-tiles-of-tabular-data-for-your-dashboard/118822
 *  Tile Builder Documentation: https://github.com/GaryMilne/Hubitat-TileBuilder/blob/main/Tile%20Builder%20Help.pdf
 *
-*  Tile Builder Parent App - ChangeLog
-*  Version 1.0.3 - Internal Only
-*  Version 1.0.4 - Cleaned up Styles. Cleaned up message text. Small bug fixes.
-*  Version 1.0.5 - Added styles.
-*  Version 1.0.6 - Fixed bug in loading any style that had an = sign embedded in the values side of the key\value pair.
-*  Version 1.0.7 - Changes to licensing text and links.
-*  Version 1.0.8 - Added Tile Deletion button and logic. Cleaned up some verbage.
-*  Version 1.0.9 - Cleaned up styles, some adds, some settings, some deletes.
-*  Version 1.1.0 - Add additional examples to override helper.
-*  Version 1.1.1 - Cleanup of some of the in-line help information. 
-*  Version 1.1.2 - Added licensing routines. 
-*  Version 1.2.0 - Limited public release. Version change to synchronize with other modules and Help. 
-*  Version 1.2.2 - Rework of setup screen based on feedback from @sburke781. Simplifies, reduces screen clutter and add a setup "Wizard".
-*  Version 1.2.3 - Adds a footer to the main screen containing versioning information.
-*  Version 1.2.4 - Split Overrides Helper examples into multiple categories for easier navigation. Add new examples.
-*  Version 1.2.6 - Round up version to match child Apps.
-*  Version 1.2.7 - Fixed a few errors in styles.
-*  Version 1.2.8 - Cleaned up some built-in style values.
-*  Version 1.3.0 - Removed isThreshold* and isKeyword* from styles in favor of myThresholdCount and myKeywordCount. Added sendMessageToTile function for child recovery. Moved unitsMap and comparators to parent. Added style Battery Meters.
+*  CHANGELOG
+*  Version 0.8.2 - Internal
+*  Version 0.8.3 - Reworked the scrubHTML routine to offer different levels of compression from most compatible to least compatible. Replaced all references from background-color to background.
+*  Version 0.8.7 - Added color compression and simplified color handling.
+*  Version 0.8.8 - More bug fixes.
+*  Version 0.9.0 - Completed option: "Also Highlight Device Names"
+*  Version 0.9.1 - Minor Updates
+*  Version 0.9.2 - Added seperate Rules control for each line and appropriate handling.
+*  Version 1.0.0 - Public Release
+*  Gary Milne - July 17th, 2023 3:59PM
 *
-*  Gary Milne - Jun 2nd, 2023
+*  This code is Multi-Attribute Monitor which is largely derived from Attribute Monitor but is still substantially different.
 *
 **/
-import groovy.transform.Field
-@Field static final Version = "<b>Tile Builder Parent v1.3.0 (6/2/23)</b>"
 
-//These are the data for the pickers used on the child forms.
-def elementSize() { return ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20'] }
-def textScale() { return ['50', '55', '60', '65', '70', '75', '80', '85', '90', '95', '100', '105', '110', '115', '120', '125', '130', '135', '140', '145', '150', '175', '200', '250', '300', '350', '400', '450', '500'] }
-def fontFamily() { return ['Arial', 'Arial Sans Serif', 'Arial Black', 'Brush Script MT', 'Comic Sans MS', 'Courier New', 'Garamond', 'Georgia', 'Hubitat', 'Lucida', 'Monospace', 'Palatino', 'Roboto', 'Tahoma', 'Times New Roman', 'Trebuchet MS', 'Verdana'] }
-//def fontFamily(){ return["Arial","Arial Sans Serif","Arial Black","Brush Script MT","Comic Sans MS","Courier New","Garamond","Georgia","Hubitat","Lucida","Material Symbols Outlined","Monospace","Palatino","Roboto","Tahoma","Times New Roman","Trebuchet MS","Verdana"] }
-def borderStyle() { return ['Dashed', 'Dotted', 'Double', 'Groove', 'Hidden', 'Inset', 'Outset', 'Ridge', 'Solid'] }
-def tableStyle() { return ['Collapse', 'Seperate'] }
-def textAlignment() { return ['Left', 'Center', 'Right', 'Justify'] }
-def tableSize() { return ['Auto', '50', '55', '60', '65', '70', '75', '80', '85', '90', '95', '100'] }
-def opacity() { return ['1', '0.9', '0.8', '0.7', '0.6', '0.5', '0.4', '0.3', '0.2', '0.1', '0'] }
-def inactivityTime() { return [0:'0 hours', 1:'1 hour', 2:'2 hours', 4:'4 Hours', 8:'8 hours', 12:'12 hours', 24:'1 day', 48:'2 days', 72:'3 days', 168:'1 week', 336:'2 weeks', 730:'1 month', 2190:'3 months', 4380:'6 months', 8760:'1 year'] }
-def deviceLimit() { return [0:'0 devices', 1:'1 device', 2:'2 devices', 3:'3 devices', 4:'4 devices', 5:'5 devices', 6:'6 devices', 7:'7 devices', 8:'8 devices', 9:'9 devices', 10:'10 devices', 11:'11 device', 12:'12 devices', 13:'13 devices', 14:'14 devices', 15:'15 devices', 16:'16 devices', 17:'17 devices', 18:'18 devices', 19:'19 devices', 20:'20 devices', 21:'21 device', 22:'22 devices', 23:'23 devices', 24:'24 devices', 25:'25 devices', 26:'26 devices', 27:'27 devices', 28:'28 devices', 29:'29 devices', 30:'30 devices'] }
-def truncateLength() { return [99:'No truncation.', 98:'First Space', 97:'Second Space', 96:'Third Space', 10:'10 characters.', 12:'12 characters.', 15:'15 characters.', 18:'18 characters.', 20:'20 characters.', 22:'22 characters.', 25:'25 characters.', 30:'30 characters.'] }
-def refreshInterval() { return [0:'Never', 1:'1 minute', 2:'2 minutes', 5:'5 minutes', 10:'10 minutes', 15:'15 minutes', 30:'30 minutes', 60:'1 hour', 120:'2 hours', 240:'4 hours', 480:'8 hours', 720:'12 hours', 1440:'24 hours'] }
-def pixels() { return ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '-1', '-2', '-3', '-4', '-5', '-6', '-7', '-8', '-9', '-10', '-11', '-12', '-13', '-14', '-15', '-16', '-17', '-18', '-19', '-20'] }
-def borderRadius() { return ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26', '27', '28', '29', '30'] }
-def baseFontSize() { return ['10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '22', '24', '26', '28', '30'] }
-def tilePreviewList() { return [1:'1 x 1', 2:'1 x 2', 3:'1 x 3', 4:'1 x 4', 5:'2 x 1', 6:'2 x 2', 7:'2 x 3', 8:'2 x 4'] }
-def storageDevices() { return ['Tile Builder Storage Device 1', 'Tile Builder Storage Device 2', 'Tile Builder Storage Device 3'] }
-def allTileList() { return [1:'tile1', 2:'tile2', 3:'tile3', 4:'tile4', 5:'tile5', 6:'tile6', 7:'tile7', 8:'tile8', 9:'tile9', 10:'tile10', 11:'tile11', 12:'tile12', 13:'tile13', 14:'tile14', 15:'tile15', 16:'tile16', 17:'tile17', 18:'tile18', 19:'tile19', 20:'tile20', 21:'tile21', 22:'tile22', 23:'tile23', 24:'tile24', 25:'tile25'] }
-def filterList() { return [0:'No Filter', 1:'String ==', 2:'String !=', 3:'Numeric ==', 4:'Numeric <=', 5:'Numeric >='] }
-def overrideCategory() { return ['Animation', 'Field Replacement', 'Text', 'Border', 'Background', 'Misc', 'Classes', 'Margin & Padding', 'Transform'] }
-def messageList() { return ['clearOverrides', 'disableKeywords', 'disableThresholds', 'clearDeviceList'] }
-def unitsMap() { return ['None', '°F', '_°F', '°C', '_°C', '%', '_%', 'A', '_A', 'V', '_V', 'W', '_W', 'kWh', '_kWH', 'K', '_K', 'ppm', '_ppm', 'lx', '_lx'] }
-def comparators() { return [0:'None', 1:'<=', 2:'==', 3:'>='] }
+import groovy.transform.Field
+@Field static final Version = "<b>Tile Builder Multi Attribute Monitor v1.0.0 (7/17/23)</b>"
 
 definition(
-    name: 'Tile Builder',
-    namespace: 'garyjmilne',
-    author: 'Gary Milne',
-    description: 'This is the Tile Builder Parent App',
-    category: 'Dashboards',
-	importUrl: "https://raw.githubusercontent.com/GaryMilne/Hubitat-TileBuilder/main/Tile_Builder_Parent.groovy",
-    iconUrl: '',
-    iconX2Url: '',
-    iconX3Url: '',
+    name: "Tile Builder - Multi Attribute Monitor",
+    description: "Monitors multiple attributes for a list of devices. Publishes an HTML table of results for a quick and attractive display in the Hubitat Dashboard environment.",
+    importUrl: "https://raw.githubusercontent.com/GaryMilne/Hubitat-TileBuilder/main/Multi_Attribute_Monitor.groovy",
+    namespace: "garyjmilne",
+    author: "Gary J. Milne",
+    category: "Utilities",
+    iconUrl: "",
+    iconX2Url: "",
+    iconX3Url: "",
     singleThreaded: true,
+    parent: "garyjmilne:Tile Builder",
     installOnOpen: true
-    )
-	
+)
+
 preferences {
-    page name: 'mainPage', title: '', install: true, uninstall: true // ,submitOnChange: true
+    page(name: "mainPage")
 }
 
 def mainPage() {
+    //Basic initialization for the initial release
     if (state.initialized == null ) initialize()
-    //initialize()
-
-    dynamicPage(name: "mainPage") {
-        //See if the user has changed the selected storage device
-        isSelectedDeviceChanged()
-
-        //Refresh the UI - neccessary for controls located on the same page.
-        refreshUI()
-
-        //This is all a single section as section breaks have been commented out. This uses less screen space.
-        section { 
-            paragraph "<div style='text-align:center;color: #c61010; font-size:30px;text-shadow: 0 0 5px #FFF, 0 0 10px #FFF, 0 0 15px #FFF, 0 0 20px #49ff18, 0 0 30px #49FF18, 0 0 40px #49FF18, 0 0 55px #49FF18, 0 0 75px #ffffff;;'> Tile Builder 🎨</div>"
-            //Intro
-            if (state.showIntro == true || state.setupState == 1) {
-                input(name: 'btnShowIntro', type: 'button', title: 'Introduction ▼', backgroundColor: 'navy', textColor: 'white', submitOnChange: true, width: 2)  //▼ ◀ ▶ ▲
-                
-                part1 = "<b>Tile Builder</b> allows you to create custom tiles with a broad range of information that can be published to a <b>Hubitat Dashboard</b> using a native application. "
-                part2 = "<b>Tile Builder</b> can eliminate the hassle of maintaining a seperate system in order to get an attractive dashboard. A sample tile generated with Tile Builder Advanced is shown below.<br>"
-                if (state.setupState != 99) titleise2(red("<b>First time setup!</b>"))
-                paragraph(part1 + part2)
-                
-                myString = "You are installing <b>Tile Builder Standard which is free</b> and provides a highly functional addition to the basic Hubitat Dashboard capabilities.<br>"
-                myString += "If you wish to upgrade to <b>Tile Builder Advanced</b> you can do so after setup is complete by visiting the Licensing section."
-                paragraph myString
-                
-                //Get the sample table
-                myHTML = getSample()
-                paragraph '<iframe srcdoc=' + '"' + myHTML + '"' + ' width="170" height="160" style="border:solid;color:red" scrolling="no"></iframe>'
-                
-                if (state.setupState != 99) myText = "  Use the <b>Next</b> button to move through the sections for initial setup."
-                else myText = "<b>Click on the section headers to navigate to a section.</b>"
-                paragraph(myText)
-                
-                //Only show button during the setup process
-                if (state.setupState != 99) {
-                    input(name: 'btnNext1', type: 'button', title: 'Next ▶', backgroundColor: 'teal', textColor: 'white', submitOnChange: true, width: 2)  //▼ ◀ ▶ ▲
-                }
-            }
-            else {
-                input(name: 'btnShowIntro', type: 'button', title: 'Introduction ▶', backgroundColor: 'DodgerBlue', textColor: 'white', submitOnChange: true, width: 2)  //▼ ◀ ▶ ▲
-            }
-            paragraph line(2)
-            //End of Intro
-            
-            
-            //Licensing
-            if (state.setupState == 99) {
-                if (state.showLicense == true) {
-                    input(name: 'btnShowLicense', type: 'button', title: 'Licensing ▼', backgroundColor: 'navy', textColor: 'white', submitOnChange: true, width: 2, newLineBefore: true, newLineAfter: false)  //▼ ◀ ▶ ▲
-                    myString = "<b>Tile Builder Standard is free</b> and provides a highly functional addition to the basic Hubitat Dashboard capabilities.<br>"
-                    myString += "<b>Tile Builder Advanced</b> adds Filters, Highlights, Styles and a range of powerful customizations options. "
-			        myString += 'Click <a href="https://github.com/GaryMilne/Hubitat-TileBuilder/blob/main/Tile%20Builder%20Help.pdf" target="_blank">here</a> for more information.</br></br>'
-            
-                    myString = myString + "To purchase the license for <b>Tile Builder Advanced</b> you must do the following:<br>"
-                    myString += '<b>1)</b> Donate at least <b>\$5</b> to ongoing development via PayPal using this <a href="https://www.paypal.com/donate/?business=YEAFRPFHJCTFA&no_recurring=1&item_name=A+donation+of+\$5+or+more+grants+you+license+to+Tile+Builder+Advanced.+Please+leave+your+Hubitat+Community+ID.&currency_code=USD" target="_blank">link.</a></br>'			
-                    myString += "<b>2)</b> Forward the paypal eMail receipt along with your ID (<b>" + getID() + "</b>) to <b>TileBuilderApp@gmail.com</b>. Please include your Hubitat community ID for future notifications.<br>"
-                    myString += "<b>3)</b> Wait for license key eMail notification (usually within 24 hours).<br>"
-                    myString += "<b>4)</b> Apply license key using the input box below.<br>"
-                    myString += "<b>Please respect the time and effort it took to create this application and comply with the terms of the license.</b>"
-                    paragraph note('', myString)
-            
-                    if (state.isAdvancedLicense == false ){
-                        input (name: "licenseKey", title: "<b>Enter Advanced License Key</b>", type: "string", submitOnChange:true, width:3, defaultValue: "?")
-                        input (name: 'activateLicense', type: 'button', title: 'Activate Advanced License', backgroundColor: 'orange', textColor: 'black', submitOnChange: true, width: 2)
-                        myString = '<b>Activation State: ' + red(state.activationState) + '</b><br>'
-                        myString = myString + 'You are running ' + dodgerBlue('<b>Tile Builder Standard</b>')
-                        paragraph myString
-                    }
-                    else {
-                        myString = '<b>Activation State: ' + green(state.activationState) + '</b><br>'
-                        myString = myString + 'You are running ' + green('<b>Tile Builder Advanced</b>')
-                        paragraph myString
-                    }
-                }
-            else {
-                input(name: 'btnShowLicense', type: 'button', title: 'Licensing ▶', backgroundColor: 'DodgerBlue', textColor: 'white', submitOnChange: true, width: 2)  //▼ ◀ ▶ ▲
-                }
-            paragraph line(2)
-            }
-            //End of Licensing
-            
-            //Device
-            if (state.showDevice == true ) {
-                input(name: 'btnShowDevice', type: 'button', title: 'Storage Device ▼', backgroundColor: 'navy', textColor: 'white', submitOnChange: true, width: 2, newLineBefore: true)  //▼ ◀ ▶ ▲
-                paragraph "<b>Tile Builder</b> stores generated tiles on a special purpose <b>Tile Builder Storage Device</b>. You must <b>create a device and attach</b> to it using the controls below.<br>"                 
-                paragraph note('Note: ', "Each instance of <b>Tile Builder</b> must have its own unique storage device.")
-                    
-                if (state.isStorageConnected == false ) {
-                    paragraph red('❌ - A Tile Builder Storage Device is not connected.')
-                    myString = "You do not have a 'Tile Builder Storage Device' connected. Click the button below to create\\connect one. <br>"
-                    myString += "<b>Important: </b>If you remove the <b>Tile Builder</b> App the Tile Builder Storage Device will become orphaned and unusable. <br>"
-                    myString += "<b>Note: </b>It is possible to install multiple instances of <b>Tile Builder</b>. In such a scenario each instance should be connected to a unique Tile Builder Storage Device."
-                    
-                    input(name: 'selectedDevice', type: 'enum', title: bold('Select a Tile Builder Storage Device'), options: storageDevices(), required: false, defaultValue: 'Tile Builder Storage Device 1', submitOnChange: true, width: 3, newLineAfter:true)
-                    input(name: 'createDevice', type: 'button', title: 'Create Device', backgroundColor: 'MediumSeaGreen', textColor: 'white', submitOnChange: true, width: 2)
-                    //paragraph ("isStorageConnected: $state.isStorageConnected")
-                    
-                    if (state.isStorageConnected == false) input(name: 'connectDevice', type: 'button', title: 'Connect Device', backgroundColor: 'Orange', textColor: 'white', submitOnChange: true, width: 2)
-                    else input(name: 'doNothing', type: 'button', title: 'Connect Device', backgroundColor: 'MediumSeaGreen', textColor: 'white', submitOnChange: true, width: 2)
-                            
-                    input(name: 'deleteDevice', type: 'button', title: 'Delete Device', backgroundColor: 'Maroon', textColor: 'yellow', submitOnChange: true, width: 2, newLineAfter: true)
-                    if (state.hasMessage != null && state.hasMessage != '' ) {
-                        if (state.hasMessage.contains("Error")) paragraph note('', red(state.hasMessage))
-                        else paragraph note('', green(state.hasMessage))
-                    }
-                }
-                else {
-                    paragraph green('✅ - ' + state.myStorageDevice + ' is connected.')
-                    paragraph note('', 'You have successfully connected to a Tile Builder Storage Device on your system. You can now create and publish tiles.')
-                    input(name: 'disconnectDevice', type: 'button', title: 'Disconnect Device', backgroundColor: 'orange', textColor: 'black', submitOnChange: true, width: 2, newLineAfter: true)
-                    }
-                //Only show button during the setup process
-                if (state.setupState != 99)
-                    input(name: 'btnNext2', type: 'button', title: 'Next ▶', backgroundColor: 'teal', textColor: 'white', submitOnChange: true, width: 2, newLine: true)  //▼ ◀ ▶ ▲
-                }
-            else input(name: 'btnShowDevice', type: 'button', title: 'Storage Device ▶', backgroundColor: 'DodgerBlue', textColor: 'white', submitOnChange: true, width: 2)  //▼ ◀ ▶ ▲
-            paragraph line(2)
-            //End of Device
-                    
-            //Setup Complete
-            if (state.setupState == 3){
-                paragraph titleise2(green('The required steps for setup are now complete!<br>'))
-                paragraph 'Click <b>Finish Setup</b> to proceed to creating your first tile!'
-                paragraph note("Note: ", "From now on you can click on the section headers to navigate the configuration options.")
-                input(name: 'btnNext3', type: 'button', title: 'Finish Setup ▶', backgroundColor: 'teal', textColor: 'white', submitOnChange: true, width: 2)  //▼ ◀ ▶ ▲
-                paragraph line(2)
-                }
-            //End of Setup
-            
-            //Create Tiles
-            if (state.setupState == 99) {
-                if (state.showCreateEdit == true) {
-                    //if (true ){
-                    input(name: 'btnShowCreateEdit', type: 'button', title: 'Create\\Edit Tiles ▼', backgroundColor: 'navy', textColor: 'white', submitOnChange: true, width: 2, newLineBefore: true, newLineAfter: false)  //▼ ◀ ▶ ▲
-                    myString = '<b>Tile Builder</b> has two types of tile:<br>'
-                    myString += '<b>1) Activity Monitor:</b> Tiles monitor a group of devices for activity\\inactivity using the <b>lastActivityAt</b> attribute. These tiles are refreshed at routine intervals.<br>'
-                    myString += '<b>2) Attribute Monitor:</b> Tiles are event driven and aggregate multiple devices\\single attribute into a single tile. For example, all room temps on a single tile.<br>'
-                    paragraph note('', myString)
-                    app(name: 'TBPA', appName: 'Tile Builder - Activity Monitor', namespace: 'garyjmilne', title: 'Add New Activity Monitor', multiple: true)
-                    app(name: 'TBPA', appName: 'Tile Builder - Attribute Monitor', namespace: 'garyjmilne', title: 'Add New Attribute Monitor', multiple: true)
-                    }
-                else {
-                    input(name: 'btnShowCreateEdit', type: 'button', title: 'Create\\Edit Tiles ▶', backgroundColor: 'DodgerBlue', textColor: 'white', submitOnChange: true, width: 2, newLineBefore: true, newLineAfter: false)  //▼ ◀ ▶ ▲
-                }
-                paragraph line(2)
-            }
-            //End of Create Tiles
+    //Handles the initialization of new variables added after the original release.
+    //updateVariables( )
         
-            //Manage Tiles 
-            if (state.setupState == 99) {
-                if (state.showManage == true ) {
-                    input(name: 'btnShowManage', type: 'button', title: 'Manage Tiles ▼', backgroundColor: 'navy', textColor: 'white', submitOnChange: true, width: 2, newLineBefore: true, newLineAfter: false)  //▼ ◀ ▶ ▲
-                    myString = 'Here you can view information about the tiles on this storage device, which tiles are in use, the last time those tiles were updated and delete obsolete tiles.<br>'
-                    myString += 'In the <b>Tile Builder Storage Device</b> you can also preview the tiles, add descriptions and delete tiles as necessary.'
-                    paragraph note('Note: ', myString)
-                    input name: 'tilesInUse', type: 'enum', title: bold('List Tiles in Use'), options: getTileList(), required: false, defaultValue: 'Tile List', submitOnChange: false, width: 4, newLineAfter:false
-                    input name: 'tilesInUseByActivity', type: 'enum', title: bold('List Tiles By Activity'), options: getTileListByActivity(), required: false, defaultValue: 'Tile List By Activity', submitOnChange: true, width: 4, newLineAfter:true
-		    		input(name: 'deleteTile', type: 'button', title: '↑ Delete ↑ Selected ↑ Tile ↑', backgroundColor: 'Maroon', textColor: 'yellow', submitOnChange: true, width: 2)
-			    	paragraph note('Note: ', 'Deleting a tile does not delete the <b>Tile Builder</b> child app that generates the tile. Delete the child app first and then delete the tile.')
-                }
-                
-            else {
-                input(name: 'btnShowManage', type: 'button', title: 'Manage Tiles ▶', backgroundColor: 'DodgerBlue', textColor: 'white', submitOnChange: true, width: 2, newLineBefore: true, newLineAfter: false)  //▼ ◀ ▶ ▲
-                }
-            paragraph line(2)
-            }
-            //End of Manage  
-       
-            //More
-            if (state.setupState == 99) {
-                if (state.showMore == true) {
-                    input(name: 'btnShowMore', type: 'button', title: 'More ▼', backgroundColor: 'navy', textColor: 'white', submitOnChange: true, width: 2, newLineBefore: true, newLineAfter: true)  //▼ ◀ ▶ ▲
-                    label title: bold('Enter a name for this Tile Builder parent instance (optional)'), required: false, width: 4, newLineAfter: true
-                    
-                    paragraph body('<b>Logging Functions</b>')
-                    input (name: "isLogInfo",  type: "bool", title: "<b>Enable info logging?</b>", defaultValue: false, submitOnChange: false, width: 2)
-                    input (name: "isLogTrace", type: "bool", title: "<b>Enable trace logging?</b>", defaultValue: false, submitOnChange: false, width: 2)
-                    input (name: "isLogDebug", type: "bool", title: "<b>Enable debug logging?</b>", defaultValue: false, submitOnChange: false, width: 2)
-                    input (name: "isLogWarn",  type: "bool", title: "<b>Enable warn logging?</b>", defaultValue: true, submitOnChange: false, width: 2)
-                    input (name: "isLogError",  type: "bool", title: "<b>Enable error logging?</b>", defaultValue: true, submitOnChange: false, width: 2, newLineAfter: true)
-                    paragraph line(1)
-                    
-                    paragraph body('<b>Support Functions</b>')
-                    input(name: 'defaultStyles'  , type: 'button', title: 'Rebuild Default Styles', backgroundColor: '#27ae61', textColor: 'white', submitOnChange: true, width: 2)
-                    input(name: 'removeLicense'  , type: 'button', title: 'De-Activate Software License', backgroundColor: '#27ae61', textColor: 'white', submitOnChange: true, width: 3, newLineAfter: true)
-                    input (name: "sendMessageToTile", title: "<b>Send Message to Tile</b>", type: "enum", options: getTileList(), submitOnChange:true, width:3, defaultValue: "?")
-                    input (name: "message", type: 'enum', title: bold('Select Message to Send'), options: messageList(), required: false, submitOnChange: true, width: 3)
-                }
-                else {
-                    input(name: 'btnShowMore', type: 'button', title: 'More ▶', backgroundColor: 'DodgerBlue', textColor: 'white', submitOnChange: true, width: 2)  //▼ ◀ ▶ ▲
-                }
-            paragraph line(2)
-            }
-            //End of More
-			
-			//Now add a footer.
-            myText = '<div style="display: flex; justify-content: space-between;">'
-            myText += '<div style="text-align:left;font-weight:small;font-size:12px"> Developer: Gary J. Milne</div>'
-            myText += '<div style="text-align:center;font-weight:small;font-size:12px">Version: ' + Version + '</div>'
-            myText += '<div style="text-align:right;font-weight:small;font-size:12px">Copyright 2022 - 2023</div>'
-            myText += '</div>'
-            paragraph myText  
-           //paragraph ("setupState is: $state.setupState")
-           //input(name: "test"  , type: "button", title: "test", backgroundColor: "#27ae61", textColor: "white", submitOnChange: true, width: 2, newLineAfter: false)
-        }
-        
-    }
-        
-        //Refresh the UI - neccessary for controls located on the same page.
-        //log.info ("Refresh again")
-        //refreshUI()
-    }
-
-def test(){
-    initialize()
-    showSection("Intro", true)
-    state.setupState = 1
-    state.hasMessage= ""
-}
-
-//A function for sending a message to a child app whenever it runs if the "sendMessageToTile control matches the child tile.
-def messageForTile( childLabel ){
-    //log.info "childLabel is: $childLabel" 
-    //log.info "sendMessageToTile is: $sendMessageToTile"
-    if ( childLabel == null || sendMessageToTile == null ) return 0
-    boolean match = sendMessageToTile.contains(childLabel.toString())
-    if ( match == true ) { return message } 
-    else { return 0 }
-}
-
-//Returns a short version of the Storage Device Name for this instance.
-def getStorageShortName(){
-    if (isLogInfo) log.info ("Storage Name is: ${state.myStorageDeviceDNI.toString()} ")
-    if (state.myStorageDeviceDNI == "Tile_Builder_Storage_Device_1" ) return "TBSD1"
-    if (state.myStorageDeviceDNI == "Tile_Builder_Storage_Device_2" ) return "TBSD2"
-    if (state.myStorageDeviceDNI == "Tile_Builder_Storage_Device_3" ) return "TBSD3"
-}
-
-//Returns a long version of the Storage Device Name for this instance.
-def getStorageLongName(){
-    return state.myStorageDeviceDNI.toString()
-}
-
-//************************************************************************************************************************************************************************************************************************
-//************************************************************************************************************************************************************************************************************************
-//************************************************************************************************************************************************************************************************************************
-//**************
-//**************  Setup and UI Functions
-//**************
-//************************************************************************************************************************************************************************************************************************
-//************************************************************************************************************************************************************************************************************************
-//************************************************************************************************************************************************************************************************************************
-
-//Show the selected section and hide all the others.
-def showSection(section, override){
-    //if (state.inSetup == true && override == false) return
-    state.showIntro = false
-    state.showLicense = false
-    state.showDevice = false
-    state.showSetupComplete = false
-    state.showCreateEdit = false
-    state.showManage = false
-    state.showMore = false
+    //Checks to see if there are any messages for this child app. This is used to recover broken child apps from certain error conditions
+    myMessage = parent.messageForTile( app.label )
+    if ( myMessage != "" ) supportFunction ( myMessage ) 
     
-    if (section == "Intro" ) state.showIntro = true
-    if (section == "License" ) state.showLicense = true
-    if (section == "Device" ) state.showDevice = true
-    if (section == "SetupComplete" ) state.showSetupComplete = true
-    if (section == "CreateEdit" ) state.showCreateEdit = true
-    if (section == "Manage" ) state.showManage = true
-    if (section == "More" ) state.showMore = true
+    refreshTable()
+    refreshUIbefore()
+    dynamicPage(name: "mainPage", title: titleise("<center><h2> Multi Attribute Monitor </h2></center>"), uninstall: true, install: true, singleThreaded:true) {
+        
+    section{
+        if (state.show.Devices == true) {
+        //paragraph buttonLink ("test", "test", 0)
+                input(name: 'btnShowDevices', type: 'button', title: 'Select Devices and Attributes ▼', backgroundColor: 'navy', textColor: 'white', submitOnChange: true, width: 3, newLineAfter: true)  //▼ ◀ ▶ ▲
+                
+                input (name: "myDeviceCount", title: "<b>How Many Devices\\Attributes?</b>", type: "enum", options: [1,2,3,4,5,6,7,8,9,10], submitOnChange:true, width:2, defaultValue: 0)
+                if (myDeviceCount != null && myDeviceCount.toInteger() >= 1 ){
+                    input "myDevice1", "capability.*", title: "<b>Device 1</b>" , multiple: false, required: false, submitOnChange: true, width: 2, newLine: true
+                    input "name1", "string", title: "<b>Item Name</b>", submitOnChange:true, width:2, defaultValue: "?", newLine:false
+                    input "prepend1", "string", title: "<b>Prepend</b>", submitOnChange:true, width:1, defaultValue: "", newLine:false
+                    input "myAttribute1", "enum", title: "&nbsp<b>Attribute</b>", options: getAttributeList(myDevice1), multiple:false, submitOnChange:true, width: 2, required: true, newLine: false
+                    input "append1", "string", title: "<b>Append</b>", submitOnChange:true, width:1, defaultValue: "", newLine:false
+                    input "actionA1", "enum", title: "<b>Cleanup</b>",  options: parent.cleanups(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
+                    input "actionB1", "enum", title: "<b>Rules</b>",  options: parent.rules(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
+                    }
+                
+                if (myDeviceCount != null && myDeviceCount.toInteger() >= 2 ){
+                    input "myDevice2", "capability.*", title: "<b>Device 2</b>" , multiple: false, required: false, submitOnChange: true, width: 2, newLine: true
+                    input "name2", "string", title: "<b>Item Name</b>", submitOnChange:true, width:2, defaultValue: "?", newLine:false
+                    input "prepend2", "string", title: "<b>Prepend</b>", submitOnChange:true, width:1, defaultValue: "", newLine:false
+                    input "myAttribute2", "enum", title: "&nbsp<b>Attribute</b>", options: getAttributeList(myDevice2), multiple:false, submitOnChange:true, width: 2, required: true, newLine: false
+                    input "append2", "string", title: "<b>Append</b>", submitOnChange:true, width:1, defaultValue: "", newLine:false
+                    input "actionA2", "enum", title: "<b>Cleanup</b>",  options: parent.cleanups(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
+                    input "actionB2", "enum", title: "<b>Rules</b>",  options: parent.rules(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
+                    }
+                
+                if (myDeviceCount != null && myDeviceCount.toInteger() >= 3 ){
+                    input "myDevice3", "capability.*", title: "<b>Device 3</b>" , multiple: false, required: false, submitOnChange: true, width: 2, newLine: true
+                    input "name3", "string", title: "<b>Item Name</b>", submitOnChange:true, width:2, defaultValue: "?", newLine:false
+                    input "prepend3", "string", title: "<b>Prepend</b>", submitOnChange:true, width:1, defaultValue: "", newLine:false
+                    input "myAttribute3", "enum", title: "&nbsp<b>Attribute</b>", options: getAttributeList(myDevice3), multiple:false, submitOnChange:true, width: 2, required: true, newLine: false
+                    input "append3", "string", title: "<b>Append</b>", submitOnChange:true, width:1, defaultValue: "", newLine:false
+                    input "actionA3", "enum", title: "<b>Cleanup</b>",  options: parent.cleanups(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
+                    input "actionB3", "enum", title: "<b>Rules</b>",  options: parent.rules(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
+                    }
+                
+                if (myDeviceCount != null && myDeviceCount.toInteger() >= 4 ){
+                    input "myDevice4", "capability.*", title: "<b>Device 4</b>" , multiple: false, required: false, submitOnChange: true, width: 2, newLine: true
+                    input "name4", "string", title: "<b>Item Name</b>", submitOnChange:true, width:2, defaultValue: "?", newLine:false
+                    input "prepend4", "string", title: "<b>Prepend</b>", submitOnChange:true, width:1, defaultValue: "", newLine:false
+                    input "myAttribute4", "enum", title: "&nbsp<b>Attribute</b>", options: getAttributeList(myDevice4), multiple:false, submitOnChange:true, width: 2, required: true, newLine: false
+                    input "append4", "string", title: "<b>Append</b>", submitOnChange:true, width:1, defaultValue: "", newLine:false
+                    input "actionA4", "enum", title: "<b>Cleanup</b>",  options: parent.cleanups(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
+                    input "actionB4", "enum", title: "<b>Rules</b>",  options: parent.rules(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
+                    }
+                
+                if (myDeviceCount != null && myDeviceCount.toInteger() >= 5 ){
+                    input "myDevice5", "capability.*", title: "<b>Device 5</b>" , multiple: false, required: false, submitOnChange: true, width: 2, newLine: true
+                    input "name5", "string", title: "<b>Item Name</b>", submitOnChange:true, width:2, defaultValue: "?", newLine:false
+                    input "prepend5", "string", title: "<b>Prepend</b>", submitOnChange:true, width:1, defaultValue: "", newLine:false
+                    input "myAttribute5", "enum", title: "&nbsp<b>Attribute</b>", options: getAttributeList(myDevice5), multiple:false, submitOnChange:true, width: 2, required: true, newLine: false
+                    input "append5", "string", title: "<b>Append</b>", submitOnChange:true, width:1, defaultValue: "", newLine:false
+                    input "actionA5", "enum", title: "<b>Cleanup</b>",  options: parent.cleanups(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
+                    input "actionB5", "enum", title: "<b>Rules</b>",  options: parent.rules(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
+                    }
+                
+                if (myDeviceCount != null && myDeviceCount.toInteger() >= 6 ){
+                    input "myDevice6", "capability.*", title: "<b>Device 6</b>" , multiple: false, required: false, submitOnChange: true, width: 2, newLine: true
+                    input "name6", "string", title: "<b>Item Name</b>", submitOnChange:true, width:2, defaultValue: "?", newLine:false
+                    input "prepend6", "string", title: "<b>Prepend</b>", submitOnChange:true, width:1, defaultValue: "", newLine:false
+                    input "myAttribute6", "enum", title: "&nbsp<b>Attribute</b>", options: getAttributeList(myDevice6), multiple:false, submitOnChange:true, width: 2, required: true, newLine: false
+                    input "append6", "string", title: "<b>Append</b>", submitOnChange:true, width:1, defaultValue: "", newLine:false
+                    input "actionA6", "enum", title: "<b>Cleanup</b>",  options: parent.cleanups(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
+                    input "actionB6", "enum", title: "<b>Rules</b>",  options: parent.rules(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
+                    }
+                
+                if (myDeviceCount != null && myDeviceCount.toInteger() >= 7 ){
+                    input "myDevice7", "capability.*", title: "<b>Device 7</b>" , multiple: false, required: false, submitOnChange: true, width: 2, newLine: true
+                    input "name7", "string", title: "<b>Item Name</b>", submitOnChange:true, width:2, defaultValue: "?", newLine:false
+                    input "prepend7", "string", title: "<b>Prepend</b>", submitOnChange:true, width:1, defaultValue: "", newLine:false
+                    input "myAttribute7", "enum", title: "&nbsp<b>Attribute</b>", options: getAttributeList(myDevice7), multiple:false, submitOnChange:true, width: 2, required: true, newLine: false
+                    input "append7", "string", title: "<b>Append</b>", submitOnChange:true, width:1, defaultValue: "", newLine:false
+                    input "actionA7", "enum", title: "<b>Cleanup</b>",  options: parent.cleanups(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
+                    input "actionB7", "enum", title: "<b>Rules</b>",  options: parent.rules(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
+                    }
+                
+                if (myDeviceCount != null && myDeviceCount.toInteger() >= 8 ){
+                    input "myDevice8", "capability.*", title: "<b>Device 8</b>" , multiple: false, required: false, submitOnChange: true, width: 2, newLine: true
+                    input "name8", "string", title: "<b>Item Name</b>", submitOnChange:true, width:2, defaultValue: "?", newLine:false
+                    input "prepend8", "string", title: "<b>Prepend</b>", submitOnChange:true, width:1, defaultValue: "", newLine:false
+                    input "myAttribute8", "enum", title: "&nbsp<b>Attribute</b>", options: getAttributeList(myDevice8), multiple:false, submitOnChange:true, width: 2, required: true, newLine: false
+                    input "append8", "string", title: "<b>Append</b>", submitOnChange:true, width:1, defaultValue: "", newLine:false
+                    input "actionA8", "enum", title: "<b>Cleanup</b>",  options: parent.cleanups(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
+                    input "actionB8", "enum", title: "<b>Rules</b>",  options: parent.rules(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
+                    }
+                
+                if (myDeviceCount != null && myDeviceCount.toInteger() >= 9 ){
+                    input "myDevice9", "capability.*", title: "<b>Device 9</b>" , multiple: false, required: false, submitOnChange: true, width: 2, newLine: true
+                    input "name9", "string", title: "<b>Item Name</b>", submitOnChange:true, width:2, defaultValue: "?", newLine:false
+                    input "prepend9", "string", title: "<b>Prepend</b>", submitOnChange:true, width:1, defaultValue: "", newLine:false
+                    input "myAttribute9", "enum", title: "&nbsp<b>Attribute</b>", options: getAttributeList(myDevice9), multiple:false, submitOnChange:true, width: 2, required: true, newLine: false
+                    input "append9", "string", title: "<b>Append</b>", submitOnChange:true, width:1, defaultValue: "", newLine:false
+                    input "actionA9", "enum", title: "<b>Cleanup</b>",  options: parent.cleanups(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
+                    input "actionB9", "enum", title: "<b>Rules</b>",  options: parent.rules(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
+                    }
+                
+                if (myDeviceCount != null && myDeviceCount.toInteger() >= 10 ){
+                    input "myDevice10", "capability.*", title: "<b>Device 10</b>" , multiple: false, required: false, submitOnChange: true, width: 2, newLine: true
+                    input "name10", "string", title: "<b>Item Name</b>", submitOnChange:true, width:2, defaultValue: "?", newLine:false
+                    input "prepend10", "string", title: "<b>Prepend</b>", submitOnChange:true, width:1, defaultValue: "", newLine:false
+                    input "myAttribute10", "enum", title: "&nbsp<b>Attribute</b>", options: getAttributeList(myDevice10), multiple:false, submitOnChange:true, width: 2, required: true, newLine: false
+                    input "append610", "string", title: "<b>Append</b>", submitOnChange:true, width:1, defaultValue: "", newLine:false
+                    input "actionA10", "enum", title: "<b>Cleanup</b>",  options: parent.cleanups(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
+                    input "actionB10", "enum", title: "<b>Rules</b>",  options: parent.rules(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
+                    }
+        }
+        else input(name: 'btnShowDevices', type: 'button', title: 'Select Devices and Attributes ▶', backgroundColor: 'dodgerBlue', textColor: 'white', submitOnChange: true, width: 3)  //▼ ◀ ▶ ▲
+        paragraph line(2)
+        
+        //Section for customization of the table.
+        if (state.show.Design == true) {
+            input (name: 'btnShowDesign', type: 'button', title: 'Design Table ▼', backgroundColor: 'navy', textColor: 'white', submitOnChange: true, width: 3, newLine: true, newLineAfter: true)  //▼ ◀ ▶ ▲
+            //input (name: "Refresh", type: "button", title: "<big>🔄 Refresh Table 🔄</big>", backgroundColor: "#27ae61", textColor: "white", submitOnChange: true, width: 2)
+            input (name: "Refresh", type: "button", title: "Refresh Table", backgroundColor: "#27ae61", textColor: "white", submitOnChange: true, width: 2)
+            input (name: "isCustomize", type: "bool", title: "Customize Table", required: false, multiple: false, defaultValue: false, submitOnChange: true, width: 2 )
+             
+            if (isCustomize == true){
+                //Allows the user to remove informational lines.
+                input (name: "isCompactDisplay", type: "bool", title: "Compact Display", required: false, multiple: false, defaultValue: false, submitOnChange: true, width: 2 )
+                
+                paragraph "<style>#buttons {font-family: Arial, Helvetica, sans-serif;width: 90%;text-align:'Center'} #buttons td,tr {background:#00a2ed;color:#FFFFFF;text-align:Center;opacity:0.75;padding: 8px} #buttons td:hover {background: #27ae61;opacity:1}</style>"
+                part1 = "<table id='buttons'><td>"  + buttonLink ('General', 'General', 1) + "</td><td>" + buttonLink ('Title', 'Title', 2) + "</td><td>" + buttonLink ('Headers', 'Headers', 3) + "</td>"
+                part2 = "<td>" + buttonLink ('Borders', 'Borders', 4) + "</td><td>" + buttonLink ('Rows', 'Rows', 5) + "</td><td>"  + buttonLink ('Footer', 'Footer', 6) + "</td>"
+                part3 = "<td>" + buttonLink ('Highlights', 'Highlights', 7) + "</td><td>" + buttonLink ('Styles', 'Styles', 8) + "</td>" + "</td><td>" + buttonLink ('Advanced', 'Advanced', 9) + "</td>"
+                if (parent.checkLicense() == true) table = part1 + part2 + part3 + "</table>"
+                else table = part1 + part2 + "</table>"
+                paragraph table
+                
+                //General Properties
+                if (activeButton == 1){ 
+                    if (isCompactDisplay == false) paragraph titleise("General Properties")
+                    input (name: "tw", type: "enum", title: bold("Width %"), options: parent.tableSize(), required: false, defaultValue: "90", submitOnChange: true, width: 2)
+                    input (name: "th", type: "enum", title: bold("Height %"), options: parent.tableSize(), required: false, defaultValue: "auto", submitOnChange: true, width: 2)
+                    input (name: "tbc", type: "color", title: bold2("Table Background Color", tbc), required:false, defaultValue: "#ffffff", width:2, submitOnChange: true)
+                    input (name: "tbo", type: "enum", title: bold("Table Background Opacity"), options: parent.opacity(), required: false, defaultValue: "1", submitOnChange: true, width: 2)
+                    input (name: "tff", type: "enum", title: bold("Font"), options: parent.fontFamily(), required: false, defaultValue: "Roboto", submitOnChange: true, width: 2, newLineAfter: true)
+                    input (name: "bm", type: "enum", title: bold("Border Mode"), options: parent.tableStyle(), required: false, defaultValue: "collapse",  submitOnChange: true, width: 2)
+                    input (name: "bfs", type: "enum", title: bold("Base Font Size"), options: parent.baseFontSize(), required: false, defaultValue: "18", submitOnChange: true, width: 2)
+                    
+                    input (name: "isComment", type: "bool", title: "<b>Add comment?</b>", required: false, multiple: false, defaultValue: false, submitOnChange: true, width: 2)
+                    if (isComment == true){
+                        input (name: "comment", type: "text", title: bold("Comment"), required: false, defaultValue: "?", width:4, submitOnChange: true)
+                    }
+                    
+                    input (name: "isFrame", type: "bool", title: bold("Add Frame"), required: false, multiple: false, defaultValue: false, submitOnChange: true, width: 2, newLine: false)
+                    if (isFrame == true){
+                        input (name: "fbc", type: "color", title: bold2("Frame Color", fbc), required: false, defaultValue: "#90C226", submitOnChange: true, width: 3, newLine: false)
+                    }
+                    input (name: "tilePreview", type: "enum", title: bold("Select Tile Preview Size"), options: parent.tilePreviewList(), required: false, defaultValue: 2, submitOnChange: true, width: 3, newLine: true)
+                    input (name: "isCustomSize", type: "bool", title: "<b>Use Custom Preview Size?</b>", required: false, multiple: false, defaultValue: false, submitOnChange: true, width: 2)
+                    if (isCustomSize == true){
+                        input (name: "customWidth", type: "text", title: bold("Tile Width"), required:false, defaultValue: "200", submitOnChange: true, width: 1)
+                        input (name: "customHeight", type: "text", title: bold("Tile Height"), required:false, defaultValue: "190", submitOnChange: true, width: 1)
+                    }
+                    input (name: "iFrameColor", type: "color", title: bold2("Dashboard Color", iFrameColor ), required: false, defaultValue: "#000000", submitOnChange: true, width: 3)
+
+                    if (isCompactDisplay == false) {
+                        paragraph line(1)
+                        paragraph summary("General Notes", parent.generalNotes() )    
+                    }
+                }
+                
+                //Title Properties
+                if (activeButton == 2){
+                    if (isCompactDisplay == false) paragraph titleise("Title Properties")
+                    input (name: "isTitle", type: "bool", title: "<b>Display Title?</b>", required: false, multiple: false, defaultValue: false, submitOnChange: true, width: 2)
+                    if (isTitle == true){
+                        input (name: "tt", title: "<b>Title Text</b>", type: "string", required:false, defaultValue: "Inactive Devices", width:3, submitOnChange: true, newLine: true)
+                        input (name: "ts", type: "enum", title: bold("Text Size %"), options: parent.textScale(), required: false, defaultValue: "150", width:2, submitOnChange: true)
+                        input (name: "ta", type: "enum", title: bold("Alignment"), options: parent.textAlignment(), required: false, defaultValue: "Center", width:2, submitOnChange: true, newLineAfter: true)
+                        input (name: "tc", type: "color", title: bold2("Text Color", tc), required:false, defaultValue: "#000000", width:3, submitOnChange: true)
+                        input (name: "to", type: "enum", title: bold("Text Opacity"), options: parent.opacity(), required: false, defaultValue: "1", submitOnChange: true, width: 2)
+                        input (name: "tp", type: "enum", title: bold("Text Padding"), options: parent.elementSize(), required: false, defaultValue: "0", width:2, submitOnChange: true, newLineAfter:true)
+                    
+                        input (name: "isTitleShadow", type: "bool", title: "<b>Add Shadow Text?</b>", required: false, multiple: false, defaultValue: false, submitOnChange: true, width: 2)
+                        if (isTitleShadow == true){
+                            input (name: "shcolor", type: "color", title: bold2("Shadow Color", shcolor), required:false, defaultValue: "#FF0000", width:3, submitOnChange: true)
+                            input (name: "shhor", type: "enum", title: bold("Hor Offset"), options: parent.pixels(), required: false, defaultValue: "5", width:2, submitOnChange: true)
+                            input (name: "shver", type: "enum", title: bold("Ver Offset"), options: parent.pixels(), required:false, defaultValue: "5", width:2, submitOnChange: true)
+                            input (name: "shblur", type: "enum", title: bold("Blur"), options: parent.borderRadius(), required: false, defaultValue: "5", width:2, submitOnChange: true)
+                        }
+                    }
+                  if (isCompactDisplay == false) {
+                    paragraph line(1)
+                    paragraph summary("Title Notes", parent.titleNotes() )
+                  }
+                }
+                
+                //Header Properties
+                if (activeButton == 3){
+                    if (isCompactDisplay == false) paragraph titleise("Header Properties")
+                    input (name: "isHeaders", type: "bool", title: "<b>Display Headers?</b>", required: false, multiple: false, defaultValue: false, submitOnChange: true, width: 2)
+                    if (isHeaders == true ){
+                        //Manage the UI if the headers are merged.
+                        input (name: "isMergeHeaders", type: "bool", title: "<b>Merge Headers?</b>", required: false, multiple: false, defaultValue: false, submitOnChange: true, width: 2, newLineAfter:true)
+                        if (isMergeHeaders == true) {
+                                input (name: "A0", type: "text", title: bold("Heading 1"), required:false, defaultValue: "Device", submitOnChange: true, width: 4)
+                            }
+                            else {
+                                input (name: "A0", type: "text", title: bold("Heading 1"), required:false, defaultValue: "Device", submitOnChange: true, width: 2)
+                                input (name: "B0", type: "text", title: bold("Heading 2"), required:false, defaultValue: "State", submitOnChange: true, width: 2)
+                            }
+                        
+                        input (name: "hts", type: "enum", title: bold("Text Size %"), options: parent.textScale(), required: false, defaultValue: "125", submitOnChange: true, width: 2)
+                        input (name: "hta", type: "enum", title: bold("Alignment"), options: parent.textAlignment(), required: false, defaultValue: 2, submitOnChange: true, width: 2)
+                        input (name: "htc", type: "color", title: bold2("Text Color", htc), required: false, defaultValue: "#000000", submitOnChange: true, width: 3)
+                        input (name: "hto", type: "enum", title: bold("Text Opacity"), options: parent.opacity(), required: false, defaultValue: "1", submitOnChange: true, width: 2, newLine: true)
+                        input (name: "hp", type: "enum", title: bold("Text Padding"), options: parent.elementSize(), required: false, defaultValue: "0",  submitOnChange: true, width: 2)
+                        input (name: "hbc", type: "color", title: bold2("Background Color", hbc), required: false, defaultValue: "#90C226", submitOnChange: true, width: 3)
+                        input (name: "hbo", type: "enum", title: bold("Background Opacity"), options: parent.opacity(), required: false, defaultValue: "1",  submitOnChange: true, width: 2)
+                        }
+                    if (isCompactDisplay == false) {
+                        paragraph line(1)
+                        paragraph summary("Header Notes", parent.headerNotes() )
+                    }
+                }
+
+                //Border Properties
+                if (activeButton == 4){
+                    if (isCompactDisplay == false) paragraph titleise("Border Properties")
+                    input (name: "isBorder", type: "bool", title: "<b>Display Borders?</b>", required: false, multiple: false, defaultValue: true, submitOnChange: true, width: 2, newLineAfter:true)
+                    if (isBorder == true ){
+                        input (name: "bs", type: "enum", title: bold("Style"), options: parent.borderStyle(), required: false, defaultValue: "Solid", submitOnChange: true, width: 2)
+                        input (name: "bw", type: "enum", title: bold("Width"), options: parent.elementSize(), required: false, defaultValue: 2,  submitOnChange: true, width: 2)
+                        input (name: "bc", type: "color", title: bold2("Border Color", bc), required: false, defaultValue: "#000000", submitOnChange: true, width: 3)
+                        input (name: "bo", type: "enum", title: bold("Opacity"), options: parent.opacity(), required: false, defaultValue: "1", submitOnChange: true, width: 2, newLine:true)
+                        input (name: "br", type: "enum", title: bold("Radius"), options: parent.borderRadius(), required: false, defaultValue: "0", submitOnChange: true, width: 2)
+                        input (name: "bp", type: "enum", title: bold("Padding"), options: parent.elementSize(), required: false, defaultValue: "0",  submitOnChange: true, width: 2)
+                    }
+                    if (isCompactDisplay == false) {
+                        paragraph line(1)
+                        paragraph summary("Border Notes", parent.borderNotes() )
+                    }
+                }
+
+                //Row Properties
+                if (activeButton == 5){
+                    if (isCompactDisplay == false) paragraph titleise("Data Row Properties")
+                    input (name: "rts", type: "enum", title: bold("Text Size %"), options: parent.textScale(), required: false, defaultValue: "100", submitOnChange: true, width: 2)
+                    input (name: "rta", type: "enum", title: bold("Alignment"), options: parent.textAlignment(), required: false, defaultValue: 15, submitOnChange: true, width: 2)
+                    input (name: "rtc", type: "color", title: bold2("Text Color", rtc), required: false, defaultValue: "#000000" , submitOnChange: true, width: 3)
+                    input (name: "rto", type: "enum", title: bold("Text Opacity"), options: parent.opacity(), required: false, defaultValue: "1", submitOnChange: true, width: 2)
+                    input (name: "rp", type: "enum", title: bold("Text Padding"), options: parent.elementSize(), required: false, defaultValue: "0",  submitOnChange: true, width: 2, newLine: true)
+                    input (name: "rbc", type: "color", title: bold2("Row Background Color", rbc), required: false, defaultValue: "#BFE373" , submitOnChange: true, width: 3)
+                    input (name: "rbo", type: "enum", title: bold("Row Background Opacity"), options: parent.opacity(), required: false, defaultValue: "1",  submitOnChange: true, width: 2)
+                    input (name: "isAppendUnits", type: "bool", title: bold("Append Units<br>to Data?"), required: false, defaultValue: true, submitOnChange: true, width: 2, newLine: true)
+                    input (name: "isAlternateRows", type: "bool", title: bold("Use Alternate<br>Row Colors?"), required: false, defaultValue: true, submitOnChange: true, width: 2, newLine: false)
+                    if (isAlternateRows == true){
+                        input (name: "ratc", type: "color", title: bold2("Alternate Text Color", ratc), required: false, defaultValue: "#000000", submitOnChange: true, width: 3)
+                        input (name: "rabc", type: "color", title: bold2("Alternate Background Color", rabc), required: false, defaultValue: "#E9F5CF", submitOnChange: true, width: 3)
+                    }   
+                    if (isCompactDisplay == false) { 
+                        paragraph line(1)
+                        paragraph summary("Row Notes", parent.rowNotes() )
+                    }
+                }
+
+                //Footer Properties
+                if (activeButton == 6){
+                    if (isCompactDisplay == false) paragraph titleise("Footer Properties")
+                    input (name: "isFooter", type: "bool", title: "<b>Display Footer?</b>", required: false, multiple: false, defaultValue: true, submitOnChange: true, width: 2, newLineAfter:true)
+                    if (isFooter == true) {
+                        input (name: "ft", type: "text", title: bold("Footer Text"), required: false, defaultValue: "%time%", width:3, submitOnChange: true)
+                        input (name: "fs", type: "enum", title: bold("Text Size %"), options: parent.textScale(), required: false, defaultValue: "50", width:2, submitOnChange: true)
+                        input (name: "fa", type: "enum", title: bold("Alignment"), options: parent.textAlignment(), required: false, defaultValue: "Center", width:2, submitOnChange: true)
+                        input (name: "fc", type: "color", title: bold2("Text Color", fc), required:false, defaultValue: "#000000", width:3, submitOnChange: true)
+                        }
+                    if (isCompactDisplay == false) {
+                        paragraph line(1)
+                        paragraph summary("Footer Notes", parent.footerNotes() )    
+                    }
+                }
+                
+                //Highlight Properties
+                if (activeButton == 7){
+                    if (isCompactDisplay == false) paragraph titleise("Highlights")
+                    
+                    //Keywords
+                    if (state.show.Keywords == true) {
+                        input(name: 'btnShowKeywords', type: 'button', title: 'Show Keywords ▼', backgroundColor: 'navy', textColor: 'white', submitOnChange: true, width: 3, newLine: true)  //▼ ◀ ▶ ▲
+                        
+                        input (name: "myKeywordCount", title: "<b>How Many Keywords?</b>", type: "enum", options: [0,1,2,3,4,5], submitOnChange:true, width:2, defaultValue: 0, newLine: true, newLineAfter:true)
+                    
+                        if (myKeywordCount.toInteger() >= 1 ){
+                            input (name: "k1", type: "text", title: bold("Enter Keyword #1"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2, newLine:true)
+                            input (name: "ktr1", type: "text", title: bold("Replacement Text #1"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2)
+                            input (name: "hc1", type: "color", title: bold2("Highlight 1 Color", hc1), required: false, defaultValue: "#008000", submitOnChange: true, width: 2)    //Default as green shade
+                            input (name: "hts1", type: "enum", title: bold("Highlight 1 Text Scale"), options: parent.textScale(), required: false, submitOnChange: true, defaultValue: "125", width: 2, newLineAfter:true)
+                        }
+                        
+                        if (myKeywordCount.toInteger() >= 2 ){
+                            input (name: "k2", type: "text", title: bold("Enter Keyword #2"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2, newLine:true)
+                            input (name: "ktr2", type: "text", title: bold("Replacement Text #2"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2)
+                            input (name: "hc2", type: "color", title: bold2("Highlight 2 Color", hc2), required: false, defaultValue: "#CA6F1E", submitOnChange: true, width: 2)    //Default as orange shade
+                            input (name: "hts2", type: "enum", title: bold("Highlight 2 Text Scale"), options: parent.textScale(), required: false, submitOnChange: true, defaultValue: "125", width: 2, newLineAfter:true)
+                        }
+                        
+                        if (myKeywordCount.toInteger() >= 3 ){
+                            input (name: "k3", type: "text", title: bold("Enter Keyword #3"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2, newLine:true)
+                            input (name: "ktr3", type: "text", title: bold("Replacement Text #3"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2)
+                            input (name: "hc3", type: "color", title: bold2("Highlight 3 Color", hc3), required: false, defaultValue: "#00FF00", submitOnChange: true, width: 2)    //Default as red shade
+                            input (name: "hts3", type: "enum", title: bold("Highlight 3 Text Scale"), options: parent.textScale(), required: false, submitOnChange: true, defaultValue: "125", width: 2, newLineAfter:true)
+                        }
+                        
+                        if (myKeywordCount.toInteger() >= 4 ){
+                            input (name: "k4", type: "text", title: bold("Enter Keyword #4"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2, newLine:true)
+                            input (name: "ktr4", type: "text", title: bold("Replacement Text #4"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2)
+                            input (name: "hc4", type: "color", title: bold2("Highlight 4 Color", hc4), required: false, defaultValue: "#0000FF", submitOnChange: true, width: 2)    //Default as blue shade
+                            input (name: "hts4", type: "enum", title: bold("Highlight 4 Text Scale"), options: parent.textScale(), required: false, submitOnChange: true, defaultValue: "125", width: 2, newLineAfter:true)
+                        }
+                        
+                        if (myKeywordCount.toInteger() >= 5 ){
+                            input (name: "k5", type: "text", title: bold("Enter Keyword #5"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2, newLine:true)
+                            input (name: "ktr5", type: "text", title: bold("Replacement Text #5"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2)
+                            input (name: "hc5", type: "color", title: bold2("Highlight 5 Color", hc5), required: false, defaultValue: "#FF0000", submitOnChange: true, width: 2)    //Default as orange shade
+                            input (name: "hts5", type: "enum", title: bold("Highlight 5 Text Scale"), options: parent.textScale(), required: false, submitOnChange: true, defaultValue: "125", width: 2, newLineAfter:true)
+                        }
+                        
+                    }
+                    else input(name: 'btnShowKeywords', type: 'button', title: 'Show Keywords ▶', backgroundColor: 'dodgerBlue', textColor: 'white', submitOnChange: true, width: 3, newLineAfter: true)  //▼ ◀ ▶ ▲
+                         
+                    //Thresholds
+                    if (state.show.Thresholds == true) {
+                        input(name: 'btnShowThresholds', type: 'button', title: 'Show Thresholds ▼', backgroundColor: 'navy', textColor: 'white', submitOnChange: true, width: 3, newLine: true)  //▼ ◀ ▶ ▲
+                        
+                        input (name: "myThresholdCount", title: "<b>How Many Thresholds?</b>", type: "enum", options: [0,1,2,3,4,5], submitOnChange:true, width:2, defaultValue: 0, newLine: true, newLineAfter:true)
+                        
+                        if (myThresholdCount.toInteger() >= 1 ){
+                            input (name: "top6", type: "enum", title: bold("Operator #6"), required: false, options: parent.comparators(), displayDuringSetup: true, defaultValue: 0, submitOnChange: true, width: 1, newLine: true)
+                            input (name: "tcv6", type: "number", title: bold("Comparison Value #6"), required: false, displayDuringSetup: true, defaultValue: 1, submitOnChange: true, width: 2)
+                            input (name: "ttr6", type: "text", title: bold("Replacement Text #6"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2)
+                            input (name: "hc6", type: "color", title: bold2("Highlight 6 Color", hc6), required: false, defaultValue: "#008000", submitOnChange: true, width: 2)    //Default as green shade
+                            input (name: "hts6", type: "enum", title: bold("Highlight 6 Text Scale"), options: parent.textScale(), required: false, submitOnChange: true, defaultValue: "125", width: 2, newLineAfter:true)
+                        }
+                        
+                        if (myThresholdCount.toInteger() >= 2 ){
+                            input (name: "top7", type: "enum", title: bold("Operator #7"), required: false, options: parent.comparators(), displayDuringSetup: true, defaultValue: "None", submitOnChange: true, width: 1, newLine: true)
+                            input (name: "tcv7", type: "number", title: bold("Comparison Value #7"), required: false, displayDuringSetup: true, defaultValue: 1, submitOnChange: true, width: 2)
+                            input (name: "ttr7", type: "text", title: bold("Replacement Text #7"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2)
+                            input (name: "hc7", type: "color", title: bold2("Highlight 7 Color", hc7), required: false, defaultValue: "#CA6F1E", submitOnChange: true, width: 2)    //Default as orange shade
+                            input (name: "hts7", type: "enum", title: bold("Highlight 7 Text Scale"), options: parent.textScale(), required: false, submitOnChange: true, defaultValue: "125", width: 2, newLineAfter:true)
+                        }
+                        if (myThresholdCount.toInteger() >= 3 ){
+                            input (name: "top8", type: "enum", title: bold("Operator #8"), required: false, options: parent.comparators(), displayDuringSetup: true, defaultValue: 0, submitOnChange: true, width: 1, newLine: true)
+                            input (name: "tcv8", type: "number", title: bold("Comparison Value #8"), required: false, displayDuringSetup: true, defaultValue: 1, submitOnChange: true, width: 2)
+                            input (name: "ttr8", type: "text", title: bold("Replacement Text #8"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2)
+                            input (name: "hc8", type: "color", title: bold2("Highlight 8 Color", hc8), required: false, defaultValue: "#00FF00", submitOnChange: true, width: 2)    //Default as red shade
+                            input (name: "hts8", type: "enum", title: bold("Highlight 3 Text Scale"), options: parent.textScale(), required: false, submitOnChange: true, defaultValue: "125", width: 2, newLineAfter:true)
+                        }
+                        if (myThresholdCount.toInteger() >= 4 ){
+                            input (name: "top9", type: "enum", title: bold("Operator #9"), required: false, options: parent.comparators(), displayDuringSetup: true, defaultValue: 0, submitOnChange: true, width: 1, newLine: true)
+                            input (name: "tcv9", type: "number", title: bold("Comparison Value #9"), required: false, displayDuringSetup: true, defaultValue: 1, submitOnChange: true, width: 2)
+                            input (name: "ttr9", type: "text", title: bold("Replacement Text #9"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2)
+                            input (name: "hc9", type: "color", title: bold2("Highlight 9 Color", hc9), required: false, defaultValue: "#0000FF", submitOnChange: true, width: 2)    //Default as blue shade
+                            input (name: "hts9", type: "enum", title: bold("Highlight 9 Text Scale"), options: parent.textScale(), required: false, submitOnChange: true, defaultValue: "125", width: 2, newLineAfter:true)
+                        }
+                        if (myThresholdCount.toInteger() >= 5 ){
+                            input (name: "top10", type: "enum", title: bold("Operator #10"), required: false, options: parent.comparators(), displayDuringSetup: true, defaultValue: 0, submitOnChange: true, width: 1, newLine: true)
+                            input (name: "tcv10", type: "number", title: bold("Comparison Value #10"), required: false, displayDuringSetup: true, defaultValue: 1, submitOnChange: true, width: 2)
+                            input (name: "ttr10", type: "text", title: bold("Replacement Text #10"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2)
+                            input (name: "hc10", type: "color", title: bold2("Highlight 10 Color", hc10), required: false, defaultValue: "#FF0000", submitOnChange: true, width: 2)    //Default as orange shade
+                            input (name: "hts10", type: "enum", title: bold("Highlight 10 Text Scale"), options: parent.textScale(), required: false, submitOnChange: true, defaultValue: "125", width: 2, newLineAfter:true)
+                        }
+                        
+                    }
+                    else input(name: 'btnShowThresholds', type: 'button', title: 'Show Thresholds ▶', backgroundColor: 'dodgerBlue', textColor: 'white', submitOnChange: true, width: 3, newLine: true, newLineAfter:true)  //▼ ◀ ▶ ▲
+                    
+                     //FormatRules
+                    if (state.show.FormatRules == true) {
+                        input(name: 'btnShowFormatRules', type: 'button', title: 'Show Format Rules ▼', backgroundColor: 'navy', textColor: 'white', submitOnChange: true, width: 3, newLine: true, newLineAfter: true)  //▼ ◀ ▶ ▲
+                        input (name: "fr1", type: "text", title: bold("Format Rule 1"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 4, newLine: true)
+                        input (name: "fr2", type: "text", title: bold("Format Rule 2"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 4, newLine: true)
+                        input (name: "fr3", type: "text", title: bold("Format Rule 3"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 4, newLine: true)
+                    }
+                    else input(name: 'btnShowFormatRules', type: 'button', title: 'Show Format Rules ▶', backgroundColor: 'dodgerBlue', textColor: 'white', submitOnChange: true, width: 3, newLine: true)  //▼ ◀ ▶ ▲
+                    
+                    input (name: "isHighlightDeviceNames", type: "bool", title: bold("Also Highlight Device Names"), required: false, multiple: false, defaultValue: false, submitOnChange: true, width: 2, newLine: true)
+                        
+                    if (isCompactDisplay == false) {
+                        paragraph line(1)
+                        paragraph summary("Highlight Notes", parent.highlightNotes() )    
+                    }
+                }
+                
+                //Styles
+                if (activeButton == 8){
+                    if (isCompactDisplay == false) paragraph titleise("Styles")
+                    input (name: "applyStyleName", type: "enum", title: bold("Select Style to Apply"), options:parent.listStyles() , required: false, submitOnChange: true, defaultValue: null, width: 3)
+                    input (name: "saveStyleName", type: "text", title: bold("Save as Style: (Tab or Enter)"), backgroundColor: "#27ae61", textColor: "white", submitOnChange: true, defaultValue: "?", width: 3)
+                    input (name: "deleteStyleName", type: "enum", title: bold("Select Style to Delete"), options:parent.listStyles() , required: false, submitOnChange: true, defaultValue: null, width: 3)
+                    input (name: "isShowImportExport", type: "bool", title: "<b>Show Import\\Export?</b>", required: false, multiple: false, defaultValue: false, submitOnChange: true, width: 3, newLineAfter:true)
+                    
+                    if (applyStyleName != null) 
+                        input (name: "applyStyle", type: "button", title: "Apply Style", backgroundColor: "#27ae61", textColor: "white", submitOnChange: true, width: 3, newLine: true, newLineAfter: false)
+                    else 
+                        input (name: "doNothing", type: "button", title: "Apply Style", backgroundColor: "#D3D3D3", textColor: "black", submitOnChange: true, width: 3, newLine: true, newLineAfter: false)
+                    
+                    //This does not work quite right.  The "doNothing" button does not show until there is a secondary refresh.
+                    if (saveStyleName != null && saveStyleName != "?") input (name: "saveStyle", type: "button", title: "Save Current Style", backgroundColor: "#27ae61", textColor: "white", submitOnChange: true, width: 3, newLine: false, newLineAfter: false)
+                    if (saveStyleName == null || saveStyleName == "?") input (name: "doNothing", type: "button", title: "Save Current Style", backgroundColor: "#D3D3D3", textColor: "black", submitOnChange: true, width: 3, newLine: false, newLineAfter: false)
+                    
+                    if (deleteStyleName != null) 
+                        input (name: "deleteStyle", type: "button", title: "Delete Selected Style", backgroundColor: "#27ae61", textColor: "white", submitOnChange: true, width: 3, newLine: false, newLineAfter: true)
+                    else 
+                        input (name: "doNothing", type: "button", title: "Delete Selected Style", backgroundColor: "#D3D3D3", textColor: "black", submitOnChange: true, width: 3, newLine: false, newLineAfter: true)
+                    
+                    if (isCompactDisplay == false) {
+                        paragraph line(1)
+                        paragraph summary("Styles Notes", parent.styleNotes())    
+                    }
+                    
+                    if (isShowImportExport == true) {
+                        //if (isCompactDisplay == false) paragraph line(1)
+                        paragraph "<b>Export</b><br>These are your currently active settings. You can copy these and share them with others via the Hubitat Community forum. Tweaking can be addictive but a lot of fun to explore!"
+                        paragraph "<style><div {width: 150px; border: 5px solid #000000;} div.a {word-wrap: break-word;}</style><body><div class='a'><b>Basic Settings:</b><br><mark>" + state.myBaseSettingsMap.sort() + "</mark></div></body>"
+                        paragraph "<style><div {width: 150px; border: 5px solid #000000;} div.a {word-wrap: break-word;}</style></head><body><div class='a'><b>Overrides:</b><br><mark>" + overrides.toString() + "</mark></div></body>"
+                        paragraph line(1)
+                        paragraph "<b>Import</b><br>You can paste settings from other people in here and save them as a new sytle. How great is that!"
+                        input (name: "importStyleText", type: "text", title: bold("Paste Basic Settings Here!"), required: false, defaultValue: "?", width:12, height:4, submitOnChange: true)
+                        input (name: "importStyleOverridesText", type: "text", title: bold("Paste Overrides Here!"), required: false, defaultValue: "?", width:12, submitOnChange: true)
+                        
+                        //Show a green button if the entered text is long enough, otherwise gray - have to add some validation on the imput.
+                        if (importStyleText == null || importStyleText.size() == 0){
+                            input (name: "doNothing", type: "button", title: "Import Style?", backgroundColor: "#D3D3D3", textColor: "black", submitOnChange: true, width: 3, newLine: false, newLineAfter: false)
+                            input (name: "doNothing", type: "button", title: "Clear Import", backgroundColor: "#D3D3D3", textColor: "black", submitOnChange: true, width: 3, newLine: false, newLineAfter: false)
+                        }
+                        else {
+                            input (name: "importStyle", type: "button", title: "Import Style", backgroundColor: "#27ae61", textColor: "white", submitOnChange: true, width: 3, newLine: true, newLineAfter: false )
+                            input (name: "clearImport", type: "button", title: "Clear Import", backgroundColor: "#27ae61", textColor: "white", submitOnChange: true, width: 3, newLine: true, newLineAfter: false )
+                        }
+                        paragraph "<b>Once you have imported a new Style you can save it if you wish to preserve it.</b>"
+                    }
+                }
+                
+                //Advanced Settings
+                if (activeButton == 9){
+                    if (isCompactDisplay == false) paragraph titleise("Advanced Settings")
+                    input (name: "scrubHTMLlevel", type: "enum", title: bold("HTML Scrub Level"), options: parent.htmlScrubLevel(), required: false, submitOnChange: true, defaultValue: 1, width: 2, newLineAfter:false)
+                    input (name: "isOverrides", type: "bool", title: "<b>Enable Overrides?</b>", required: false, multiple: false, defaultValue: false, submitOnChange: true, width: 2, newLineAfter: false)
+                    input (name: "isShowSettings", type: "bool", title: "<b>Show Effective Settings?</b>", required: false, multiple: false, defaultValue: false, submitOnChange: true, width: 2)
+                    input (name: "isShowHTML", type: "bool", title: "<b>Show Pseudo HTML?</b>", required: false, multiple: false, defaultValue: false, submitOnChange: true, width: 2)
+                    if (isOverrides == true) {
+                        paragraph line(1) 
+                        input (name: "overrideHelperCategory", type: "enum", title: bold("Override Category"), options: parent.overrideCategory().sort(), required: true, width:2, submitOnChange: true, newLineAfter: true)
+                        input (name: "overridesHelperSelection", type: "enum", title: bold("$overrideHelperCategory Examples"), options: getOverrideCommands(overrideHelperCategory.toString()), required: false, width:12, submitOnChange: true, newLineAfter: true)
+                        if (state.currentHelperCommand != null ) paragraph "<mark>" + state.currentHelperCommand + "</mark></body>"
+                        input (name: "clearOverrides", type: "button", title: "Clear the Overrides", backgroundColor: "#27ae61", textColor: "white", submitOnChange: true, width: 2, newLine: true, newLineAfter: false )
+                        input (name: "copyOverrides", type: "button", title: "Copy To Overrides", backgroundColor: "#27ae61", textColor: "white", submitOnChange: true, width: 2, newLine: true, newLineAfter: false )
+                        input (name: "appendOverrides", type: "button", title: "Append To Overrides", backgroundColor: "#27ae61", textColor: "white", submitOnChange: true, width: 2, newLine: true, newLineAfter: false )
+                        input (name: "Refresh", type: "button", title: "Refresh Table", backgroundColor: "#27ae61", textColor: "white", submitOnChange: true, width: 2)
+                        input (name: "overrides", type: "textarea", title: titleise("Settings Overrides"), required: false, defaultValue: "?", width:12, rows:5, submitOnChange: true)
+                        if (isCompactDisplay == false) paragraph summary("About Overrides", parent.overrideNotes() )    
+                    }
+                    
+                    if (isShowSettings == true) {
+                        paragraph line(1)
+                        paragraph "<b>Effective Settings</b>"
+                        paragraph "<head><style><div {width: 150px; border: 5px solid #000000;} div.a {word-wrap: break-word;}</style></head><body><div class='a'><mark>" + state.myEffectiveSettingsMap.sort() + "</mark></div></body>"
+                    }
+                    
+                    if (isShowHTML == true) {
+                        paragraph line(1)
+                        paragraph "<b>Pseudo HTML</b>"
+                        myHTML = state.iFrameHTML
+                        paragraph "<head><style><div {width: 150px; border: 5px solid #000000;} div.a {word-wrap: break-word;}</style></head><body><div class='a'><mark>" + unHTML(state.HTML) + "</mark></div></body>"
+                    }
+                    if (isCompactDisplay == false) {
+                        paragraph line(1)
+                        paragraph summary("Advanced Notes", parent.advancedNotes() )    
+                      }
+                    }
+                                
+                  if (isCompactDisplay == false) paragraph line(2)
+            }    //End of isCustomize
+        
+            //Display Table     
+            if (isCompactDisplay == false) paragraph summary("Display Tips", parent.displayTips() )
+            
+            myHTML = toHTML(state.iframeHTML)
+            myHTML = myHTML.replace("#iFrame1#","body{background:${iFrameColor};font-size:${bfs}px;}")
+            state.iFrameFinalHTML = myHTML
+
+            if (isCustomSize == false){
+                if (tilePreview == "1" ) paragraph '<iframe srcdoc=' + '"' + myHTML + '"' + ' width="190" height="190" style="border:solid" scrolling="no"></iframe>'
+                if (tilePreview == "2" ) paragraph '<iframe srcdoc=' + '"' + myHTML + '"' + ' width="190" height="380" style="border:solid" scrolling="no"></iframe>'
+                if (tilePreview == "3" ) paragraph '<iframe srcdoc=' + '"' + myHTML + '"' + ' width="190" height="570" style="border:solid" scrolling="no"></iframe>'
+                if (tilePreview == "4" ) paragraph '<iframe srcdoc=' + '"' + myHTML + '"' + ' width="190" height="760" style="border:solid" scrolling="no"></iframe>'
+                if (tilePreview == "5" ) paragraph '<iframe srcdoc=' + '"' + myHTML + '"' + ' width="380" height="190" style="border:solid" scrolling="no"></iframe>'
+                if (tilePreview == "6" ) paragraph '<iframe srcdoc=' + '"' + myHTML + '"' + ' width="380" height="380" style="border:solid" scrolling="no"></iframe>'
+                if (tilePreview == "7" ) paragraph '<iframe srcdoc=' + '"' + myHTML + '"' + ' width="380" height="570" style="border:solid" scrolling="no"></iframe>'
+                if (tilePreview == "8" ) paragraph '<iframe srcdoc=' + '"' + myHTML + '"' + ' width="380" height="760" style="border:solid" scrolling="no"></iframe>'
+            }
+            else {
+                //Use a custom size for the preview window.
+                myString = '<iframe srcdoc=' + '"' + myHTML + '"' + ' width=XXX height=YYY style="border:solid" scrolling="no"></iframe>'
+                myString = myString.replace("XXX", "${settings.customWidth}")
+                myString = myString.replace("YYY", "${settings.customHeight}")
+                paragraph myString
+            }
+            
+            if (state.HTMLsizes.Final < 4096 ){
+                if (isCompactDisplay == false) paragraph "<div style='color:#17202A;text-align:left; margin-top:0em; margin-bottom:0em ; font-size:18px'>Current HTML size is: <font color = 'green'><b>${state.HTMLsizes.Final}</b></font color = '#17202A'> bytes. Maximum size for dashboard tiles is <b>4,096</b> bytes.</div>"
+                }
+            else {
+                if (isCompactDisplay == false) paragraph "<div style='color:#17202A;text-align:left; margin-top:0em; margin-bottom:0em ; font-size:18px'>Current HTML size is: <font color = 'red'><b>${state.HTMLsizes.Final}</b></font color = '#17202A'> bytes. Maximum size for dashboard tiles is <b>4,096</b> bytes.</div>"
+            }
+
+            if (isCustomize == true){
+                overridesSize = 0
+                if (settings.overrides?.size() != null && isOverrides == true) overridesSize = settings.overrides?.size()
+                line = "<b>Enabled Features:</b> Comment:${isComment}, Frame:${isFrame}, Title:${isTitle}, Title Shadow:${isTitleShadow}, Headers:${isHeaders}, Border:${isBorder}, Alternate Rows:${isAlternateRows}, Footer:${isFooter}, Overrides:${isOverrides} ($overridesSize bytes)<br>"
+                line += "<b>Space Usage:</b> Comment: <b>${state.HTMLsizes.Comment}</b>  Head: <b>${state.HTMLsizes.Head}</b>  Body: <b>${state.HTMLsizes.Body}</b>  Interim Size: <b>${state.HTMLsizes.Interim}</b>  Final Size: <b>${state.HTMLsizes.Final}</b> (Scrubbing level is: ${parent.htmlScrubLevel()[scrubHTMLlevel.toInteger()] })<br>"
+                //line += "<b>Devices:</b> Selected: <b>${myDeviceList?.size() || 0}</b>  Limit: <b>${myDeviceLimit?.toInteger() || 0}</b>"
+                line = line.replace("true","<b><font color = 'green'> On</font color = 'black'></b>")
+                line = line.replace("false","<b><font color = 'grey'> Off</font color = 'grey'></b>")
+                if (isCompactDisplay == false) {
+                    paragraph note("", line)
+                    if (state.HTMLsizes.Final < 1024 ) paragraph note("Note: ","Current tile is less than 1,024 bytes and will be stored within an attribute.")
+                    else paragraph note("Note: ","Current tile is greater than 1,024 bytes and will be stored as a file in File Manager and linked with an attribute.")
+                }
+              }
+            }  //End of showDesign
+            else input(name: 'btnShowDesign', type: 'button', title: 'Design Table ▶', backgroundColor: 'dodgerBlue', textColor: 'white', submitOnChange: true, width: 3, newLine: true)  //▼ ◀ ▶ ▲
+            paragraph line(2)
+            //End of Display Table
+        
+            //Configure Data Refresh
+            if (state.show.Publish == true) {
+                input(name: 'btnShowPublish', type: 'button', title: 'Publish Table ▼', backgroundColor: 'navy', textColor: 'white', submitOnChange: true, width: 3, newLineAfter: true)  //▼ ◀ ▶ ▲
+                myText = "Here you will configure where the table will be stored. It will be refreshed at the frequency you specify."
+                
+                //myText += "HTML data is less than 1,024 bytes it will be published via a tile attribute on the storage device.<br>"
+                //myText += "If HTML data is greater than 1,024 it will be published via file with the tile attribute being link to that file.<br>"
+                paragraph myText
+                input (name: "myTile", title: "<b>Which Tile Attribute will store the table?</b>", type: "enum", options: parent.allTileList(), required:true, submitOnChange:true, width:3, defaultValue: 0, newLine:false)
+                input (name:"myTileName", type:"text", title: "<b>Name this Tile</b>", submitOnChange: true, width:3, newLine:false, required: true)
+                input (name: "tilesAlreadyInUse", type: "enum", title: bold("For Reference Only: Tiles already in Use"), options: parent.getTileList(), required: false, defaultValue: "Tile List", submitOnChange: false, width: 3, newLineAfter:true)
+                if(myTileName) app.updateLabel(myTileName)
+                paragraph note("Note:", " The Tile Name given here will also be used as the name for this instance of Multi Attribute Monitor.")
+                paragraph line(1)
+            
+                if ( state.HTMLsizes.Final < 4096 && settings.myTile != null && myTileName != null ) {
+                    input (name: "publishSubscribe", type: "button", title: "Publish and Subscribe", backgroundColor: "#27ae61", textColor: "white", submitOnChange: true, width: 12)
+                    input (name: "unsubscribe", type: "button", title: "Delete Subscription", backgroundColor: "#27ae61", textColor: "white", submitOnChange: true, width: 12)
+                }
+                else input (name: "cannotPublish", type: "button", title: "Publish", backgroundColor: "#D3D3D3", textColor: "black", submitOnChange: false, width: 12)
+            }
+            else input(name: 'btnShowPublish', type: 'button', title: 'Publish Table ▶', backgroundColor: 'dodgerBlue', textColor: 'white', submitOnChange: true, width: 3, newLineAfter: true)  //▼ ◀ ▶ ▲
+            if (isCompactDisplay == false) paragraph line(2)
+                        
+            input (name:"isMore", type: "bool", title: "More Options", required: false, multiple: false, defaultValue: false, submitOnChange: true, width: 2)
+            if (isMore == true){
+                paragraph "<div style='background:#FFFFFF; height: 1px; margin-top:0em; margin-bottom:0em ; border: 0;'></div>"    //Horizontal Line
+                input (name: "isLogInfo",  type: "bool", title: "<b>Enable info logging?</b>", defaultValue: false, submitOnChange: true, width: 2)
+                input (name: "isLogTrace", type: "bool", title: "<b>Enable trace logging?</b>", defaultValue: false, submitOnChange: true, width: 2)
+                input (name: "isLogDebug", type: "bool", title: "<b>Enable debug logging?</b>", defaultValue: false, submitOnChange: true, width: 2)
+                input (name: "isLogWarn",  type: "bool", title: "<b>Enable warn logging?</b>", defaultValue: true, submitOnChange: true, width: 2)
+                input (name: "isLogError",  type: "bool", title: "<b>Enable error logging?</b>", defaultValue: true, submitOnChange: true, width: 2)
+            }   
+            
+        //Now add a footer.
+        myDocURL = "<a href='https://github.com/GaryMilne/Hubitat-TileBuilder/blob/main/Tile%20Builder%20Help.pdf' target=_blank> <i><b>Tile Builder Help</b></i></a>"
+        myText = '<div style="display: flex; justify-content: space-between;">'
+        myText += '<div style="text-align:left;font-weight:small;font-size:12px"> <b>Documentation:</b> ' + myDocURL + '</div>'
+        myText += '<div style="text-align:center;font-weight:small;font-size:12px">Version: ' + Version + '</div>'
+        myText += '<div style="text-align:right;font-weight:small;font-size:12px">Copyright 2022 - 2023</div>'
+        myText += '</div>'
+        paragraph myText
+            
+        }    //End Configure Data Refresh    
+        refreshUIafter()
+    }
+}
+
+
+//Get a list of supported attributes for a given device and return a sorted list.
+def getAttributeList (thisDevice){
+    if (thisDevice != null) {
+        myAttributesList = []
+        supportedAttributes = thisDevice.supportedAttributes
+        supportedAttributes.each { attributeName -> myAttributesList << attributeName.name }
+        return myAttributesList.unique().sort()
+     }
+     
+}
+
+
+//************************************************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************************************************
+//**************
+//**************  Functions Related to the Management of the UI
+//**************
+//************************************************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************************************************
+
+//This is the refresh routine called at the start of the page. This is used to replace\clear screen values that do not respond when performed in the mainline code.
+//This function is unique between Activity Monitor and Attribute Monitor
+void refreshUIbefore(){
+    //Get the oveerrides helper selection and look it up in the global map and use the key pair value as an on-screen guide.
+    state.currentHelperCommand = ""
+    
+    overridesHelperMap = parent.getOverridesListAll()
+    state.currentHelperCommand = overridesHelperMap.get(overridesHelperSelection)
+    
+    if (state.flags.isClearOverridesHelperCommand == true){
+        if (isLogTrace == true) log.trace ("Clearing overrides.")
+        app.updateSetting("overrides", [value:"", type:"textarea"])  //Works
+        state.flags.isClearOverridesHelperCommand = false
+    }
+}
+
+//This is the refresh routine called at the end of the page. This is used to replace\clear screen values that do not respond when performed in the mainline code.
+void refreshUIafter(){    
+    //This checks a flag for the saveStlye operation and clears the text field if the flag has been set. Neccessary to do this so the UI updates correctly.
+    if (state.flags.styleSaved == true ){
+        app.updateSetting("saveStyleName","?")
+        state.flags.styleSaved = false
+    }
+
+    //Copy the selected command to the Overrides field and replace any existing text.
+    if (state.flags.isCopyOverridesHelperCommand == true){
+        myCommand = state.currentHelperCommand
+        
+        app.updateSetting("overrides", [value:myCommand, type:"textarea"])  //Works
+        state.flags.isCopyOverridesHelperCommand = false
+    }
+    
+    //Appends the selected command to current contents of the Overrides field.
+    if (state.flags.isAppendOverridesHelperCommand == true){
+        myCurrentCommand = overrides.toString()
+        combinedCommand = myCurrentCommand.toString() + " | \n" + state.currentHelperCommand.toString()
+        
+        app.updateSetting("overrides", [value:combinedCommand.toString(), type:"textarea"])  //Works
+        state.flags.isAppendOverridesHelperCommand = false
+    }
+}
+
+//Runs recovery functions when messaged from the parent app. This can be used to recoved a child app when an error condidtion arises.
+def supportFunction ( supportCode ){
+    if ( supportCode.toString() == "0" ) return
+    log.info "Running supportFunction with code: $supportCode" 
+    switch(supportCode) {
+           case "disableOverrides":
+               app.updateSetting("isOverrides", false)
+               break
+            case "disableKeywords":
+                app.updateSetting("myKeywordCount", 0)
+                break
+            case "disableThresholds":
+                app.updateSetting("myThresholdCount", 0)
+                break
+            case "clearDeviceList":
+                app.updateSetting("myDeviceList",[type:"capability",value:[]])
+                break
+    }
+}
+
+//Generic placeholder for test function.
+void test(){   
+    
 }
 
 //This is the standard button handler that receives the click of any button control.
-def appButtonHandler(btn) {
-    switch (btn) {
-        case 'test':
-            if (isLogTrace) log.trace('appButtonHandler: Clicked on test')
+def appButtonHandler(btn) {    
+    switch(btn) {
+        case 'btnShowDevices':
+            if (state.show.Devices == true) state.show.Devices = false
+            else state.show.Devices = true
+            break
+        case 'btnShowKeywords':
+            if (state.show.Keywords == true) state.show.Keywords = false
+            else state.show.Keywords = true
+            break
+        case 'btnShowThresholds':
+            if (state.show.Thresholds == true) state.show.Thresholds = false
+            else state.show.Thresholds = true
+            break
+        case 'btnShowFormatRules':
+            if (state.show.FormatRules == true) state.show.FormatRules = false
+            else state.show.FormatRules = true
+            break
+        case 'btnShowDesign':
+            if (state.show.Design == true) state.show.Design = false
+            else state.show.Design = true
+            break
+        case 'btnShowPublish':
+            if (state.show.Publish == true) state.show.Publish = false
+            else state.show.Publish = true
+            break
+        case "Refresh":
+            //We don't need to do anything. The refreshTable will be called by the submitOnChange.
+            if (isLogTrace==true) log.trace("appButtonHandler: Clicked on Refresh")
+            break
+        case "publish":
+            //We will publish it right away and then shcedule the refresh as requested.
+            if (isLogTrace) log.trace("appButtonHandler: Clicked on publish")
+            publishTable()
+            createSchedule()
+            break
+        case "cannotPublish":
+            if (isLogTrace) log.trace("appButtonHandler: Clicked on publish (cannotPublish)")
+            cannotPublishTable()
+            break
+        case "General":
+            if (isLogTrace) log.trace("appButtonHandler: Clicked on General")
+            app.updateSetting("activeButton", 1)
+            break
+        case "Title":
+            if (isLogTrace) log.trace("appButtonHandler: Clicked on Title")
+            app.updateSetting("activeButton", 2)
+            break
+        case "Headers":
+            if (isLogTrace) log.trace("appButtonHandler: Clicked on Headers")
+            app.updateSetting("activeButton", 3)
+            break
+        case "Borders":
+            if (isLogTrace) log.trace("appButtonHandler: Clicked on Borders")
+            app.updateSetting("activeButton", 4)
+            break
+        case "Rows":
+            if (isLogTrace) log.trace("appButtonHandler: Clicked on Rows")
+            app.updateSetting("activeButton", 5)
+            break
+        case "Footer":
+            if (isLogTrace) log.trace("appButtonHandler: Clicked on Footer")
+            app.updateSetting("activeButton", 6)
+            break
+        case "Highlights":
+            if (isLogTrace) log.trace("appButtonHandler: Clicked on Highlights")
+            app.updateSetting("activeButton", 7)
+            break
+        case "Styles":
+            if (isLogTrace) log.trace("appButtonHandler: Clicked on Styles")
+            app.updateSetting("activeButton", 8)
+            break
+        case "Advanced":
+            if (isLogTrace) log.trace("appButtonHandler: Clicked on Advanced")
+            app.updateSetting("activeButton", 9)
+            break
+        case "test":    
             test()
+        case "copyOverrides":
+            if (isLogTrace) log.trace("appButtonHandler: Clicked on copyOverrides")
+            state.flags.isCopyOverridesHelperCommand = true
             break
-        case 'btnNext1':
-            if (isLogTrace) log.trace('appButtonHandler: Clicked on btnNext1')
-            state.setupState = 2
-            showSection("Device", true)
+        case "appendOverrides":
+            if (isLogTrace) log.trace("appButtonHandler: Clicked on appendOverrides")
+            state.flags.isAppendOverridesHelperCommand = true
             break
-        case 'btnNext2':
-            if (isLogTrace) log.trace('appButtonHandler: Clicked on btnNext2')
-            state.setupState = 3
-            showSection("SetupComplete", true)
+        case "clearOverrides":
+            if (isLogTrace) log.trace("appButtonHandler: Clicked on clearOverrides")
+            state.flags.isClearOverridesHelperCommand = true
             break
-        case 'btnNext3':
-            state.setupState = 99
-            showSection("CreateEdit", true)
+        case "applyStyle":
+            if (isLogTrace) log.trace("appButtonHandler: Clicked on applyStyle")
+            myStyle = loadStyle(applyStyleName.toString())
+            applyStyle(myStyle)    
+            refreshTable()
             break
-        case 'btnShowIntro':
-            if (isLogTrace) log.trace('appButtonHandler: Clicked on btnShowIntro')
-            showSection("Intro", false)
+        case "saveStyle":
+            if (isLogTrace) log.trace("appButtonHandler: Clicked on saveStyle")
+            saveCurrentStyle(saveStyleName)
+            state.flags.styleSaved = true
             break
-        case 'btnShowLicense':
-            if (isLogTrace) log.trace('appButtonHandler: Clicked on btnShowLicense')
-            showSection("License", false)
+        case "deleteStyle":
+            if (isLogTrace) log.trace("appButtonHandler: Clicked on deleteStyle")
+            deleteSelectedStyle(deleteStyleName)
             break
-        case 'btnShowDevice':
-            if (isLogTrace) log.trace('appButtonHandler: Clicked on btnShowDevice')
-            showSection("Device", false)
+        case "importStyle":
+            if (isLogTrace) log.trace("appButtonHandler: Clicked on Importing Style")
+            app.updateSetting("overrides", importStyleOverridesText)
+            def myImportMap = [:]
+            def myOverridesMap = [:]
+            //Add an overrides item to the the empty map.
+            myOverridesMap.overrides = importStyleOverrides
+            //Convert the base settings string to a map.
+            myImportMap = importStyleString(settings.importStyleText)
+            myImportStyle = myImportMap.clone()
+            applyStyle(myImportStyle)
             break
-        case 'btnShowCreateEdit':
-            if (isLogTrace) log.trace('appButtonHandler: Clicked on btnShowCreateEdit')
-            showSection("CreateEdit", false)
+        case "clearImport":
+            if (isLogTrace) log.trace("appButtonHandler: Clicked on clearImport")
+            app.updateSetting("importStyleText", "")
+            app.updateSetting("importStyleOverridesText", "")
             break
-        case 'btnShowManage':
-            if (isLogTrace) log.trace('appButtonHandler: Clicked on btnShowManage')
-            showSection("Manage", false)
+        case "publishSubscribe":
+            publishSubscribe()
             break
-        case 'btnShowMore':
-            if (isLogTrace) log.trace('appButtonHandler: Clicked on btnShowMore')
-            showSection("More", false)
-            break
-        case 'defaultStyles':
-            if (isLogTrace) log.trace('appButtonHandler: Clicked on defaultStyles')
-            makeDefaultStyles()
-            break
-        case 'createDevice':
-            if (isLogTrace) log.trace('appButtonHandler: Clicked on createDevice')
-            makeTileStorageDevice()
-            break
-        case 'connectDevice':
-            if (isLogTrace) log.trace('appButtonHandler: Clicked on connectDevice')
-            connectTileStorageDevice()
-            break
-        case 'disconnectDevice':
-            if (isLogTrace) log.trace('appButtonHandler: Clicked on disconnectDevice')
-            disconnectTileStorageDevice()
-            break
-        case 'deleteDevice':
-            if (isLogTrace) log.trace('appButtonHandler: Clicked on deleteDevice')
-            deleteTileStorageDevice()
-            break
-		case 'deleteTile':
-            if (isLogTrace) log.trace('appButtonHandler: Clicked on deleteTile')
-            deleteTile()
-            break
-        case 'doNothing':
-            break
-        case 'activateLicense': 
-            if (isLogTrace) log.trace('appButtonHandler: Clicked on activateLicense')
-            if (activateLicense() == true ) state.activationState = "Success"
-            else state.activationState = "Failed"
-            break
-        case 'removeLicense': 
-            if (isLogTrace) log.trace('appButtonHandler: Clicked on removeLicense')
-            state.isAdvancedLicense = false
-            state.activationState = "Not Activated"
+        case "unsubscribe":
+            deleteSubscription()
             break
     }
+    if (isLogDebug) log.debug("appButtonHandler: activeButton is: ${activeButton}")
 }
 
-//This is called after a submit actions
-void refreshUI() {
-    if (selectedDevice == null ) selectedDevice = 'Tile Builder Storage Device 1'
-    if (state.flags.selectedDeviceChanged == true && selectedDevice != null) {
-        state.isStorageConnected = false
-        if (selectedDevice != null ) log.info('selectedDevice is:' + selectedDevice)
-        state.myStorageDevice = selectedDevice
-        state.myStorageDeviceDNI = selectedDevice.replace(' ', '_')
-        state.hasMessage = '<b>You must connect to a storage device in order to publish tiles.</b>'
+
+//Return the appropriate list of sample override commands that is usable by the drop down control.
+def getOverrideCommands(myCategory){
+    def commandList = []
+    overridesHelperMap = [:]
+    switch(myCategory) {
+        case "Animation":
+            overridesHelperMap = parent.getOverrideAnimationList()
+            break
+        case "Background":
+            overridesHelperMap = parent.getOverrideBackgroundList()
+            break
+        case "Border":
+            overridesHelperMap = parent.getOverrideBorderList()
+            break
+        case "Classes":
+            overridesHelperMap = parent.getOverrideClassList()
+            break
+        case "Cell Operations":
+            overridesHelperMap = parent.getOverrideCellOperationsList()
+            break
+        case "Field Replacement":
+            overridesHelperMap = parent.getOverrideFieldReplacementList()
+            break
+        case "Font":
+            overridesHelperMap = parent.getOverrideFontList()
+            break
+        case "Margin & Padding":
+            overridesHelperMap = parent.getOverrideMarginPaddingList()
+            break
+        case "Misc":
+            overridesHelperMap = parent.getOverrideMiscList()
+            break
+        case "Text":
+            overridesHelperMap = parent.getOverrideTextList()
+            break
+        case "Transform":
+            overridesHelperMap = parent.getOverrideTransformList()
+            break
+    }
+
+    overridesHelperMap.each { 
+        key = it.key.toString()
+        value = it.value.toString()
+        //Split the value into two strings, before the | and after.  
+        details = value.tokenize('|')
+        commandList.add (key)        
+    }
+    //log("getSampleCommands", "commandList is: ${return commandList.unique().sort()}", 2)
+    return commandList.unique().sort()
+}
+
+//Get the values of the selected device attributes and put them into a map after a little cleanup.
+def getDeviceMapMultiAttrMon(){
+    def newMap = [:]
+    int myInt = 0
+    float myFloat = 0
+    String myString = ""
+    
+    //Loop through all of the potential devices and their attributes.  Clean them up if required and then put them into the map.
+    for (int i = 1; i <= myDeviceCount.toInteger(); i++) {
         
+        if (settings["myDevice$i"] != null) { 
+        
+            dataType = getDataType( settings["myDevice$i"].currentValue(settings["myAttribute$i"]).toString() )
+            //log.info ("dataType is: ${dataType} for device $i" )
+            def myAction = settings["actionA$i"]
+            //log.info ("action is: actionA$i  value is: $myAction" )
+            
+            //If the attribute has a null value alert the user.
+            if ( dataType == "Null" ){ 
+                log.info ("This is a null value")
+                newMap [ settings["name$i"] ] = "<b>Null Attribute</b>"
+            }
+            
+            if ( dataType == "String" ){ 
+                def useDefault = true
+                if ( settings["actionA$i"] == "Capitalize" ) {
+                    myString = settings["myDevice$i"].currentValue(settings["myAttribute$i"]) 
+                    myString = myString[0].toUpperCase() + myString[1..-1]
+                    newMap [ settings["name$i"] ] = myString
+                    useDefault = false
+                }
+                
+                if ( settings["actionA$i"] == "Upper Case" )  {
+                    newMap [ settings["name$i"] ] = settings["myDevice$i"].currentValue(settings["myAttribute$i"]).toUpperCase()
+                    useDefault = false
+                    }
+                
+                if ( useDefault == true) newMap [ settings["name$i"] ] = settings["myDevice$i"].currentValue(settings["myAttribute$i"])        
+            }
+                
+            if ( dataType == "Float" ){ 
+                def useDefault = true
+                if ( settings["actionA$i"] == "0 Decimal Places" ) {
+                    myFloat = settings["myDevice$i"].currentValue(settings["myAttribute$i"]).toFloat() 
+                    newMap [ settings["name$i"] ] = myFloat.round(0).toInteger()
+                    useDefault = false
+                }
+                
+                if ( settings["actionA$i"] == "1 Decimal Place" ) {
+                    myFloat = settings["myDevice$i"].currentValue(settings["myAttribute$i"]).toFloat() 
+                    newMap [ settings["name$i"] ] = myFloat.round(1)
+                    useDefault = false
+                }
+                
+                if ( settings["actionA$i"] == "Commas" ) {
+                    myFloat = settings["myDevice$i"].currentValue(settings["myAttribute$i"]).toFloat() 
+                    log.info ("myFloat is: $myFloat")
+                    if (myFloat >= 1000) {
+                        def formattedNumber = String.format("%,d", myFloat)
+                        newMap [ settings["name$i"] ] = formattedNumber.toString()
+                        useDefault = false
+                    }
+                    //else newMap [ settings["name$i"] ] = myFloat
+                    useDefault = false
+                }
+                
+                if ( useDefault == true) newMap [ settings["name$i"] ] = settings["myDevice$i"].currentValue(settings["myAttribute$i"])
+                
+            }
+            
+            if ( dataType == "Integer" ){ 
+                def useDefault = true
+                if ( settings["actionA$i"] == "1 Decimal Place" ) {
+                    myFloat = settings["myDevice$i"].currentValue(settings["myAttribute$i"]).toFloat()
+                    newMap [ settings["name$i"] ] = myFloat.round(1)
+                    useDefault = false
+                    }
+                
+                if ( settings["actionA$i"] == "Commas" ) {
+                    myInt = settings["myDevice$i"].currentValue(settings["myAttribute$i"])
+                    def formattedNumber = String.format("%,d", myInt)
+                    newMap [ settings["name$i"] ] = formattedNumber
+                    useDefault = false
+                }
+                if ( useDefault == true) newMap [ settings["name$i"] ] = settings["myDevice$i"].currentValue(settings["myAttribute$i"])
+            }
+        }
+    }
+    if (isLogDebug) log.debug ("newMap is: $newMap")
+    return newMap
+}
+
+
+//************************************************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************************************************
+//**************
+//**************  Functions for HTML generation
+//**************
+//************************************************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************************************************
+
+//Collates the most recent data and calls the makeHTML function
+void refreshTable(){
+    if (isLogTrace) log.trace("refreshTable: Entering refreshTable")
+    //Create the template for the data
+    def data = ["#A01#":"A01","#B01#":"B01","#A02#":"A02","#B02#":"B02","#A03#":"A03","#B03#":"B03","#A04#":"A04","#B04#":"B04","#A05#":"A05","#B05#":"B05", "#A06#":"A06","#B06#":"B06","#A07#":"A07","#B07#":"B07","#A08#":"A08","#B08#":"B08","#A09#":"A09","#B09#":"B09","#A10#":"A10","#B10#":"B10"]
+
+    //For getDeviceMapMultiAttrMon() the map is not actually sorted. It always remains in the same order but this keeps the code the same.
+    sortedMap = getDeviceMapMultiAttrMon()
+    if (isLogDebug) 
+    log.debug("refreshTable: sortedMap is: ${sortedMap}")
+    
+    //Iterate through the sortedMap and take the number of entries corresponding to the number set by the deviceLimit
+    recordCount = sortedMap.size()
+    
+    //Make myDeviceLimit = 0 if the they choose 'No Selection' from the drop down or have not selected anything into the devicelist.
+    sortedMap.eachWithIndex{ key, value, i -> 
+        if (i + 1 <= myDeviceCount.toInteger() ){ 
+            
+            //Data starts at row 1. Row 0 is the headers.
+            i = i + 1 
+            if (i < 10){
+                mapKeyA = "#A0" + i + "#"
+                mapKeyB = "#B0" + i + "#"
+            }
+            else {
+                mapKeyA = "#A" + i + "#"
+                mapKeyB = "#B" + i + "#"
+            }
+            data."${mapKeyA}" = key
+            data."${mapKeyB}" = value
+            //if (isLogDebug) log.debug("refreshTable: key is: ${key} value is: ${value}, index is: ${i} shortName is: ${shortName}")
+            }
+        } //End of sortedMap.eachWithIndex
+    int myRows = Math.min(recordCount, myDeviceCount.toInteger())
+    if (isLogDebug) log.debug ("refreshTable: calling makeHTML: ${data} and myRows:${myRows}")
+    state.recordCount = myRows
+    //log.info ("data array is: $data")
+    makeHTML(data, myRows)
+}
+
+//Creates the HTML data
+void makeHTML(data, int myRows){
+    if (isLogTrace) log.trace("makeHTML: Entering makeHTML")
+    
+    //Configure all of the HTML template lines.
+    String HTMLCOMMENT = "<!--#comment#-->"
+    String HTMLSTYLE1 = "<head>#head#<style>#class# #class1# #class2# #class3# #class4# #class5# #iFrame1#table.#id#{border-collapse:#bm#;width:#tw#%;height:#th#%;margin:Auto;font-family:#tff#;background:#tbc#;#table#;}"    //Table Style - Always included.  
+    String HTMLSTYLE2 = ".#id# tr{color:#rtc#;text-align:#rta#;#row#}.#id# td{background:#rbc#;font-size:#rts#%;padding:#rp#px;#data#}</style>"    //End of the Table Style block - Always included.
+    //String HTMLSTYLE2 = ".#id# tr{color:#rtc#;text-align:#rta#;#row#}.#id# td{font-size:#rts#%;padding:#rp#px;#data#}</style>"    //End of the Table Style block - Always included.
+    String HTMLBORDERSTYLE = "<style>.#id# th,.#id# td{border:#bs# #bw#px #bc#;padding:#bp#px;border-radius:#br#px;#border#}</style>"    //End of the Table Style block. Sets border style for TD and TH elements. - Always included.
+    String HTMLTITLESTYLE = "<style>ti#id#{display:block;color:#tc#;font-size:#ts#%;font-family:#tff#;text-align:#ta#;#titleShadow#;padding:#tp#px;#title#}</style>"        //This is the row for the Title Style - May be omitted.
+    String HTMLHEADERSTYLE = "<style>.#id# th{background:#hbc#;color:#htc#;text-align:#hta#;font-size:#hts#%;padding:#hp#px;#header#}</style>"        //This is the row for Header Style - Will be ommitted 
+    String HTMLARSTYLE = "<style>.#id# tr:nth-child(even){color:#ratc#;background:#rabc#;#alternaterow#;}</style>"                            //This is the row for Alternating Row Style - May be omitted.
+    String HTMLFOOTERSTYLE = "<style>ft#id#{display:block;text-align:#fa#;font-size:#fs#%;color:#fc#}</style>"                                //Footer Style - May be omitted
+    String HTMLHIGHLIGHT1STYLE = "<style>h#id#1{color:#hc1#;font-size:#hts1#%;#high1#}</style>"                                                        //Highlighting Styles - May be ommitted.
+    String HTMLHIGHLIGHT2STYLE = "<style>h#id#2{color:#hc2#;font-size:#hts2#%;#high2#}</style>"                                                        //Highlighting Styles - May be ommitted.
+    String HTMLHIGHLIGHT3STYLE = "<style>h#id#3{color:#hc3#;font-size:#hts3#%;#high3#}</style>"                                                        //Highlighting Styles - May be ommitted.
+    String HTMLHIGHLIGHT4STYLE = "<style>h#id#4{color:#hc4#;font-size:#hts4#%;#high4#}</style>"                                                        //Highlighting Styles - May be ommitted.
+    String HTMLHIGHLIGHT5STYLE = "<style>h#id#5{color:#hc5#;font-size:#hts5#%;#high5#}</style>"                                                        //Highlighting Styles - May be ommitted.
+    String HTMLHIGHLIGHT6STYLE = "<style>h#id#6{color:#hc6#;font-size:#hts6#%;#high6#}</style>"                                                        //Highlighting Styles - May be ommitted.
+    String HTMLHIGHLIGHT7STYLE = "<style>h#id#7{color:#hc7#;font-size:#hts7#%;#high7#}</style>"                                                        //Highlighting Styles - May be ommitted.
+    String HTMLHIGHLIGHT8STYLE = "<style>h#id#8{color:#hc8#;font-size:#hts8#%;#high8#}</style>"                                                        //Highlighting Styles - May be ommitted.
+    String HTMLHIGHLIGHT9STYLE = "<style>h#id#9{color:#hc9#;font-size:#hts9#%;#high9#}</style>"                                                        //Highlighting Styles - May be ommitted.
+    String HTMLHIGHLIGHT10STYLE = "<style>h#id#10{color:#hc10#;font-size:#hts10#%;#high10#}</style>"                                                   //Highlighting Styles - May be ommitted.
+    String HTMLDIVSTYLE = "<style>div.#id#{height:auto;background:#fbc#;padding:20px;#frame#}</style>"                                                 //Div container - May be ommitted.
+    String HTMLDIVSTART = "<div class=#id#>"                                                                                                           //Div class - May be ommitted. 
+    String HTMLTITLE = "<ti#id#>#tt#</ti#id#>"                                                                                                         //This is the row for the Title - May be omitted.
+    String HTMLTABLESTART = "</head><body><table class=#id#>"                                                                                          //Start of the Table - always present.
+    String HTMLR0 = ""
+    if (isMergeHeaders == true) HTMLR0 = "<tr><th colspan=2>#A00#</th></tr>"                                                                        //This is the row for Single Column Headers - May be omitted.
+    else HTMLR0 = "<tr><th>#A00#</th><th>#B00#</th></tr>"                                                                                            //This is the row for Dual Column Header - May be omitted.
+    String HTMLTBODY = "<tbody>"                                                                                                                    //Sets the start of table body section
+    String HTMLR1 = "<tr><td>#A01#</td><td>#B01#</td></tr>"; String HTMLR2 = "<tr><td>#A02#</td><td>#B02#</td></tr>"; String HTMLR3 = "<tr><td>#A03#</td><td>#B03#</td></tr>"; String HTMLR4 = "<tr><td>#A04#</td><td>#B04#</td></tr>"; String HTMLR5 = "<tr><td>#A05#</td><td>#B05#</td></tr>"
+    String HTMLR6 = "<tr><td>#A06#</td><td>#B06#</td></tr>"; String HTMLR7 = "<tr><td>#A07#</td><td>#B07#</td></tr>"; String HTMLR8 = "<tr><td>#A08#</td><td>#B08#</td></tr>"; String HTMLR9 = "<tr><td>#A09#</td><td>#B09#</td></tr>"; String HTMLR10 = "<tr><td>#A10#</td><td>#B10#</td></tr>"
+    String HTMLTABLEEND = "</tbody></table>"
+    String HTMLFOOTER = "<ft#id#>#ft#</ft#id#>"        //Footer - May be omitted
+    String HTMLDIVEND = "</div>"    
+    String HTMLEND = "</body>" 
+    
+    //Set the HTML* to "" if they are not going to be displayed.
+    if (isComment == false) HTMLCOMMENT = ""
+    if (isFrame == false) { HTMLDIVSTYLE = "" ; HTMLDIVSTART = "" ; HTMLDIVEND = "" }
+    if (isAlternateRows == false) HTMLARSTYLE = ""
+    if ( (myKeywordCount.toInteger() == null || myKeywordCount.toInteger() < 1 ) ) HTMLHIGHLIGHT1STYLE = ""
+    if ( (myKeywordCount.toInteger() == null || myKeywordCount.toInteger() < 2 ) ) HTMLHIGHLIGHT2STYLE = ""
+    if ( (myKeywordCount.toInteger() == null || myKeywordCount.toInteger() < 3 ) ) HTMLHIGHLIGHT3STYLE = ""
+    if ( (myKeywordCount.toInteger() == null || myKeywordCount.toInteger() < 4 ) ) HTMLHIGHLIGHT4STYLE = ""
+    if ( (myKeywordCount.toInteger() == null || myKeywordCount.toInteger() < 5 ) ) HTMLHIGHLIGHT5STYLE = ""
+    
+    if ( (myThresholdCount.toInteger() == null || myThresholdCount.toInteger() < 1 ) ) HTMLHIGHLIGHT6STYLE = ""
+    if ( (myThresholdCount.toInteger() == null || myThresholdCount.toInteger() < 2 ) ) HTMLHIGHLIGHT7STYLE = ""
+    if ( (myThresholdCount.toInteger() == null || myThresholdCount.toInteger() < 3 ) ) HTMLHIGHLIGHT8STYLE = ""
+    if ( (myThresholdCount.toInteger() == null || myThresholdCount.toInteger() < 4 ) ) HTMLHIGHLIGHT9STYLE = ""
+    if ( (myThresholdCount.toInteger() == null || myThresholdCount.toInteger() < 5 ) ) HTMLHIGHLIGHT10STYLE = ""
+    
+    if (isFooter == false) { HTMLFOOTERSTYLE = "" ; HTMLFOOTER = "" }
+    if (isBorder == false) HTMLBORDERSTYLE = ""
+    if (isTitle == false) { HTMLTITLESTYLE = "" ; HTMLTITLE = "" }
+    if (isHeaders == false) { HTMLHEADERSTYLE = "" ; HTMLR0 = "" }
+        
+    //Nullify the non-populated. We allow it to go to zero rows so that by turning off headers we can have just a Title field for a decorative tile.
+    if (myRows <= 10) HTMLR11 = ""; if (myRows <= 9) HTMLR10 = ""; if (myRows <= 8) HTMLR9 = ""; if (myRows <= 7) HTMLR8 = ""; if (myRows <= 6) HTMLR7 = ""; if (myRows <= 5) HTMLR6 = ""; if (myRows <= 4) HTMLR5 = ""; if (myRows <= 3) HTMLR4 = ""; if (myRows <= 2) HTMLR3 = ""; if (myRows <= 1) HTMLR2 = ""; if (myRows <= 0) HTMLR1 = ""
+    
+    //Now build the final HTML TEMPLATE string
+    def interimHTML = HTMLCOMMENT + HTMLSTYLE1 + HTMLSTYLE2 + HTMLDIVSTYLE + HTMLBORDERSTYLE + HTMLTITLESTYLE + HTMLHEADERSTYLE + HTMLARSTYLE  + HTMLFOOTERSTYLE + HTMLHIGHLIGHT1STYLE + HTMLHIGHLIGHT2STYLE + HTMLHIGHLIGHT3STYLE + HTMLHIGHLIGHT4STYLE + HTMLHIGHLIGHT5STYLE 
+    interimHTML += HTMLHIGHLIGHT6STYLE + HTMLHIGHLIGHT7STYLE + HTMLHIGHLIGHT8STYLE + HTMLHIGHLIGHT9STYLE + HTMLHIGHLIGHT10STYLE + HTMLDIVSTART + HTMLTITLE + HTMLTABLESTART + HTMLR0 + HTMLTBODY 
+    interimHTML += HTMLR1 + HTMLR2 + HTMLR3 + HTMLR4 + HTMLR5 + HTMLR6 + HTMLR7 + HTMLR8 + HTMLR9 + HTMLR10 + HTMLR11
+    interimHTML += HTMLTABLEEND + HTMLFOOTER + HTMLDIVEND + HTMLEND
+    if (isLogDebug) log.debug ("HTML Template is: ${interimHTML}")
+            
+    //Load all the saved settings 
+    def myTemplate = fillStyle()
+    
+    //Now add the received data map to the list
+    myTemplate = myTemplate + data
+    if (isLogDebug) log.debug ("makeHTML: myTemplate with Row Data is : ${myTemplate}")
+
+    //We use this index to track the row number which allows us to reference the array of variables i.e. device1, attribute1 etc.
+    myIndex = 0
+
+    //Now replace the placeholders with the actual data values for cells B1 - B10.
+    myTemplate.each{ it, value ->   
+        //If it's the data colum it will begin #B1# thru #B30#. Anything else we can just process normally.
+        if ( beginsWith(it, "#B") == false || beginsWith(it,"#B00") == true ){
+            interimHTML = interimHTML.replaceAll(it, value.toString())    
+            }
+        else    //It is a data column it MAY need to be modified
+            {
+            if ( beginsWith(it, "#B") == true ){ 
+                myIndex = myIndex + 1 
+                //log.info ("it is: $it  Index is $myIndex   value is: $value")
+            }
+            //interimHTML = interimHTML.replace(it, value.toString())    
+            newDataValue = highlightValue(value, myIndex)
+            
+            //It get a little tricky to debug because many of the <HTML> tags do not not print in the log window.
+            //if (isLogDebug == true && newValue != null ) log.debug("makeHTML: Replacing: <td>${it}</td> with: ${unHTML(newValue)}")
+            //Replace any () or [] characters with <>
+            newDataValue = toHTML(newDataValue)
+            interimHTML = interimHTML.replaceAll("<td>${it}</td>", "${newDataValue}")
+            
+            //What needs to be done here is that we must check the newDataValue to see if it contains any highlight strings <hqq1>..<hqq10>
+            //if it does and the switch is enabled that wrap the device name in <hqq1> tags for example.
+            //The device name is located in the template at "#A + myIndex + #" all of which the myIndex should be padded with a leading 0 if required.
+            //We then have to do a search and replace on the interimHTML = interimHTML.replaceAll(deviceName , <hqq1>deviceName</hqq1>)
+            
+            //We will test to see if the data contains a highlight class. If it does and device highlighting is selected that the appropriate <hqq?> tags are added to the deviceName
+            def myClass = getHighlightClass(newDataValue)
+            if (myClass != null){
+                def deviceTemplateLocation = "#A" + (myIndex as String).padLeft(2, '0') + "#"
+                String oldDeviceString = myTemplate[deviceTemplateLocation]
+                
+                //If the name does not contain any special characters and device name highlighting is true then we can do search and replace operations on it and add the <hqq?> tags.
+                if (containsSpecialCharacters(oldDeviceString) == false && isHighlightDeviceNames == true){
+                    newDeviceString = "<" + myClass + ">" + oldDeviceString + "</" + myClass + ">"
+                
+                    //String cleanDeviceName = cleanSpecialCharacters(oldDeviceName)
+                    //log.info ("Old Name: $oldDeviceString      New Name: $newDeviceString")
+                    interimHTML = interimHTML.replaceAll("<td>" + oldDeviceString + "</td>", "<td>" + newDeviceString + "</td>")                
+                }
+                else log.info("makeHTML: The device name ${oldDeviceString} contains reserved characters and the style ${myClass} could not be applied.")
+            } //End of if(myClass......
+        }
+        
+    } //end of myTemplate.each
+    
+    //Set an appropriate format for day and time.
+    def myTime = new Date().format('HH:mm a')
+    def myDay = new Date().format('E')
+    
+    //Replace macro values regardless of case.
+    interimHTML = interimHTML.replaceAll("(?i)%day%", myDay)
+    interimHTML = interimHTML.replaceAll("(?i)%time%", myTime)
+    interimHTML = interimHTML.replaceAll("(?i)%count%", state.recordCount.toString())
+    
+    //Replace any embedded tags using [] with <>
+    interimHTML = toHTML(interimHTML)
+    
+    //We have the Interim Version now we need to create the iFrame version and the final version
+    iframeHTML = scrubHTML(interimHTML, false) 
+    finalHTML = scrubHTML(interimHTML, true) 
+    state.interimHTML = interimHTML    
+    
+    //Calculates the sizes of the elements of each and display info to user.
+    getHTMLSize(finalHTML.toString(), interimHTML.toString())
+    
+    //Save the HTML to display on the page.
+    if (state.HTMLsizes.Final < 4096) {
+        state.iframeHTML = iframeHTML
+        state.HTML = finalHTML
+        if (isLogDebug) log.debug("makeHTML: HTML final size is <= than 4,096 bytes.")
+    }
+    else  {
+        state.iframeHTML = iframeHTML
+        state.HTML = "<b>HTML length exceeded 4,096 bytes for '${myTileName}' (${state.HTMLsizes.Final}).</b>"
+        if (isLogDebug) log.debug("makeHTML: HTML final size is > 4,096 bytes.")
     }
 }
 
+//Looks at a provided attributeValue and compares it to those values provided by keywords and thresholds.
+//If any are a match it uses the chosen CSS style to highlight it.
+def highlightValue(attributeValue, myIndex){
+    if (isLogTrace) log.info("highlightValue: Received attributeValue: ${attributeValue} with index: $myIndex")
+    //Save a copy of the original value.
+    def originalValue = attributeValue.toString()
+    def returnValue = ""
+    dataType = getDataType(attributeValue.toString())
+    
+    //Calculate and save the prepend and append strings which are tied to the position in the table.
+    String prepend = settings["prepend$myIndex"] 
+    String append = settings["append$myIndex"]       
+    if ( prepend == null ) prepend = ""
+    if ( append == null ) append = ""
+    
+    if ( settings["actionB$myIndex"] == "Format Rule 1" ) {
+        returnValue = (settings["fr1"] + "").replace ("%value%", attributeValue.toString())
+        return "[td]" + returnValue + "[/td]"
+    }
+    
+    if ( settings["actionB$myIndex"] == "Format Rule 2" ) {
+        returnValue = (settings["fr2"] + "").replace ("%value%", attributeValue.toString())
+        return "[td]" + returnValue + "[/td]"
+    }
+    
+    if ( settings["actionB$myIndex"] == "Format Rule 3" ) {
+        returnValue = (settings["fr3"] + "").replace ("%value%", attributeValue.toString())
+        return "[td]" + returnValue + "[/td]"
+    }
+    
+    //If the data is a string then we must process it for Keywords.
+    int i = 1
+    if ( dataType == "String" && ( settings["actionB$myIndex"] == "All Keywords" ) ){  
+          
+        for (i = 1; i <= myKeywordCount.toInteger(); i++) {
+            if (isLogDebug) log.info ("Processing keyword i is: $i.")
+            if ( settings["k$i"] != null && settings["k$i"] != "") {
+                if (settings["k$i"].trim() == attributeValue.toString().trim() ){
+                    if (isLogDebug) log.debug("highlightValue: Keyword ${attributeValue} was found and is a match for Keyword1.")
+                    if (settings["ktr$i"] != null && settings["ktr$i"].size() > 0) {
+                        returnValue = settings["ktr$i"].replace ("%value%", attributeValue)
+                        return "[td][hqq$i]" + prepend + returnValue + append + "[/hqq$i][/td]"
+                    }
+                }
+            }    
+        }
+        //It's a string but does not match a keyword.
+        return "[td]" + prepend + attributeValue + append + "[/td]"
+    }
+    
+    //If it get's this far it must be a number.
+    returnValue = attributeValue.toString()
+    
+    //Use a flag to rememeber the highest threshold with a match
+    def lastThreshold = 0
+    //i is the loopcounter. It starts at 6 because the threshold controls are numbered 6 thru 10.
+    i = 6
+
+    while (i <= myThresholdCount.toInteger() + 5 ) {
+        //log.info ("Processing threshold i is: $i.")
+        myVal1 = settings["tcv$i"]
+        myVal2 = settings["top$i"]
+        myThresholdText = "Threshold " + ( i - 5).toString()
+        if (isLogDebug) log.info ("i is: $i.  tcv$i is: $myVal1  top$i is: $myVal2  dataType is $dataType  Threshold is: $myText")
+        if (settings["tcv$i"] != null && settings["tcv$i"] != "" && settings["tcv$i"] != "None" && ( ( settings["actionB$myIndex"] == "All Thresholds" )  || settings["actionB$myIndex"] == myThresholdText ) )  {
+            
+            //This is the ideal place for a switch statement but using a greak within a switch causes it to exit the for loop also.
+            if ( ( settings["top$i"] == "1" || settings["top$i"] == "<=" ) && attributeValue.toInteger() <= settings["tcv$i"].toInteger() ) {
+                if (isLogDebug)  log.debug("highlightThreshold: A <= than condition was met.")
+                if ( ( settings["ttr$i"] != null && settings["ttr$i"] != " " ) && settings["ttr$i"] != "?") { returnValue = settings["ttr$i"] } 
+                lastThreshold = i
+                }
+            
+            if ( ( settings["top$i"] == "2" || settings["top$i"] == "==" ) && attributeValue.toInteger() == settings["tcv$i"].toInteger() ) {
+                if (isLogDebug) log.debug("highlightThreshold: An == condition was met.")
+                if (settings["ttr$i"] != null && settings["ttr$i"] != " " && settings["ttr$i"] != "?") { returnValue = settings["ttr$i"] } 
+                lastThreshold = i
+                }
+            
+            if ( ( settings["top$i"] == "3" || settings["top$i"] == ">=" ) && attributeValue.toInteger() >= settings["tcv$i"].toInteger() ) {
+                if (isLogDebug) log.debug("highlightThreshold: A >= than condition was met.")
+                if (settings["ttr$i"] != null && settings["ttr$i"] != " " && settings["ttr$i"] != "?") { returnValue = settings["ttr$i"] } 
+                lastThreshold = i
+                }
+        }
+        i = i + 1
+    }
+    
+    //log.info ("Exited For Loop and lastThreshold is: $lastThreshold ")
+    
+    if (lastThreshold == 0) {
+        //Does not match any threshold
+        return "[td]" + prepend + returnValue +  append + "[/td]"    
+        }                
+    else { 
+        returnValue = returnValue.replace("%value%", attributeValue.toString()) 
+        return "[td][hqq$lastThreshold]" + prepend + returnValue +  append + "[/hqq$lastThreshold][/td]"
+        }
+
+} //End of function
+
+
 //************************************************************************************************************************************************************************************************************************
 //************************************************************************************************************************************************************************************************************************
 //************************************************************************************************************************************************************************************************************************
 //**************
-//**************  Storage Device Functions
+//**************  Publishing Related Functions
 //**************
 //************************************************************************************************************************************************************************************************************************
 //************************************************************************************************************************************************************************************************************************
 //************************************************************************************************************************************************************************************************************************
 
-//Called by the child apps. Returns an open handle to the childDevice
-def getStorageDevice() {
-    if (state.isStorageConnected == true ) {
-        deviceDNI = state.myStorageDeviceDNI
-        myStorageDevice = getChildDevice(deviceDNI)
-        if (isLogDebug) log.debug("Parent returning myStorageDevice is: $myStorageDevice")
-        return    myStorageDevice
+//Deletes all event subscriptions. Only used by Attribute Monitor but retained for ease of maintenance.
+void deleteSubscription(){
+    unsubscribe()
+}
+
+//This function removes all existing subscriptions for this app and replaces them with new ones corresponding to the devices and attributes being monitored.
+void publishSubscribe(){
+    if (isLogTrace) log.trace("createSubscription: Entering.")
+    //if (isLogInfo) 
+    if (isLogInfo) log.info("createSubscription: Creating subscription for Tile: $myTile with description: $myTileName.")
+    //Remove all existing subscriptions.
+    unsubscribe()
+    
+    if (myDevice1 != null && myAttribute1 != null )  { subscribe (myDevice1, myAttribute1.toLowerCase(), handler) }
+    if (myDevice2 != null && myAttribute2 != null )  { subscribe (myDevice2, myAttribute2.toLowerCase(), handler) }
+    if (myDevice3 != null && myAttribute3 != null )  { subscribe (myDevice3, myAttribute3.toLowerCase(), handler) }
+    if (myDevice4 != null && myAttribute4 != null )  { subscribe (myDevice4, myAttribute4.toLowerCase(), handler) }
+    if (myDevice5 != null && myAttribute5 != null )  { subscribe (myDevice5, myAttribute5.toLowerCase(), handler) }
+    if (myDevice6 != null && myAttribute6 != null )  { subscribe (myDevice6, myAttribute6.toLowerCase(), handler) }
+    if (myDevice7 != null && myAttribute7 != null )  { subscribe (myDevice7, myAttribute7.toLowerCase(), handler) }
+    if (myDevice8 != null && myAttribute8 != null )  { subscribe (myDevice8, myAttribute8.toLowerCase(), handler) }
+    if (myDevice9 != null && myAttribute9 != null )  { subscribe (myDevice9, myAttribute9.toLowerCase(), handler) }
+    if (myDevice10 != null && myAttribute10 != null ){ subscribe (myDevice10, myAttribute10.toLowerCase(), handler) }
+    
+    //Populate the Initial Table based on the present state.
+    publishTable()
+}
+
+//This should get executed whenever any of the subscribed devices receive an update to the monitored attribute.
+def handler(evt) {
+    if (isLogInfo) log.info("handler: Subscription event handler called with event: $evt. ") 
+    publishTable()   
+}
+
+//Save the current HTML to the variable. This is the function that is called by the scheduler.
+void publishTable(){
+    if (isLogTrace==true) log.trace("publishTable: Entering publishTable.")
+    
+    //Handles the initialization of new variables added after the original release.
+    updateVariables()
+    
+    //Refresh the table with the new data and then save the HTML to the driver variable.
+    refreshTable()
+    if (isLogInfo) log.info("publishTable: Tile $myTile ($myTileName) is being refreshed.")
+    
+    myStorageDevice = parent.getStorageDevice()
+    if ( myStorageDevice == null ) {
+        log.error("publishTable: myStorageDevice is null. Is the device created and available? This error can occur immediately upon hub startup. Nothing published.")
+        return
     }
+    
+    if (isLogInfo) log.info ("Size is: ${state.HTML.size()}")
+    //If the tile is less than 1024 we just publish to the attribute. If it's more we publish the file and then the attribute to cause a refresh
+    if (state.HTML.size() < 1024 ) {
+        myStorageDevice.createTile(settings.myTile, state.HTML, settings.myTileName)
+        }
     else {
-        log.warn('getStorageDevice: There is no storage device connected.')
-        return null
-    }
-}
-
-//Create a Tile Builder Storage Device.
-def makeTileStorageDevice() {
-    if (isLogTrace) log.trace("makeTileStorageDevice: Attempting to create Tile Builder Storage Device: $selectedDevice")
-    deviceName = selectedDevice.toString()
-    deviceDNI = deviceName.replace(' ', '_')
-    try {
-        myChildDevice = addChildDevice('garyjmilne', 'Tile Builder Storage Driver', deviceDNI, [ isComponent:false, label: deviceName, name: deviceName] )
-        if (myChildDevice) {
-            if (isLogInfo) log.info ("makeTileStorageDevice: <b>Storage Device ${state.myStorageDevice} Created.</b>")
-            state.hasMessage = "<b>Storage Device ${state.myStorageDevice} Created. You must connect to it before you can start publishing tiles.</b>"
-            state.myStorageDevice = deviceName
-            state.myStorageDeviceDNI = deviceDNI
-        }
-         else {
-            log.warn = ("makeTileStorageDevice(): Device Creation Error! Does the device '$deviceName' already exist? Was it created by a different instance of Tile Builder?")
-            state.hasMessage = "<b>makeTileStorageDevice(): Device Creation Error! Does the device '$deviceName' already exist? Was it created by a different instance of Tile Builder?</b>"
-         }
-    }
-    catch (ex) {
-        log.error('makeTileStorageDevice(): Device Creation Error! Does the device already exist.')
-        state.hasMessage = '<b>Device Creation Error! Does the device already exist? Was it created by a different instance of Tile Builder?</b>'
-        state.isStorageConnected = false
-    }
-}
-
-//Connect to an existing Tile Storage Device
-def connectTileStorageDevice() {
-    if (isLogTrace) log.trace ('connectTileStorageDevice: Entering connectTileStorageDevice')
-    deviceDNI = state.myStorageDeviceDNI
-    if (isLogDebug) log.debug("Connecting to Storage Device: $deviceDNI")
-    try {
-        myChildDevice = getChildDevice(deviceDNI)
-        if (isLogDebug) log.debug ("myChildDevice is: $myChildDevice")
-        if (myChildDevice != null) {
-            state.hasMessage = "connectTileStorageDevice(): Connect Success ($myChildDevice)"
-            if (isLogInfo) log.info ("connectTileStorageDevice(): Connect Success ($myChildDevice)")
-            state.isStorageConnected = true
-        }
-         else {
-            state.hasMessage = '<b>Device Connection Error! Does the device exist? Was it created by a different instance of Tile Builder?</b>'
-            state.isStorageConnected = false
-         }
-    }
-    catch (ex) {
-        log.error("connectTileStorageDevice(): Failed - $selectedDevice. Exception:$ex")
-        state.hasMessage = "<b>Exception encountered. Connection to '${selectedDevice}' failed.</b>"
-        state.isStorageConnected = false
-    }
-}
-
-//Disonnect from an existing Tile Storage Device
-def disconnectTileStorageDevice() {
-    if (isLogTrace) log.trace ('disconnectTileStorageDevice: Entering disconnectTileStorageDevice')
-    deviceDNI = state.myStorageDeviceDNI
-    if (isLogInfo) log.info("Disconnecting from Storage Device: $deviceDNI")
-    try {
-        myChildDevice = getChildDevice(deviceDNI)
-        if (myChildDevice == true ) {
-            if (isLogInfo) log.info("disconnectTileStorageDevice(): Successfully disconnected from $myChildDevice")
-            state.hasMessage = ("<b>Successfully disconnected from $myChildDevice.</b>")
-            state.myStorageDevice = ''
-            state.myStorageDeviceDNI = ''
-            state.isStorageConnected = false
-        }
-        else {
-            if (isLogInfo) log.info("connectTileStorageDevice(): No connection to $myChildDevice to disconnect.")
-            state.hasMessage = "<b>No connection to $deviceDNI.</b>"
-            state.isStorageConnected = false
+        def prefix = parent.getStorageShortName()
+        def fileName = prefix + "_Tile_" + myTile.toString() + ".html"
+        if (isLogDebug) log.debug ("filename is: ${fileName}")
+        def myBytes = state.HTML.getBytes("UTF-8")
+        //Now try and upload the file to the hub. There is no return value so we must do try catch
+        try {
+            def myIP = location.hub.localIP
+            uploadHubFile("${fileName}", myBytes)
+            //Put in a slight delay to allow the file upload to complete.
+            pauseExecution (100)
+            def src = "http://" + myIP + "/local/" + fileName
+            
+            // This is working without any jumpiness. def stubHTML = '<div style="height:100%; width:100%; scrolling:'no'"><iframe src=' + src + ' style="height: 100%; width:100%; border: none; scrolling:no"></iframe><div>'
+            // This is working without any jumpiness. App Settings: Preview Size = 2 x 4, Width = 100, Height = Auto, Border Padding = 0, Row Text Padding = 0, #tile-3 .tile-primary {outline: 2px solid yellow;} , #tile-3 .tile-contents {overflow: hidden; !important}
+            // This is working without any jumpiness. Dash Settings: Width = 200, Height = 190, Tile 4H x 2W
+            // This is working without any jumpiness. Dash CSS : #tile-3 .tile-primary {vertical-align: top; overflow: hidden; !important} , #tile-3 .tile-title, .tile-title {visibility: hidden; display: none !important} , 
+            //Somehow the following formatting causes the actual HTML equivalent to be ingested into the device driver attribute. Something to do with the comma's I believe. 
+            //*** def stubHTML = '<div style="height:100%; width:100%; scrolling:'no'"><iframe src=' + src + ' style="height: 100%; width:100%; border: none; scrolling:no"></iframe><div>' ***
+            //It will temporarily display on the dashboard even though it exceeds the 1,024 byte limit. Because of this the table refreshes on the dash are very smooth. If you reload the dashboard you will get the "Please Select an Attribute" message because it is oversize.
+            //def stubHTML = """<div style="height:100%; width:100%; scrolling='no'"><iframe src=""" + src + """ style="height: 100%; width:100%; border: none; scrolling='no'"></iframe><div>"""
+            //Although we tell the iFrame to not have scroll bars and to hide any overflow this gets ignored by the Hubitat Dashboard whenever a scrollbar is required. I have not yet found the CSS that hides this particular scrollbar!!!
+            def stubHTML = """<div style='height:100%; width:100%; scrolling:no; overflow:hidden;'><iframe src=""" + src + """ style='height: 100%; width:100%; border: none; scrolling:no; overflow: hidden;'></iframe><div>"""
+            if (isLogDebug) log.debug ("stub is : ${unHTML(stubHTML)}")
+        
+            //Then we will update the Storage Device attribute which will cause the file to be reloaded into the dashboard.
+            myStorageDevice.createTile(settings.myTile, stubHTML, settings.myTileName)
+            }
+        catch (Exception e){
+            if ( isLogError ) log.error ("Exception ${e} in publishTable. Probably an error uploading file to hub.") 
+            //Then we will update the Storage Device attribute to indicate there was a problem.
+            def myTime = new Date().format('E @ HH:mm a')
+            myStorageDevice.createTile(settings.myTile, "The tile did not upload\\update correctly. Check the logs. ${myTime}", settings.myTileName)
+            }
         }
     }
-    catch (ex) {
-        log.warn("connectTileStorageDevice: Error disconnecting from $myChildDevice. Exception:$ex")
-        state.hasMessage = "<b>Exception encountered. Error disconnecting from $myChildDevice. </b>"
-        state.isStorageConnected = true
-    }
+
+//Warn the user that clicking on the button is doing nothing.
+void cannotPublishTable(){
+    log.error("cannotPublishTile: Tile $myTile ($myTileName) cannot be published because it's size is great than 4,096 bytes.")
 }
 
-//Delete a Tile Builder Storage Device.
-def deleteTileStorageDevice() {
-    if (isLogTrace) log.trace ('deleteTileStorageDevice: Entering deleteTileStorageDevice')
-    myDeviceDNI = state.myStorageDeviceDNI
-    state.hasMessage = "<b>Device Deletion initiated for $myDeviceDNI.</b>"
-    if (isLogInfo) log.info("deleteTileStorageDevice: Initiating deletion of ${myDeviceDNI}.")
-    deleteChildDevice("$myDeviceDNI")
-    state.isStorageConnected = false
+//Calculates the size of the main groups and saves them to state.HTMLsizes
+def getHTMLSize(String finalHTML, String interimHTML){
+    
+    if (state.HTMLsizes == null) state.HTMLsizes = [Comment: 0, Head: 0, Body: 0, Interim: 0, Final: 0]
+    if (interimHTML.size() > 0 ) state.HTMLsizes.Interim = interimHTML.size()
+    if (finalHTML.size() > 0 ) state.HTMLsizes.Final = finalHTML.size()
+    
+    commentLength = countBetween(finalHTML, "<!--", "-->")
+    state.HTMLsizes.Comment = commentLength
+        
+    headLength = countBetween(finalHTML, "<head>","</head>")
+    state.HTMLsizes.Head = headLength
+    
+    bodyLength = countBetween(finalHTML, "<body>","</body>")
+    state.HTMLsizes.Body = bodyLength
 }
-
-//Get a list of tiles from the device
-def getTileList() {
-    if (isLogTrace) log.trace ('getTileList: Entering getTileList')
-    def tileList = []
-    myDevice = getChildDevice(state.myStorageDeviceDNI)
-    if (isLogDebug) log.debug("getTileList: myDevice: $myDevice")
-    if (state.isStorageConnected == true) tileList = myDevice.getTileList()
-    return tileList
-}
-
-//Get a list of tiles from the device sorted by activity date.
-def getTileListByActivity() {
-    if (isLogTrace) log.trace ('getTileListbyActivity: Entering getTileListbyActivity')
-    def tileList = []
-    myDevice = getChildDevice(state.myStorageDeviceDNI)
-    if (isLogDebug) log.debug("getTileList: myDevice: $myDevice")
-    if (state.isStorageConnected == true) tileList = myDevice.getTileListByActivity()
-    return tileList
-}
-
-//Delete a Tile Builder Tile on connected Storage Device.
-def deleteTile() {
-    if (isLogTrace) log.trace ('deleteTile: Entering deleteTile')
-    myDeviceDNI = state.myStorageDeviceDNI
-	
-	//Test to see if it is a valid tile selection
-	if (tilesInUse == null || tilesInUse.size() < 5 ){
-		log.info ("deleteTile: Invalid selection: Nothing done.")
-		return
-	}
-	myArr = tilesInUse.tokenize(':')
-	//log.debug ("myArr is: ${myArr}")
-	selectedTile = myArr[0]
-	//log.debug ("selectedTile is: ${selectedTile}")
-	selectedTile = selectedTile.replace("tile","")
-	//log.debug ("Tile Number is: ${selectedTile}")
-	myDevice = getChildDevice(state.myStorageDeviceDNI)
-	if (state.isStorageConnected == true) {
-		log.info ("deleteTile: Delete tile initiated for tile number ${selectedTile} on device: ${myDeviceDNI}")
-		myDevice.deleteTile(selectedTile)
-	}
-}
-
-def checkLicense() {
-	return state.isAdvancedLicense
-}
-
 
 //************************************************************************************************************************************************************************************************************************
 //************************************************************************************************************************************************************************************************************************
 //************************************************************************************************************************************************************************************************************************
 //**************
-//**************  Style Related Functions
+//**************  Style Related functions.
 //**************
 //************************************************************************************************************************************************************************************************************************
 //************************************************************************************************************************************************************************************************************************
 //************************************************************************************************************************************************************************************************************************
+//The first 3 call the equivalent function in the parent as all styles except for the currently active style are stored within the parent app.
+//This allows styles to be shared between multiple child apps.
+//All saved styles are pre-fixed with the word Style- followed by a 2 digit code for the module type. For Activity Monitor it is naturally 'AM'
 
-//Creates all of the default internal styles.
-def makeDefaultStyles() {
-    if (isLogTrace) log.trace ('makeDefaultStyles: Entering makeDefaultStyles')
-
-    styleA = convertStyleStringToMap('#myKeywordCount#=0, #myThresholdCount#=0, #isCustomSize#=false, #tbc#=#ffffff, #isFrame#=true, #fbc#=#000000, #tc#=#f6cd00, #bp#=3, #isHeaders#=true, #hp#=0, #hta#=Center, #ts#=140, #shcolor#=#f6cd00, #fc#=#000000, #to#=1, #rabc#=#dff8aa, #hbc#=#f6cd00, #shblur#=2, #hts#=100, #bm#=Collapse, #rtc#=#000000, #hbo#=1, #iFrameColor#=#fffada, #shver#=2, #tff#=Comic Sans MS, #isTitleShadow#=false, #rp#=0, #comment#=?, #tp#=3, #th#=Auto, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.8, #shhor#=2, #htc#=#000000, #rbc#=#fbed94, #fa#=Center, #rts#=80, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=1, #fs#=60, #rta#=Center, #isFooter#=false, #tw#=90, #bfs#=18, #bc#=#000000, #ratc#=#000000, #bw#=2, #bs#=Solid')
-    styleB = ['overrides':'#Class1#=@keyframes A{0%{transform:rotate(-360deg)}100% {transform:rotate(0)}}|#Row#=animation:A 2s ease 0s 1 normal forwards| #title#=font-weight:900']
-    style = styleA + styleB
-    state.'*Style-AM Banana' = style
-    
-    //IMPORTANT: This line uses ═ (Alt 205) instead of = within #ttr values to simplify parsing.  They are converted to regular = in the convertStyleStringToMap function.
-    styleA = convertStyleStringToMap('#tc#=#000000, #bp#=5, #ktr2#=?, #tbo#=0, #k4#=?, #isHeaders#=true, #hp#=0, #hta#=Left, #ts#=150, #shcolor#=#000000, #top4#=0, #tbc#=#000000, #fc#=#000000, #hc2#=#CA6F1E, #ttr1#=[meter low═70 high═80 max═100 optimum═100 value═%value%][/meter] (%value%%), #to#=1, #tcv4#=70, #rabc#=#dff8aa, #hts3#=100, #myKeywordCount#=0, #hbc#=#282828, #shblur#=5, #hts#=100, #isCustomSize#=false, #myThresholdCount#=1, #bm#=Seperate, #ktr3#=?, #rtc#=#ffffff, #k5#=?, #customWidth#=200, #k1#=?, #hbo#=1, #iFrameColor#=#705c5c, #ttr3#=?, #shver#=0, #top5#=0, #tff#=Roboto, #ttr2#=?, #isTitleShadow#=false, #rp#=0, #hc3#=#00FF00, #top1#=1, #comment#=?, #tp#=5, #customHeight#=190, #tcv5#=70, #hts2#=100, #th#=Auto, #tcv1#=100, #isAlternateRows#=false, #isTitle#=false, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0, #ktr4#=?, #k2#=?, #isFrame#=false, #ttr4#=?, #hc4#=#0000FF, #shhor#=0, #htc#=#ffffff, #rbc#=#ff0000, #top2#=0, #fa#=Center, #rts#=90, #isBorder#=false, #isScrubHTML#=true, #rto#=1, #hts5#=100, #hto#=1, #isOverrides#=false, #tcv2#=70, #hts1#=100, #bo#=1, #fs#=80, #fbc#=#000000, #rta#=Left, #ktr5#=?, #isFooter#=false, #k3#=?, #ktr1#=?, #tw#=100, #bfs#=18, #hc1#=#ffffff, #bc#=#050505, #ratc#=#000000, #ttr5#=?, #hc5#=#FF0000, #top3#=0, #bw#=2, #hts4#=100, #bs#=Solid, #tcv3#=70')
-    styleB = ['overrides':'?']
-    style = styleA + styleB
-    state.'*Style-AM Battery Meter' = style
-    
-	styleA = convertStyleStringToMap('#myKeywordCount#=0, #myThresholdCount#=0, #isCustomSize#=false, #tbc#=#ffffff, #tc#=#000000, #bp#=10, #isHeaders#=false, #hp#=0, #hta#=Center, #ts#=150, #shcolor#=#7a7a7a, #fc#=#000000, #to#=1, #rabc#=#dff8aa, #hbc#=#000000, #shblur#=10, #hts#=100, #bm#=Collapse, #rtc#=#ffffff, #hbo#=1, #iFrameColor#=#fcfcfc, #shver#=2, #tff#=Comic Sans MS, #isTitleShadow#=true, #rp#=0, #comment#=?, #tp#=3, #th#=Auto, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.3, #isFrame#=false, #shhor#=2, #htc#=#000000, #rbc#=#292929, #fa#=Center, #rts#=110, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=1, #fs#=90, #fbc#=#000000, #rta#=Center, #isFooter#=true, #tw#=90, #bfs#=18, #bc#=#ffffff, #ratc#=#000000, #bs#=Solid')
-    styleB = ['overrides':'#Data#=transform: rotateX(10deg) rotateY(15deg);background: linear-gradient(45deg, #fff 0%, #000 50%,#fff 100%);']
-    style = styleA + styleB
-    state.'*Style-AM Black and White' = style
-
-    styleA = convertStyleStringToMap('#myKeywordCount#=0, #myThresholdCount#=0, #tc#=#050505, #bp#=5, #ktr2#=?, #isHeaders#=true, #hp#=0, #hta#=Center, #ts#=140, #shcolor#=#d7dce0, #tbc#=#908989, #fc#=#000000, #hc2#=#CA6F1E, #ttr1#=?, #to#=1, #rabc#=#b71a3b, #hbc#=#0063b1, #shblur#=2, #hts#=100, #isCustomSize#=false, #bm#=Seperate, #rtc#=#050505, #customWidth#=200, #k1#=?, #hbo#=1, #iFrameColor#=#908989, #shver#=2, #tff#=Arial Black, #ttr2#=?, #isTitleShadow#=false, #rp#=0, #comment#=?, #tp#=5, #customHeight#=190, #hts2#=125, #th#=85, #tcv1#=100, #isAlternateRows#=false, #isTitle#=true, #br#=25, #ta#=Center, #isComment#=false, #rbo#=0.6, #k2#=?, #isFrame#=false, #shhor#=2, #htc#=#cbcbc8, #rbc#=#7fb2e7, #fa#=Left, #rts#=80, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #tcv2#=30, #hts1#=125, #bo#=1, #fs#=80, #fbc#=#000000, #rta#=Center, #isFooter#=false, #ktr1#=?, #tw#=90, #bfs#=18, #hc1#=#008000, #bc#=#1e1e20, #ratc#=#ffffff, #bw#=3, #bs#=Solid')
-    styleB = ['overrides':'#Title#=text-shadow: 1px 1px 2px LightSkyBlue, 0 0 25px DodgerBlue, 0 0 5px darkblue']
-    style = styleA + styleB
-    state.'*Style-AM Blue Buttons' = style
-	
-	styleA = convertStyleStringToMap('#myKeywordCount#=0, #myThresholdCount#=0, #tc#=#222f3c, #bp#=5, #ktr2#=?, #isHeaders#=true, #hp#=0, #hta#=Center, #ts#=120, #shcolor#=#ffffff, #tbc#=#aaa9ad, #fc#=#66cbe0, #hc2#=#CA6F1E, #ttr1#=?, #to#=1, #rabc#=#dff8aa, #hbc#=#23303e, #shblur#=4, #hts#=100, #isCustomSize#=false, #bm#=Seperate, #rtc#=#d5d5d7, #customWidth#=200, #k1#=?, #hbo#=1, #iFrameColor#=#696969, #shver#=0, #tff#=Arial Black, #ttr2#=?, #isTitleShadow#=true, #rp#=0, #comment#=?, #tp#=3, #customHeight#=290, #hts2#=125, #th#=Auto, #tcv1#=100, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0, #k2#=?, #isFrame#=false, #shhor#=0, #htc#=#c0c0c0, #rbc#=#5b6db2, #fa#=Center, #rts#=80, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #tcv2#=30, #hts1#=125, #bo#=1, #fs#=100, #fbc#=#000000, #rta#=Center, #isFooter#=false, #ktr1#=?, #tw#=90, #bfs#=18, #hc1#=#008000, #bc#=#ada9a9, #ratc#=#000000, #bw#=2, #bs#=Solid')
-    styleB = ['overrides':'#Table#=background: linear-gradient(0deg, #bdc3c7 0%, #2c3e50 40%)']
-    style = styleA + styleB
-    state.'*Style-AM Blue Grey' = style
-	
-	styleA = convertStyleStringToMap('#myKeywordCount#=0, #myThresholdCount#=0, #tc#=#fffafa, #bp#=3, #ktr2#=?, #isHeaders#=false, #hp#=0, #hta#=Center, #ts#=100, #shcolor#=#7a7a7a, #tbc#=#282828, #fc#=#ffffff, #hc2#=#CA6F1E, #ttr1#=?, #to#=1, #rabc#=#dff8aa, #hbc#=#000000, #shblur#=10, #hts#=100, #bm#=Collapse, #rtc#=#ffffff, #k1#=?, #hbo#=1, #iFrameColor#=#282828, #shver#=2, #tff#=Comic Sans MS, #ttr2#=?, #isTitleShadow#=false, #rp#=0, #comment#=?, #tp#=3, #hts2#=125, #th#=Auto, #tcv1#=70, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.3, #k2#=?, #isFrame#=false, #shhor#=2, #htc#=#000000, #rbc#=#292929, #fa#=Center, #rts#=75, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #tcv2#=30, #hts1#=125, #bo#=1, #fs#=75, #fbc#=#000000, #rta#=Center, #isFooter#=true, #ktr1#=?, #tw#=90, #bfs#=18, #hc1#=#008000, #bc#=#ffffff, #ratc#=#000000, #bw#=2, #bs#=Solid')
-    styleB = ['overrides':'#Row#=transform: rotate(1deg) | #Title#=transform: rotate(-1deg); | #ts#=160 | #footer#=padding:3px | #Data#=text-shadow: 1px 1px 3px #FFFFFF | #Title#=text-shadow: 1px 1px 3px #FFFFFF']
-    style = styleA + styleB
-    state.'*Style-AM Chalkboard' = style
-	
-    styleA = convertStyleStringToMap('#myKeywordCount#=0, #myThresholdCount#=0, #isCustomSize#=false, #tbc#=#ffffff, #tc#=#000000, #bp#=5, #isHeaders#=false, #hp#=0, #hta#=Center, #ts#=150, #shcolor#=#000000, #fc#=#000000, #to#=1, #rabc#=#dff8aa, #hbc#=#ffffff, #shblur#=5, #hts#=100, #bm#=Seperate, #rtc#=#000000, #hbo#=1, #iFrameColor#=#bbbbbb, #shver#=0, #tff#=Roboto, #isTitleShadow#=false, #rp#=0, #comment#=?, #tp#=5, #th#=Auto, #isAlternateRows#=false, #isTitle#=false, #br#=0, #ta#=Center, #isComment#=false, #rbo#=1, #isFrame#=false, #shhor#=0, #htc#=#000000, #rbc#=#e7e4e4, #fa#=Center, #rts#=100, #isBorder#=false, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=false, #bo#=1, #fs#=80, #fbc#=#000000, #rta#=Left, #isFooter#=false, #tw#=100, #bfs#=18, #bc#=#050505, #ratc#=#000000, #bw#=2, #bs#=Solid')
-    styleB = ['overrides':'?']
-    style = styleA + styleB
-    state.'*Style-AM Everything Off' = style
-
-    styleA = convertStyleStringToMap('#myKeywordCount#=0, #myThresholdCount#=0, #isCustomSize#=false, #tbc#=#ffffff, #isFrame#=false, #fbc#=#000000, #bs#=Solid, #bm#=Collapse, #ft#=%time%, #isHeaders#=true, #hp#=0, #fc#=#000000, #hta#=Center, #ts#=140, #shcolor#=#bfe373, #bc#=#000000, #fs#=80, #rabc#=#E9F5CF, #hbc#=#90c226, #shblur#=4, #hts#=100, #br#=0, #ta#=Center, #rtc#=#000000, #tp#=0, #hbo#=1, #iFrameColor#=#908989, #shver#=0, #tff#=Verdana, #isTitleShadow#=true, #rp#=0, #comment#=?, #th#=Auto, #isAlternateRows#=true, #bw#=2, #isTitle#=true, #isComment#=false, #fa#=Center, #shhor#=0, #htc#=#000000, #rbc#=#BFE373, #rts#=90, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=false, #tc#=#000000, #rta#=Center, #bp#=10, #isFooter#=true, #tw#=100, #bfs#=18, #ratc#=#000000')
-    styleB = ['overrides':'?']
-    style = styleA + styleB
-    state.'*Style-AM Greens' = style
-
-	styleA = convertStyleStringToMap('#myKeywordCount#=0, #myThresholdCount#=0, #isCustomSize#=false, #tbc#=#ffffff, #tc#=#de5b00, #bp#=10, #isHeaders#=true, #hp#=10, #hta#=Center, #ts#=200, #shcolor#=#ff1d00, #fc#=#000000, #to#=1, #rabc#=#f69612, #hbc#=#c64a10, #shblur#=2, #hts#=100, #bm#=Seperate, #rtc#=#ffff00, #hbo#=1, #iFrameColor#=#8d8686, #shver#=2, #tff#=Comic Sans MS, #isTitleShadow#=false, #rp#=6, #comment#=?, #tp#=5, #th#=Auto, #isAlternateRows#=true, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.7, #isFrame#=true, #shhor#=2, #htc#=#000000, #rbc#=#f69612, #fa#=Center, #rts#=100, #isBorder#=false, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=0.7, #fs#=80, #fbc#=#000000, #rta#=Center, #isFooter#=false, #tw#=Auto, #bfs#=18, #bc#=#050505, #ratc#=#000000, #bw#=2, #bs#=Solid')
-    styleB = ['overrides':'#Table#=box-shadow: #FFF 0 -1px 4px, #ff0 0 -2px 10px, #ff8000 0 -10px 20px, red 0 -18px 40px, 5px 5px 15px 5px rgba(0,0,0,0)']
-    style = styleA + styleB
-    state.'*Style-AM Halloween' = style
-	
-	styleA = convertStyleStringToMap('#myKeywordCount#=2, #myThresholdCount#=0, #isCustomSize#=false, #tc#=#e5e826, #bp#=0, #ktr2#=[div classXglow]📬[/div], #isHeaders#=false, #hp#=6, #hta#=Center, #ts#=150, #shcolor#=#7a7a7a, #tbc#=#696969, #fc#=#3be800, #hc2#=#ca6f1e, #ttr1#=?, #to#=1, #rabc#=#dff8aa, #hbc#=#000000, #shblur#=10, #hts#=60, #bm#=Collapse, #rtc#=#41ff00, #k1#=off, #hbo#=1, #iFrameColor#=#696969, #shver#=2, #tff#=Lucida, #ttr2#=?, #isTitleShadow#=false, #rp#=0, #comment#=?, #tp#=3, #hts2#=300, #th#=Auto, #tcv1#=70, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=1, #k2#=on, #isFrame#=false, #shhor#=2, #htc#=#41ff00, #rbc#=#696969, #fa#=Center, #rts#=150, #isBorder#=false, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #tcv2#=30, #hts1#=300, #bo#=1, #fs#=50, #fbc#=#000000, #rta#=Left, #isFooter#=false, #ktr1#=📭, #tw#=100, #bfs#=18, #hc1#=#f5f90b, #bc#=#c52b2b, #ratc#=#000000, #bw#=5, #bs#=Solid')
-    styleB = ['overrides':'#Class1#= .glow {animation: glow 3s ease-in-out infinite alternate;} @keyframes glow {from {text-shadow: 0 0 10px #fff, 0 0 20px #fff, 0 0 35px #e60073;}to {text-shadow: 0 0 10px #fff, 0 0 15px #ff4da6;}} | #row#=text-align: center |#rp#=0 | #bp#=-5| #row#=text-align: center |#rp#=0 | #bp#=-5']
-    style = styleA + styleB
-    state.'*Style-AM Mailbox (See Docs)' = style
-	
-	styleA = convertStyleStringToMap('#myKeywordCount#=0, #myThresholdCount#=0, #tc#=#751f2e, #bp#=5, #ktr2#=?, #isHeaders#=true, #hp#=0, #hta#=Center, #ts#=120, #shcolor#=#ffffff, #tbc#=#ffffff, #fc#=#66cbe0, #hc2#=#CA6F1E, #ttr1#=?, #to#=1, #rabc#=#dff8aa, #hbc#=#832333, #shblur#=4, #hts#=100, #isCustomSize#=false, #bm#=Seperate, #rtc#=#f4b53b, #customWidth#=200, #k1#=?, #hbo#=1, #iFrameColor#=#696969, #shver#=0, #tff#=Comic Sans MS, #ttr2#=?, #isTitleShadow#=true, #rp#=0, #comment#=?, #tp#=3, #customHeight#=290, #hts2#=125, #th#=Auto, #tcv1#=100, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.9, #k2#=?, #isFrame#=false, #shhor#=0, #htc#=#f4b53b, #rbc#=#832333, #fa#=Center, #rts#=80, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #tcv2#=30, #hts1#=125, #bo#=1, #fs#=100, #fbc#=#000000, #rta#=Center, #isFooter#=false, #ktr1#=?, #tw#=100, #bfs#=18, #hc1#=#008000, #bc#=#d9b784, #ratc#=#000000, #bw#=2, #bs#=Solid')
-    styleB = ['overrides':'#Class1#=@keyframes myAnim {0% {opacity: 0;transform: rotate(-540deg) scale(0);}100% {opacity: 1;transform: rotate(0) scale(1);}} | #Header#=animation: myAnim 2s ease 0s 1 normal backwards; | #Row#=animation: myAnim 2s ease 0s 1 normal forwards;']
-    style = styleA + styleB
-    state.'*Style-AM Marooned' = style
-
-	styleA = convertStyleStringToMap('#myKeywordCount#=0, #myThresholdCount#=0, #isCustomSize#=false, #tc#=#b2e0de, #bp#=10, #isHeaders#=false, #hp#=5, #hta#=Center, #ts#=200, #shcolor#=#000000, #tbc#=#ffffff, #fc#=#000000, #hc2#=#CA6F1E, #to#=1, #rabc#=#dff8aa, #hbc#=#9ec1eb, #shblur#=3, #hts#=100, #bm#=Collapse, #rtc#=#282828, #hbo#=1, #iFrameColor#=#282828, #shver#=0, #tff#=Comic Sans MS, #ttr2#=?, #isTitleShadow#=true, #rp#=10, #comment#=?, #tp#=15, #hts2#=125, #th#=Auto, #tcv1#=70, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=1, #k2#=?, #isFrame#=true, #shhor#=0, #htc#=#000000, #rbc#=#282828, #fa#=Center, #rts#=90, #isBorder#=false, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #tcv2#=30, #hts1#=125, #bo#=1, #fs#=60, #fbc#=#282828, #rta#=Center, #isFooter#=false, #tw#=90, #bfs#=18, #hc1#=#008000, #bc#=#000000, #ratc#=#000000, #bw#=2, #bs#=Solid')
-    styleB = ['overrides' : '#Title#=margin-top: 0px; font-size: 70px; font-weight: bold; color: #CFC547; text-align: center; letter-spacing: 5px; text-shadow: 16px 22px 11px rgba(168,158,32,0.8)']
-    style = styleA + styleB
-    state.'*Style-AM Menu Bar (See Docs)' = style
-	
-	styleA = convertStyleStringToMap('#myKeywordCount#=0, #myThresholdCount#=0, #tc#=#cfc547, #bp#=10, #ktr2#=?, #isHeaders#=true, #hp#=0, #hta#=Center, #ts#=200, #shcolor#=#000000, #tbc#=#282828, #fc#=#000000, #hc2#=#CA6F1E, #ttr1#=?, #to#=1, #rabc#=#dff8aa, #hbc#=#c74343, #shblur#=3, #hts#=125, #bm#=Seperate, #rtc#=#282828, #k1#=?, #hbo#=0.2, #iFrameColor#=#696969, #shver#=0, #tff#=Comic Sans MS, #ttr2#=?, #isTitleShadow#=false, #rp#=10, #comment#=?, #tp#=0, #hts2#=125, #th#=Auto, #tcv1#=70, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=1, #k2#=?, #isFrame#=false, #shhor#=0, #htc#=#c5bc44, #rbc#=#696969, #fa#=Center, #rts#=90, #isBorder#=false, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #tcv2#=30, #hts1#=125, #bo#=1, #fs#=60, #fbc#=#282828, #rta#=Center, #isFooter#=false, #ktr1#=?, #tw#=100, #bfs#=18, #hc1#=#008000, #bc#=#000000, #ratc#=#000000, #bw#=2, #bs#=Solid')
-    styleB = ['overrides':'#Title#= letter-spacing: 5px; text-shadow: 16px 22px 11px rgba(168,158,32,0.8); background-color: #282828, ']
-    style = styleA + styleB
-    state.'*Style-AM Menu Bar Dual (See Docs)' = style
-	
-	styleA = convertStyleStringToMap('#myKeywordCount#=0, #myThresholdCount#=0, #isCustomSize#=false, #tc#=#66cbe0, #bp#=5, #ktr2#=?, #isHeaders#=true, #hp#=0, #hta#=Center, #ts#=150, #shcolor#=#7a7a7a, #tbc#=#ffffff, #fc#=#66cbe0, #hc2#=#CA6F1E, #ttr1#=?, #to#=1, #rabc#=#dff8aa, #hbc#=#66cbe0, #shblur#=10, #hts#=140, #bm#=Collapse, #rtc#=#eb822e, #k1#=?, #hbo#=0.8, #iFrameColor#=#696969, #shver#=2, #tff#=Comic Sans MS, #ttr2#=?, #isTitleShadow#=false, #rp#=0, #comment#=?, #tp#=3, #hts2#=125, #th#=Auto, #tcv1#=70, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=1, #k2#=?, #isFrame#=false, #shhor#=2, #htc#=#eb822e, #rbc#=#d9ddc6, #fa#=Center, #rts#=110, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=false, #tcv2#=30, #hts1#=125, #bo#=1, #fs#=100, #fbc#=#000000, #rta#=Center, #isFooter#=false, #ktr1#=?, #tw#=90, #bfs#=18, #hc1#=#008000, #bc#=#eb822e, #ratc#=#000000, #bw#=2, #bs#=Solid')
-    styleB = ['overrides':'?']
-    style = styleA + styleB
-    state.'*Style-AM Palm Springs' = style
-	
-	styleA = convertStyleStringToMap('#myKeywordCount#=0, #myThresholdCount#=0, #isCustomSize#=false, #tbc#=#ffffff, #tc#=#000000, #bp#=10, #isHeaders#=true, #hp#=0, #hta#=Center, #ts#=140, #shcolor#=#bfe373, #fc#=#000000, #to#=1, #rabc#=#e9f5cf, #hbc#=#9bdbe8, #shblur#=4, #hts#=100, #bm#=Collapse, #rtc#=#fe7868, #hbo#=0.5, #iFrameColor#=#908989, #shver#=0, #tff#=Verdana, #isTitleShadow#=false, #rp#=0, #comment#=?, #tp#=0, #th#=Auto, #isAlternateRows#=false, #isTitle#=false, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.5, #isFrame#=false, #shhor#=0, #htc#=#650606, #rbc#=#ffffa0, #fa#=Center, #rts#=90, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=1, #fs#=80, #fbc#=#000000, #rta#=Center, #isFooter#=true, #tw#=100, #bfs#=18, #bc#=#000000, #ratc#=#000000, #bw#=2, #bs#=Solid')
-    styleB = ['overrides':'#Table#=background-image: repeating-radial-gradient(#0000 0% 6%,#c39f76 7% 13% ); background-size:40px 40px | #Row#=font-weight:bold']
-    style = styleA + styleB
-    state.'*Style-AM Pastel Swirl' = style
-	
-    styleA = convertStyleStringToMap('#myKeywordCount#=0, #myThresholdCount#=0, #isCustomSize#=false, #tbc#=#ffffff, #tc#=#b2e0de, #bp#=10, #isHeaders#=false, #hp#=5, #hta#=Center, #ts#=140, #shcolor#=#000000, #fc#=#000000, #to#=1, #rabc#=#dff8aa, #hbc#=#9ec1eb, #shblur#=3, #hts#=100, #bm#=Seperate, #rtc#=#000000, #hbo#=1, #iFrameColor#=#888686, #shver#=0, #tff#=Comic Sans MS, #isTitleShadow#=false, #rp#=10, #comment#=?, #tp#=15, #th#=Auto, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=1, #isFrame#=true, #shhor#=0, #htc#=#000000, #rbc#=#b2e0de, #fa#=Center, #rts#=90, #isBorder#=false, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=1, #fs#=60, #fbc#=#624141, #rta#=Center, #isFooter#=false, #tw#=90, #bfs#=18, #bc#=#000000, #ratc#=#000000, #bw#=2, #bs#=Solid')
-    styleB = ['overrides':'#Table#=box-shadow: 0px 0px 10px 10px #E8DD95;']
-    style = styleA + styleB
-    state.'*Style-AM Sea Foam Glow' = style
-   
-    styleA = convertStyleStringToMap('#myKeywordCount#=0, #myThresholdCount#=0, #isCustomSize#=false, #tbc#=#ffffff, #tc#=#000000, #bp#=0, #isHeaders#=true, #hp#=6, #hta#=Center, #ts#=150, #shcolor#=#7a7a7a, #fc#=#3be800, #to#=1, #rabc#=#dff8aa, #hbc#=#000000, #shblur#=10, #hts#=60, #bm#=Collapse, #rtc#=#41ff00, #hbo#=1, #iFrameColor#=#929090, #shver#=2, #tff#=Lucida, #isTitleShadow#=false, #rp#=6, #comment#=?, #tp#=3, #th#=Auto, #isAlternateRows#=false, #isTitle#=false, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.5, #isFrame#=false, #shhor#=2, #htc#=#41ff00, #rbc#=#000000, #fa#=Center, #rts#=50, #isBorder#=false, #isScrubHTML#=true, #rto#=0.7, #hto#=1, #isOverrides#=true, #bo#=0, #fs#=50, #fbc#=#000000, #rta#=Center, #isFooter#=true, #tw#=100, #bfs#=18, #bc#=#ffffff, #ratc#=#000000, #bw#=5, #bs#=Solid')
-    styleB = ['overrides':'#Table#=background: linear-gradient(180deg, #060606 0%, #11610B 100%)']
-    style = styleA + styleB
-    state.'*Style-AM Terminal' = style
-	
-	styleA = convertStyleStringToMap('#myKeywordCount#=0, #myThresholdCount#=0, #tc#=#000000, #bp#=0, #ktr2#=?, #isHeaders#=true, #hp#=0, #hta#=Center, #ts#=120, #shcolor#=#f6cd00, #tbc#=#696969, #fc#=#000000, #hc2#=#ca6f1e, #ttr1#=?, #to#=1, #rabc#=#a8c171, #hbc#=#f9e66c, #shblur#=2, #hts#=85, #isCustomSize#=false, #bm#=Seperate, #rtc#=#000000, #customWidth#=200, #k1#=?, #hbo#=1, #iFrameColor#=#696969, #shver#=2, #tff#=Comic Sans MS, #ttr2#=?, #isTitleShadow#=false, #rp#=0, #comment#=?, #tp#=0, #customHeight#=190, #hts2#=125, #th#=Auto, #tcv1#=100, #isAlternateRows#=false, #isTitle#=false, #br#=10, #ta#=Center, #isComment#=false, #rbo#=1, #k2#=?, #isFrame#=false, #shhor#=2, #htc#=#000000, #rbc#=#d1dd2c, #fa#=Left, #rts#=70, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #tcv2#=30, #hts1#=125, #bo#=1, #fs#=80, #fbc#=#282828, #rta#=Center, #isFooter#=true, #ktr1#=?, #tw#=100, #bfs#=18, #hc1#=#008000, #bc#=#000000, #ratc#=#000000, #bw#=3, #bs#=Dotted')
-    styleB = ['overrides':'#Table#=transform: rotate(2deg) translate(0px,8px)']
-    style = styleA + styleB
-    state.'*Style-AM Tickets' = style
-	
-	styleA = convertStyleStringToMap('#myKeywordCount#=0, #myThresholdCount#=0, #isCustomSize#=false, #tc#=#412f86, #bp#=5, #ktr2#=?, #isHeaders#=true, #hp#=0, #hta#=Center, #ts#=175, #shcolor#=#ffc62f, #tbc#=#e3b994, #fc#=#000000, #hc2#=#ca6f1e, #ttr1#=?, #to#=1, #rabc#=#f7c104, #hbc#=#4c247e, #shblur#=4, #hts#=140, #bm#=Collapse, #rtc#=#f7f7f7, #k1#=open, #hbo#=0.9, #iFrameColor#=#dbc0a9, #shver#=0, #tff#=Brush Script MT, #ttr2#=?, #isTitleShadow#=true, #rp#=0, #comment#=?, #tp#=3, #hts2#=125, #th#=Auto, #tcv1#=70, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.7, #k2#=?, #isFrame#=false, #shhor#=0, #htc#=#f7c104, #rbc#=#4d2081, #fa#=Center, #rts#=110, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=false, #tcv2#=30, #hts1#=125, #bo#=0.6, #fs#=90, #fbc#=#000000, #rta#=Center, #isFooter#=false, #ktr1#=[div class=cl99]Open[/div], #tw#=90, #bfs#=18, #hc1#=#008000, #bc#=#f7c104, #ratc#=#000000, #bw#=2, #bs#=Solid')
-    styleB = ['overrides':'?']
-    style = styleA + styleB
-    state.'*Style-AM Vikings' = style
-
-    styleA = convertStyleStringToMap('#myKeywordCount#=0, #myThresholdCount#=0, #isCustomSize#=false, #tc#=#d6ae7b, #bp#=6, #ktr2#=?, #isHeaders#=false, #hp#=0, #hta#=Center, #ts#=200, #shcolor#=#000000, #tbc#=#ffffff, #fc#=#d6ae7b, #hc2#=#CA6F1E, #ttr1#=?, #to#=1, #rabc#=#dff8aa, #hbc#=#9ec1eb, #shblur#=10, #hts#=100, #bm#=Collapse, #rtc#=#786854, #k1#=?, #hbo#=1, #iFrameColor#=#000000, #shver#=2, #tff#=Brush Script MT, #ttr2#=?, #isTitleShadow#=true, #rp#=0, #comment#=?, #tp#=3, #hts2#=125, #th#=Auto, #tcv1#=70, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.6, #k2#=?, #isFrame#=true, #shhor#=2, #htc#=#000000, #rbc#=#ba8c63, #fa#=Center, #rts#=150, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #tcv2#=30, #hts1#=125, #bo#=1, #fs#=90, #fbc#=#560b0b, #rta#=Center, #isFooter#=true, #ktr1#=?, #tw#=90, #bfs#=18, #hc1#=#008000, #bc#=#786854, #ratc#=#000000, #bw#=2, #bs#=Solid')
-    styleB = ['overrides':'#Row#=text-shadow:3px 3px 8px #660000']
-    style = styleA + styleB
-    state.'*Style-AM Wood' = style
-
-    log.info("Default Styles have been rebuilt.")
-	return
+def saveCurrentStyle(String styleName){
+    if (isLogInfo) log.info("saveCurrentStyle: Child saving style '${saveStyleName} with settings: ${styleMap}")
+    styleMap = state.myActiveStyleMap
+    saveStyleName = "Style-AM-${styleName}"
+    parent.saveStyle(saveStyleName, styleMap)
 }
 
-//Converts an built-in internal Style in string form into a Map for storage
-def convertStyleStringToMap(String style) {
-    if (isLogTrace) log.trace ('convertStyleStringToMap: Entering convertStyleStringToMap')
-    style = style.replace(', ', ', ')
-	
-    if (isLogDebug) log.debug ("Style is: ${style}")
-    def myStyle = [:]
+//Takes all of the values in the style and applies them to the controls.
+def loadStyle(String styleName){
+    myStyle = parent.loadStyle(styleName)    
+    if (isLogInfo) log.info("loadStyle: style ${styleName} received from parent with settings: ${myStyle}.")
+    //Now update all of the settings with the retreived values
+    return myStyle
+}
 
-    myArr = style.tokenize(',')
-	//log.debug ("myArr is: ${myArr}")
-    myArr.each {
-        details = it.tokenize('=')
-        //if (isLogDebug) 
-        //log.debug ("Details is: ${details}")
+def deleteSelectedStyle(String styleName){
+    if (isLogInfo) log.info ("deleteSelectedStyle: ${styleName} Style deleted from ")
+    parent.deleteStyle(styleName)    
+}
+
+def importStyle(){
+    if (isLogInfo) log.info ("importStyleString: Importing style.")
+    myStyle = importStyleString(settings.importStyleText)
+    newStyle = [myStyle]
+    return newStyle
+}
+
+//Takes a Style Map and applies all the settings.
+//Any controls having their value restored must not be visible on the page or the operation will fail.
+def applyStyle(style){
+    if (isLogInfo) log.info ("applyStyle: Received style: ${style}")
+    //We need to excluded certain settings for Highlighting from the style for MAM.
+    //This way we can import AM Styles but ignore the Highlight settings.
+    def exclusionList1 = ["hc1", "hts1", "hc2", "hts2", "hc3", "hts3", "hc4", "hts4", "hc5", "hts5", "hc6", "hts6", "hc7", "hts7", "hc8", "hts8", "hc9", "hts9", "hc10", "hts10"]
+    def exclusionList2 = ["myKeywordCount", "k1", "ktr1", "k2", "ktr2", "k3", "ktr3", "k4", "ktr4", "k5", "ktr5"]
+    def exclusionList3 = ["myThresholdCount", "top1", "tcv1", "ttr1", "top2", "tcv2", "ttr2", "top3", "tcv3", "ttr3", "top4", "tcv4", "ttr4", "top5", "tcv5", "ttr5"]
+    def combinedExclusionList = []
+    combinedExclusionList.addAll(exclusionList1)
+    combinedExclusionList.addAll(exclusionList2)
+    combinedExclusionList.addAll(exclusionList3)
+
+    style.each{ mySetting, myValue ->
+        mySetting = mySetting.replaceAll("#","")
+        log.debug ("setting is: ${mySetting} and value is: ${myValue} and myclass is: ${myClass}")
+        //If the setting is not in the exclusion list then we will process it.
+        if ( !combinedExclusionList.contains(mySetting) ) {
+            myClass = getSettingClass(mySetting)
+            //if (isLogDebug) 
+            if (myClass == "color" ) app.updateSetting(mySetting, [value:myValue, type:"color"]) 
+            if (myClass == "enum" ) app.updateSetting(mySetting, [value:myValue.toString(), type:"enum"]) 
+            if (myClass == "bool" ) app.updateSetting(mySetting, [value:myValue.toString(), type:"bool"]) 
+            if (myClass == "text" ) app.updateSetting(mySetting, [value:myValue.toString(), type:"text"]) 
+            if (myClass == "textarea" ) app.updateSetting(mySetting, [value:myValue.toString(), type:"textarea"]) 
+            if (myClass == null ) log.warn ("Found setting: ${mySetting} in style with value: ${myValue} but no such setting exists. This is not harmful and does not affect the operation of the program.")
+        }
+    }    
+}
+
+//Converts a Style in string form into a Map for storage.
+def importStyleString(styleString){
+    styleString.replace(", ",",")
+    if (isLogInfo) log.info ("importStyleString: Style is: ${styleString}")
+    def newStyle = [:]
+    
+    myArr = styleString.tokenize(",")
+    myArr.each{
+        it = it.replace("[","")
+        it = it.replace("]","")
+        it = it.replace("[[","[")
+        it = it.replace("]]","]")
+        it = it.replace("[ ","[")
+        it = it.replace(" ]","]")
+        details = it.tokenize(":")
+        
+        if (isLogDebug) log.debug ("Details is: ${details}")
         if (details[0] != null ) d0 = details[0].trim()
-		//log.debug ("d0 is: ${d0}")
         if (details[1] != null ) d1 = details[1].trim()
-		//log.debug ("details is: ${details}")
-        //log.debug ("details1 is: ${details[1]}")
-        //log.debug ("details2 is: ${details[2]}")
-        //log.debug ("details3 is: ${details[3]}")
-		//If the style string has an embedded = sign like class=abc.
-        //In which case we concatenate details[1] + "=" + details[2] to restore the substring that was split up by the earlier tokenize '='
-		if (details[2] != null ) { d1 = d1 + "=" + details[2].trim() }
-        //Replace any Alt 205 characters
-        //log.debug ("d1 before is: ${d1}")
-        d1 = d1.replace('═', '=')
-        //log.debug ("d1 after is: ${d1}")
-	    if (d0 != null && d1 != null ) myStyle."${d0}" = d1
-    }
-    if (isLogDebug) log.debug ("myStyle is: ${myStyle}")
-    return myStyle
-}
-
-//Saves the settings received from a child app as a new style.
-def saveStyle(styleName, styleMap) {
-    if (isLogTrace) log.trace ('saveStyle: Entering saveStyle')
-    if (isLogInfo) log.info("Parent - Saving style: '${saveName}' with settings: ${styleMap}")
-    state."${styleName}" = styleMap
-}
-
-//Returns all of the settings in a style to the child app.
-def loadStyle(String styleName) {
-    if (isLogTrace) log.trace ('loadStyle: Entering loadStyle')
-    def myStyle = [:]
-    myStyle = state."${styleName}"
-    if (isLogDebug) log.debug("Parent - Returning style: '${styleName}' with settings: ${myStyle}")
-    return myStyle
-}
-
-//Deletes the selected Style.
-def deleteStyle(String deleteStyle) {
-    if (isLogTrace) log.trace ('deleteStyle: Entering deleteStyle')
-    state.remove(deleteStyle)
-    if (isLogInfo) log.info("Parent - Deleted style: '${deleteStyle}'")
-}
-
-//Returns a list of state key names that begin with the word "Style-"
-def listStyles() {
-    if (isLogTrace) log.trace ('listStyles: Entering listStyles')
-    def myList = []
-    state.each {
-        //Only process those with a matching name.
-        if ( it.toString().indexOf('Style-AM') == 0  || it.toString().indexOf('*Style-AM') == 0 ) {
-            data = it.toString().tokenize('=')
-            myVal = data[0].toString()
-            myList.add(myVal)
+        if (d0 != null && d1 != null ) {
+            if (isLogDebug) log.debug ("d0 is:${d0} and d1 is: ${d1}")
+            newStyle."${d0}" = d1
         }
     }
-    return myList.sort()
+    if (isLogDebug) log.debug ("importStyleString: Returning - ${newStyle}")
+    return newStyle
+}
+
+//fillStyle replaces the placeholders in the HTML template with the actual data values
+//Note:Overrides are placed at the start of the list so they take precedence over other lists. The item will be replaced in the string and won't be found by subsequent searches.
+//Returns a list of maps which contain the replacement values for the HTML template string.
+//titleScheme - tt=title text, ts=title size, tc=title color, ta=title alignment. titleShadow = composite entity for text shadow.
+//headerScheme - hbc=header background color, htc=header text color, hts=header text size, hta=header text alignment, hto=header text opacity, hp=header padding
+//rowScheme - rbc=row background color, rtc=row text color, rts=row text size, rta=header text alignment, rto=row text opacity, rabc=row alternate background color, ratc=row alternate text color, rp = row padding (applies to data area)
+//tableScheme - th=table height, tw=table width, tml=table margin left, tmr=table margin right.
+//borderScheme - bw=border width, bc=border color, bp=border padding, bs=border style
+//footerScheme - ft=footer text, fs=footer size, fc=footer color, fa=footer alignment
+//booleanScheme - These will never be found. They are included in the allScheme so that their settings can be saved along with the rest of the style.
+def fillStyle(){
+    if (isLogTrace) log.trace ("fillStyle: Entering fillStyle.")
+    def myTime = new Date().format('E @ HH:mm a')
+    def myRP, myBP
+    def myTitleShadow = ""
+
+    //If the border is enabled and the padding is > 0 the header and row padding values will be ignored. This will result in them getting stripped from the final HTML as the string will read padding:0px; which is redundant as that is the default value.
+    if (isLogDebug) log.debug("isBorder: ${isBorder}")
+    if (isLogDebug) log.debug("bp: ${settings.bp}")
+    if (isBorder == true && bp.toInteger() > 0 ) {
+        if (isLogDebug) log.debug ("Border is on and > 0")
+        myHP = "0" ; myRP = "0"
+    }
+    else { myHP = hp ; myRP = rp }    
+    
+    //Calculate the composite values here.
+    if (isTitleShadow == true) myTitleShadow = "text-shadow:" + shhor + "px " + shver + "px " + shblur + "px " + shcolor
+    
+    //Color values that support opacity must be converted to HEX8.
+    //For example hbc = Header Background Color. It is created by combining Header Background Color (hbc) and Header Background Opacity (hbo) to make a HEX8 value.
+    //Table
+    def mytbc = convertToHex8(tbc, tbo.toFloat())  
+    //Title
+    def mytc = convertToHex8(tc, to.toFloat())  
+    //Border
+    def mybc = convertToHex8(bc, bo.toFloat())  
+    //Table Header
+    def myhbc = convertToHex8(hbc, hbo.toFloat())  
+    def myhtc = convertToHex8(htc, hto.toFloat())  
+    //Table Rows
+    def myrbc = convertToHex8(rbc, rbo.toFloat())  
+    def myrtc = convertToHex8(rtc, rto.toFloat())  
+    
+    Hex8ColorScheme = ["#tbc#":mytbc, "#tc#":mytc,"#hbc#":myhbc, "#htc#":myhtc,"#rbc#":myrbc, "#rtc#":myrtc, "#bc#":mybc]    
+    titleScheme = ["#tt#":tt, "#ts#":ts, "#tc#":tc, "#tp#":tp, "#ta#":ta, "#to#":to, "#shcolor#":shcolor, "#shver#":shver, "#shhor#":shhor, "#shblur#":shblur, "#titleShadow#":myTitleShadow]
+    headerScheme = ["#A00#":A0, "#B00#":B0, "#hbc#":hbc, "#hbo#":hbo, "#htc#":htc, "#hto#":hto, "#hts#":hts, "#hta#":hta , "#hp#":myHP]         
+    rowScheme = ["#rbc#":rbc, "#rtc#":rtc, "#rts#":rts, "#rta#":rta ,"#rabc#":rabc, "#ratc#":ratc, "#rp#":myRP, "#rto#":rto, "#rbo#":rbo]            
+    //Add a temporary class ID of 'qq'. A double qq is not used in the english language. The final one will be assigned by the Tile Builder Storage Device when the Tile is published.
+    tableScheme = ["#id#":"qq", "#th#":th,"#tw#":tw, "#tbc#":tbc, "#tbo#":tbo ]        
+    borderScheme = ["#bw#":bw, "#bc#":bc, "#bs#":bs, "#br#":br, "#bp#":bp, "#bo#":bo ]
+    footerScheme = ["#ft#":ft, "#fs#":fs, "#fc#":fc, "#fa#":fa ] 
+    
+    //hc?:highlight color; hts? highlight text size; 
+    highlightScheme = ["#hc1#":compress(hc1), "#hts1#":hts1, "#hc2#":compress(hc2), "#hts2#":hts2,"#hc3#":compress(hc3), "#hts3#":hts3, "#hc4#":compress(hc4), "#hts4#":hts4, "#hc5#":compress(hc5), "#hts5#":hts5, "#hc6#":compress(hc6), "#hts6#":hts6, "#hc7#":compress(hc7), "#hts7#":hts7,"#hc8#":compress(hc8), "#hts8#":hts8, "#hc9#":compress(hc9), "#hts9#":hts9, "#hc10#":compress(hc10), "#hts10#":hts10]
+    keywordScheme = ["#k1#":k1, "#ktr1#":ktr1, "#k2#":k2, "#ktr2#":ktr2, "#k3#":k3, "#ktr3#":ktr3, "#k4#":k4, "#ktr4#":ktr4, "#k5#":k5, "#ktr5#":ktr5]
+    thresholdScheme = ["#top1#":top1, "#tcv1#":tcv1, "#ttr1#":ttr1, "#top2#":top2, "#tcv2#":tcv2, "#ttr2#":ttr2, "#top3#":top3, "#tcv3#":tcv3, "#ttr3#":ttr3, "#top4#":top4, "#tcv4#":tcv4, "#ttr4#":ttr4, "#top5#":top5, "#tcv5#":tcv5, "#ttr5#":ttr5]
+    otherScheme = ["#comment#":comment, "#bm#":bm,"#tff#":tff, "#bfs#":bfs, "#fbc#":fbc, "#customWidth#":customWidth, "#customHeight#":customHeight, "#iFrameColor#":iFrameColor, "#myKeywordCount#" : myKeywordCount, "#myThresholdCount#" : myThresholdCount] 
+        
+    //The booleanScheme uses the same configuration but these are not tags that are stored within the HTML. However they are stored in settings as they guide the logic flow of the application.
+    booleanScheme1 = ["#isCustomSize#":isCustomSize, "#isFrame#":isFrame, "#isComment#":isComment,"#isTitle#":isTitle,"#isTitleShadow#":isTitleShadow,"#isHeaders#":isHeaders,"#isBorder#":isBorder,"#isAlternateRows#":isAlternateRows,"#isFooter#":isFooter]  
+    booleanScheme2 = ["#isOverrides#":isOverrides]
+
+    //'myBaseSettingsMap' are those configured through the UI. 'myOverridesMap' are those extracted from the overrides text field and converted to a map. 
+    //'myEffectiveSettings' are the result of merging the 'myBaseSettingsMap' settings with the 'myOverrideMap'. 
+    def myBaseSettingsMap = [:]
+    def myOverridesMap = [:]
+    
+    //Get any configured overrides if relevant, otherwise just leave it empty.
+    if ( overrides != null && isOverrides == true ) {
+        //log.info("overrides is: ${overrides}")
+        //Remove most duplication of seperators.
+        tmpOverrides = overrides.replace("| | |"," | ")
+        tmpOverrides = tmpOverrides.replace("| |"," | ")
+        tmpOverrides = tmpOverrides.replace("||"," | ")
+        //log.info("tmp is: ${tmpOverrides}")
+        myOverridesMap = overridesToMap(tmpOverrides, "|", "=" )        
+    }
+    //Save the override map to state for diagnostic purposes.
+    state.myOverrides = myOverridesMap
+    
+    //Calculate the base settings map and save it to state. These have HEX colors and can be applied directly to settings.
+    myBaseSettingsMap = titleScheme.clone() + headerScheme.clone() + rowScheme.clone() + tableScheme.clone() + borderScheme.clone() + footerScheme.clone() + highlightScheme.clone() + keywordScheme.clone() + thresholdScheme.clone() + otherScheme.clone() + booleanScheme1.clone() + booleanScheme2.clone()
+    
+    //For this one we start with the same base and add the HEX8 color values. This result is for use in the display in a compressed form.
+    state.myBaseSettingsMap = myBaseSettingsMap.clone()
+    myBaseSettingsMapHEX8 = myBaseSettingsMap.clone() + Hex8ColorScheme.clone()
+    
+    //Add the overrides to the front of the map. By listing myOverridesMap second those values take precedence and 'Win' the collision. Save them to state.
+    def myBaseSettingsPlusOverrides = myBaseSettingsMap.clone() + myOverridesMap.clone()
+    state.myBaseSettingsPlusOverrides = myBaseSettingsPlusOverrides.clone()
+    
+    //Color values that support opacity must be converted to HEX8.These must be done AFTER overrides have been applied in case they include a color or opacity.
+    //Combine color and opacity. For example hbc = Header Background Color. It is created by combining Header Background Color (hbc) and Header Background Opacity (hbo) to make a HEX8 value called myhbc.
+    
+    mytbc = convertToHex8(myBaseSettingsPlusOverrides.get("#tbc#"), myBaseSettingsPlusOverrides.get("#tbo#").toFloat())    
+    mytc = convertToHex8(myBaseSettingsPlusOverrides.get("#tc#"), myBaseSettingsPlusOverrides.get("#to#").toFloat())    
+    mybc = convertToHex8(myBaseSettingsPlusOverrides.get("#bc#"), myBaseSettingsPlusOverrides.get("#bo#").toFloat())    
+    
+    //Table Header
+    myhbc = convertToHex8(myBaseSettingsPlusOverrides.get("#hbc#"), myBaseSettingsPlusOverrides.get("#hbo#").toFloat())    
+    myhtc = convertToHex8(myBaseSettingsPlusOverrides.get("#htc#"), myBaseSettingsPlusOverrides.get("#hto#").toFloat())    
+    
+    //Table Rows
+    myrbc = convertToHex8(myBaseSettingsPlusOverrides.get("#rbc#"), myBaseSettingsPlusOverrides.get("#rbo#").toFloat())    
+    myrtc = convertToHex8(myBaseSettingsPlusOverrides.get("#rtc#"), myBaseSettingsPlusOverrides.get("#rto#").toFloat())    
+    
+    Hex8ColorScheme = ["#tbc#":compress(mytbc),"#tc#":compress(mytc), "#hbc#":compress(myhbc), "#htc#":compress(myhtc),  "#rbc#":compress(myrbc), "#rtc#":compress(myrtc),  "#bc#":compress(mybc)]
+    
+    if (isLogDebug) log.debug("myBaseSettingsMap is: ${myBaseSettingsMap}")
+    if (isLogDebug) log.debug("myBaseSettingsMapwithHex8 is: ${myBaseSettingsMapHex8}")
+    def myEffectiveSettingsMap = myBaseSettingsPlusOverrides.clone() + Hex8ColorScheme.clone()
+    state.myEffectiveSettingsMap = myEffectiveSettingsMap.clone() //.sort()
+    
+    //Now Calculate the Style by eliminating those fields that contain 'content' and then adding the overrides back in string form.
+    def myStyleMap = myBaseSettingsMap
+    myStyleMap.remove("#Comment#")
+    myStyleMap.remove("#id#")
+    myStyleMap.remove("#tt#")
+    myStyleMap.remove("#A00#")
+    myStyleMap.remove("#B00#")
+    myStyleMap.remove("#ft#")
+    //The value of #titleShadow#, pre and post are calculated values based on other settings and do not need to be preserved.
+    myStyleMap.remove("#titleShadow#")
+    myStyleMap.overrides = settings.overrides
+    
+    //Now change the colors back from the current HEX8 format to HEX6 format for saving.
+    myStyleMap."#tbc#" = tbc  //"#FFFFFF"
+    myStyleMap."#tc#" = tc  //"#FFFFFF"
+    myStyleMap."#bc#" = bc  //"#FFFFFF"
+    myStyleMap."#rbc#" = rbc
+    myStyleMap."#rtc#" = rtc
+    myStyleMap."#hbc#" = hbc
+    myStyleMap."#htc#" = htc
+    
+    //Save the styleMap
+    state.myActiveStyleMap = myStyleMap
+    
+    //Now return the effective settings
+    if (isLogDebug) log.debug ("fillStyle: myEffectiveSettingsMap is: ${myEffectiveSettingsMap}")
+    return myEffectiveSettingsMap
+}
+
+
+//************************************************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************************************************
+//**************
+//**************  Installation and update routines.
+//**************
+//************************************************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************************************************
+
+// Initialize the states only when first installed...
+void installed() {
+    initialize()
+}
+
+//Configures all of the default settings values. 
+//This allows us to have some parts of the settings not be visible but still have their values initialized.
+//We do this to avoid errors that might occur if a particular setting were referenced but had not been initialized.
+def initialize(){
+    if ( state.initialized == true ){
+        if (isLogDebug) log.debug ("initialize: Initialize has already been run. Exiting")
+        //return
+    }
+    
+    //Set the flag so that this should only ever run once.
+    state.initialized = true
+    
+    app.updateSetting("inactivityThreshold", 24)
+    app.updateSetting("myDeviceCount", 1)
+    app.updateSetting("myTruncateLength", 20)
+    app.updateSetting("mySortOrder", 1)
+    app.updateSetting("myDecimalPlaces", 1)
+    app.updateSetting("myUnits", [value:"None", type:"String"])
+    app.updateSetting("isAbbreviations", false)
+    app.updateSetting("isShowDeviceNameModification", false)
+    
+    //Filtering
+    app.updateSetting("myFilterType", 0)
+    app.updateSetting("myFilterText", "")
+    
+    //General
+    app.updateSetting("classID", "qq")
+    app.updateSetting("tilePreview","6")
+    app.updateSetting("isComment", false)
+    app.updateSetting("comment", "?")
+    app.updateSetting("isFrame", false)
+    app.updateSetting("fbc", [value:"#bbbbbb", type:"color"])
+    app.updateSetting("tbc", [value:"#d9ecb1", type:"color"])
+    app.updateSetting("tbo", "1")
+    app.updateSetting("isShowSettings", false)
+    app.updateSetting("iFrameColor", [value:"#bbbbbb", type:"color"])
+    app.updateSetting("isCustomSize", false)
+    app.updateSetting("customWidth", "200")
+    app.updateSetting("customHeight", "190")
+    
+    app.updateSetting("isLogDebug", false)
+    app.updateSetting("isLogTrace", false)
+    app.updateSetting("isLogInfo", false)
+    app.updateSetting("isLogWarn", true)
+    app.updateSetting("isLogError", true)
+    app.updateSetting("isCustomize", false)
+    
+    //Title Properties
+    app.updateSetting("isTitle", false)
+    app.updateSetting("tt", "My Title")
+    app.updateSetting("ts", "125")
+    app.updateSetting("tc", [value:"#000000", type:"color"])
+    app.updateSetting("ta", "Center")
+    app.updateSetting("tp", "3")
+    app.updateSetting("to", "1")
+    
+    app.updateSetting("isTitleShadow", false )
+    app.updateSetting("shhor", "0")
+    app.updateSetting("shver", "0")
+    app.updateSetting("shblur", "5")
+    app.updateSetting("shcolor", [value:"#000000", type:"color"])
+    app.updateSetting("titleShadow", "text-shadow:" + settings.shhor + "px " + settings.shver + "px " + settings.shblur + "px " + settings.shcolor + ";")
+    
+    //Table Properties
+    app.updateSetting("tw", "100")
+    app.updateSetting("th", "Auto")
+    app.updateSetting("bm", "Collapse")
+    
+    //Border Properties
+    app.updateSetting("isBorder", true )
+    app.updateSetting("bs", "Solid")
+    app.updateSetting("bc", [value:"#000000", type:"color"])
+    app.updateSetting("bo", "1")
+    app.updateSetting("bw", "2")
+    app.updateSetting("br", "0")
+    app.updateSetting("bp", "0")
+    
+    //Header Properties
+    app.updateSetting("isHeaders", true)
+    app.updateSetting("isMergeHeaders", false)
+    app.updateSetting("A0", "Device")
+    app.updateSetting("B0", "State")
+    app.updateSetting("hbc", [value:"#90C226", type:"color"])
+    app.updateSetting("hbo", "1")
+    app.updateSetting("htc", [value:"#000000", type:"color"])
+    app.updateSetting("hts", "100")
+    app.updateSetting("hta", "Center")
+    app.updateSetting("hto", "1")
+    app.updateSetting("hp", "0")
+    
+    //Row Properties
+    app.updateSetting("rtc", [value:"#000000", type:"color"])
+    app.updateSetting("rts", "80")
+    app.updateSetting("rbc", [value:"#000000", type:"color"])
+    app.updateSetting("rbo", "0")
+    app.updateSetting("rta", "Center")
+    app.updateSetting("rto", "1")
+    app.updateSetting("isAppendUnits", false)
+    app.updateSetting("isAlternateRows", false)
+    app.updateSetting("rabc", [value:"#dff8aa", type:"color"])
+    app.updateSetting("ratc", [value:"#000000", type:"color"])
+    app.updateSetting("rp", "0")
+    
+    //Footer Properties
+    app.updateSetting("isFooter", true)
+    app.updateSetting("ft", "%time%")
+    app.updateSetting("fs", "60")
+    app.updateSetting("fc", [value:"#000000", type:"color"])
+    app.updateSetting("fa", "Center")
+    
+    //Highlight Colors
+    app.updateSetting("hc1", [value:"#008000", type:"color"])
+    app.updateSetting("hts1", "100")
+    app.updateSetting("hc2", [value:"#CA6F1E", type:"color"])
+    app.updateSetting("hts2", "100")
+    app.updateSetting("hc3", [value:"#00FF00", type:"color"])
+    app.updateSetting("hts3", "100")
+    app.updateSetting("hc4", [value:"#0000FF", type:"color"])
+    app.updateSetting("hts4", "100")
+    app.updateSetting("hc5", [value:"#FF0000", type:"color"])
+    app.updateSetting("hts5", "100")
+    app.updateSetting("hc6", [value:"#008000", type:"color"])
+    app.updateSetting("hts6", "100")
+    app.updateSetting("hc7", [value:"#CA6F1E", type:"color"])
+    app.updateSetting("hts7", "100")
+    app.updateSetting("hc8", [value:"#00FF00", type:"color"])
+    app.updateSetting("hts8", "100")
+    app.updateSetting("hc9", [value:"#0000FF", type:"color"])
+    app.updateSetting("hts9", "100")
+    app.updateSetting("hc10", [value:"#FF0000", type:"color"])
+    app.updateSetting("hts10", "100")
+    app.updateSetting("isHighlightDeviceNames", false)
+    
+    //Keywords
+    app.updateSetting("myKeywordCount", 0)
+    app.updateSetting("k1", [value:"?", type:"text"])
+    app.updateSetting("ktr1", [value:"?", type:"text"])
+    app.updateSetting("k2", [value:"?", type:"text"])
+    app.updateSetting("ktr2", [value:"?", type:"text"])
+    app.updateSetting("k3", [value:"?", type:"text"])
+    app.updateSetting("ktr3", [value:"?", type:"text"])
+    app.updateSetting("k4", [value:"?", type:"text"])
+    app.updateSetting("ktr4", [value:"?", type:"text"])
+    app.updateSetting("k5", [value:"?", type:"text"])
+    app.updateSetting("ktr5", [value:"?", type:"text"])
+    
+    //Thresholds
+    app.updateSetting("myThresholdCount", 0)
+    app.updateSetting("top1", [value:"0", type:"enum"])
+    app.updateSetting("tcv1", [value:70, type:"number"])
+    app.updateSetting("ttr1", [value:"?", type:"text"])
+    app.updateSetting("top2", [value:"0", type:"enum"])
+    app.updateSetting("tcv2", [value:70, type:"number"])
+    app.updateSetting("ttr2", [value:"?", type:"text"])
+    app.updateSetting("top3", [value:"0", type:"enum"])
+    app.updateSetting("tcv3", [value:70, type:"number"])
+    app.updateSetting("ttr3", [value:"?", type:"text"])
+    app.updateSetting("top4", [value:"0", type:"enum"])
+    app.updateSetting("tcv4", [value:70, type:"number"])
+    app.updateSetting("ttr4", [value:"?", type:"text"])
+    app.updateSetting("top5", [value:"0", type:"enum"])
+    app.updateSetting("tcv5", [value:70, type:"number"])
+    app.updateSetting("ttr5", [value:"?", type:"text"])
+    
+    //Format Rules
+    app.updateSetting("fr1", [value:"?", type:"text"])
+    app.updateSetting("fr2", [value:"?", type:"text"])
+    app.updateSetting("fr3", [value:"?", type:"text"])
+
+    //Advanced
+    app.updateSetting("bfs", "18")
+    app.updateSetting("tff", "Roboto")
+    app.updateSetting("scrubHTMLlevel", 1)
+    app.updateSetting("isShowImportExport", false)
+    app.updateSetting("isShowHTML", false)
+    app.updateSetting("importStyleText", "?")
+    app.updateSetting("importStyleOverridesText", "?")
+    app.updateSetting("isOverrides", false)
+    app.updateSetting("overrides", [value: "?", type:"textarea"])
+    
+    //Other
+    app.updateSetting("mySelectedTile", "")
+    app.updateSetting("publishInterval", [value:1, type:"enum"])
+    app.updateSetting("isCompactDisplay", false)
+    
+    app.updateSetting("overrideHelperCategory", [value:"Animation", type:"text"])
+    app.updateSetting("overridesHelperSelection", [value:"Fade: Fades in an object on refresh.", type:"text"])
+        
+    //Set initial Log settings
+    app.updateSetting('isLogDebug', false)
+    app.updateSetting('isLogTrace', false)
+    app.updateSetting('isLogInfo', false)
+    app.updateSetting('isLogWarn', true)
+    app.updateSetting('isLogError', true)
+    
+    //Flags for multi-part operations usually to do with screen refresh.
+    state.flags = [isClearImport: false , isCopyOverridesHelperCommand: false, isAppendOverridesHelperCommand: false, isClearOverridesHelperCommand: false, styleSaved: false, myCapabilityChanged: false]
+    state.myCapabilityHistory = [new: "seed1", old: "seed"]
+    
+    //Have all the section collapsed to begin with except devices
+    state.show = [Devices: true, Design: true, Publish: false, More: false]
+}
+
+//Handles the initialization of any variables created after the original creation of the child instance.
+//These are susceptible to change with each rev or feature add.
+def updateVariables( ) {
+    //This will be called with release of version 1.3.0 which added search and replace within device names. Previously only myReplacementText1 and myReplacementText2 should have existed.
+    if (state.variablesVersion == null || state.variablesVersion < 130 ) {
+        log.info ("Updating Variables to Version 1.3.0")
+        state.variablesVersion = 130
+    }
+    
+    //Next release will use this branch.
+    if (state.variablesVersion == 131 ) {
+        //Place logic to update variables here.
+    }
+}
+
+//Will be used to remove retired variables at some future time.  
+//They are not deleted immediately upon upgrade to allow falling back to prior code version.
+def removeRetiredVariables(int myVersion){
+    //These variables were retired with Version 1.3.0
+    if ( myVersion == 130 ) {
+        
+    }       
 }
 
 //*****************************************************************************************************
 //Utility Functions
 //*****************************************************************************************************
 
-//Get the license type the user has selected.
-def isAdvLicense(){
-    if (isLogInfo) ("License:" + isAdvLicense)
-    return isAdvLicense
+//Determines if an integer is odd or even
+private static boolean isEven(int number) {
+    return number % 2 == 0
+}
+
+//Returns a string containing the var if it is not null. Used for the controls.
+String bold2(s, var) {
+    if (var == null) return "<b>$s (N/A)</b>"
+    else return ("<b>$s ($var)</b>")
 }
 
 //Functions to enhance text appearance
 String bold(s) { return "<b>$s</b>" }
 String italic(s) { return "<i>$s</i>" }
 String underline(s) { return "<u>$s</u>" }
-String dodgerBlue(s) { return '<font color = "DodgerBlue">' + s + '</font>' }
-String myTitle(s1, s2) { return '<h3><b><font color = "DodgerBlue">' + s1 + '</font></h3>' + s2 + '</b>' }
+String dodgerBlue(s) { return '<font color = "DodgerBlue">' + s + '</font>'}
+String myTitle(s1, s2) { return '<h3><b><font color = "DodgerBlue">' + s1 + '</font></h3>' + s2 + '</b>'}
+//String red(s) { return '<font color = "Chestnut">' + s + '</font>'}
 String red(s) { return '<r style="color:red">' + s + '</r>' }
 String green(s) { return '<g style="color:green">' + s + '</g>' }
-String orange(s) { return '<g style="color:orange">' + s + '</g>' }
 
 //Set the titles to a consistent style.
-def titleise(title) {
-    title = "<span style='color:#1962d7;text-align:left; margin-top:0em; font-size:20px'><b>${title}</b></span>"
-}
-
-//Set the titles to a consistent style without underline
-def titleise2(title) {
-    title = "<span style='color:#1962d7;text-align:left; margin-top:0em; font-size:20px'><b>${title}</b></span>"
+def titleise(title){
+    //title = "<span style='color:#1962d7;text-align:left; margin-top:0em; font-size:20px; box-shadow: 0px 0px 5px 5px #E8DD95; padding:2px; background:#E8DD95;'><b>${title}</b></span>"
+    title = "<span style='color:#1962d7;text-align:left; margin-top:0em; font-size:20px; padding:2px'><b>${title}</b></span>"
 }
 
 //Set the notes to a consistent style.
-String note(myTitle, myText) {
-    return "<span style='color:#17202A;text-align:left; margin-top:0.25em; margin-bottom:0.25em ; font-size:16px'>" + '<b>' + myTitle + '</b>' + myText + '</span>'
+String note(myTitle, myText){
+    return "<span style='color:#17202A;text-align:left; margin-top:0.25em; margin-bottom:0.25em ; font-size:16px'>" + "<b>" + myTitle + "</b>" + myText + "</span>"
 }
 
 //Set the body text to a consistent style.
 String body(myBody) {
-    return "<span style='color:#17202A;text-align:left; margin-top:0em; margin-bottom:0em ; font-size:18px'>"  + myBody + '</span>&nbsp'
+    return "<span style='color:#17202A;text-align:left; margin-top:0em; margin-bottom:0em ; font-size:18px'>"  + myBody + "</span>&nbsp"               
 }
 
 //Produce a horizontal line of the speficied width
-String line(myHeight) {
-    return "<div style='background-color:#005A9C; height: " + myHeight + "px; margin-top:0em; margin-bottom:0em ; border: 0;'></div>"
+String line(myHeight){
+    return "<div style='background:#005A9C; height: " + myHeight.toString() + "px; margin-top:0em; margin-bottom:0em ; border: 0;'></div>"
 }
 
-//Displays a sample HTML table on the Parent App Screen.
-/* groovylint-disable-next-line GetterMethodCouldBeProperty */
-def getSample() {
-    return '<head><style>.cl1{animation:myAnim 1s linear 0s infinite normal forwards} @keyframes myAnim{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)} }table.qq{width:85%;height:70%;margin:Auto;font-family:Comic Sans MS;background-color:#ffffff;box-shadow:#FFF 0 -1px 4px, #ff0 0 -2px 10px, #ff8000 0 -10px 20px, red 0 -18px 40px, 5px 5px 15px 5px rgba(0,0,0,0)}.qq tr{color:rgba(255,255,0,1);text-align:Center}.qq td{background-color:rgba(246,150,18,0.7);font-size:80%}.qq th{background:rgba(198,74,16,1);color:rgba(0,0,0,1);text-align:Center}.qq tr:nth-child(even){color:#000000;background-color:#f69612}hqq1{color:#008000;font-size:125%}</style></head><body><table class=qq><tr><th colspan=2>Fan Status</th></tr><tbody><tr><td>Attic</td><td>off</td></tr><tr><td>Bathroom</td><td>off</td></tr><tr><td>Bedroom</td><td><hqq1><div class=cl1>❌</div></hqq1></td></tr><tr><td>Circulation</td><td>off</td></tr><tr><td>Porch</td><td>off</td></tr></tbody></table></body>'
+//Gets the class of a control\setting.
+def getSettingClass(mySetting){
+    myClass = getSettingType(mySetting)
+    return myClass
 }
 
-String obfuscateStrings(String str1, String str2) {
-    def result = ""
-    int maxLength = Math.max(str1.length(), str2.length())
-
-    for (int i = 0; i < maxLength; i++) {
-        if (i < str1.length()) {
-            result += str1.charAt(i)
-        }
-        if (i < str2.length()) {
-            result += str2.charAt(i)
-        }
-    }
-    return result
-}
-
-def activateLicense(){
-    String hubUID = getHubUID()
-    def P1 = (hubUID.substring(0, 8)).toUpperCase()
-    def P2 = (hubUID.substring(Math.max(hubUID.length() - 8, 0))).toUpperCase()
-    
-    myResult = obfuscateStrings(P1.reverse().toString(), P2.reverse().toString())
-    
-    def firstHalf = myResult.substring(0, 8)
-    def secondHalf = myResult.substring(8, 16)
-    
-    def key = firstHalf.toUpperCase() + "-" + secondHalf.toUpperCase()
-    
-    if (key == licenseKey) {
-        state.isAdvancedLicense = true
-        return true
-        }
-    else return false
-}
-
-def getID(){
-    //Create a Quasi Unique Identifier
-    String hubUID = getHubUID()
-    def P1 = (hubUID.substring(0, 8)).toUpperCase()
-    def P2 = (hubUID.substring(Math.max(hubUID.length() - 8, 0))).toUpperCase()
-    return ("${P1}-${P2}")
+//Set the notes to a consistent style.
+String summary(myTitle, myText){
+    myTitle = dodgerBlue(myTitle)
+    return "<details><summary>" + myTitle + "</summary>" + myText + "</details>"
 }
 
 
@@ -924,375 +1989,384 @@ String buttonLink(String btnName, String linkText, int buttonNumber) {
     font = chooseButtonFont(buttonNumber)
     color = chooseButtonColor(buttonNumber)
     text = chooseButtonText(buttonNumber, linkText)
-    return "<div class='form-group'><input type='hidden' name='${btnName}.type' value='button'></div><div><div class='submitOnChange' onclick='buttonClick(this)' style='color:${color};cursor:pointer;font-size:${font}px'>${text}</div></div><input type='hidden' name='settings[$btnName]' value=''>"
+    "<div class='form-group'><input type='hidden' name='${btnName}.type' value='button'></div><div><div class='submitOnChange' onclick='buttonClick(this)' style='color:${color};cursor:pointer;font-size:${font}px'>${text}</div></div><input type='hidden' name='settings[$btnName]' value=''>"
 }
 
-def chooseButtonColor(buttonNumber) {
-    return (buttonNumber == settings.activeButton) ? '#00FF00' : '#000000'
+def chooseButtonColor(buttonNumber){
+    if (buttonNumber == settings.activeButton) return "#00FF00"
+    else return "#000000"
 }
 
-def chooseButtonFont(buttonNumber) {
-    return (buttonNumber == settings.activeButton) ? 20 : 15
+def chooseButtonFont(buttonNumber){
+    if (buttonNumber == settings.activeButton) return 20
+    else return 15
 }
 
-def chooseButtonText(buttonNumber, buttonText) {
-    return (buttonNumber == settings.activeButton) ? "<b>$buttonText</b>" : "<b>$buttonText</b>"
+def chooseButtonText(buttonNumber, buttonText){
+    if (buttonNumber == settings.activeButton) return "<b>${buttonText}</b>"
+    else return "<b>${buttonText}</b>"
 }
 
 //************************************************************************************************************************************************************************************************************************
 //************************************************************************************************************************************************************************************************************************
 //************************************************************************************************************************************************************************************************************************
 //**************
-//**************  Child Functions - Overrides Helper - These are all called during the design process. Functions called during the Table generation process have been relocated to the child app for efficiency.
+//**************  Support Functions.
 //**************
 //************************************************************************************************************************************************************************************************************************
 //************************************************************************************************************************************************************************************************************************
 //************************************************************************************************************************************************************************************************************************
 
-def getOverridesListAll(){
-    def overridesMapAll = getOverrideAnimationList()    
-    overridesMapAll += getOverrideFieldReplacementList()
-    overridesMapAll += getOverrideTextList()
-    overridesMapAll += getOverrideBorderList()
-    overridesMapAll += getOverrideBackgroundList()
-    overridesMapAll += getOverrideClassList()
-    overridesMapAll += getOverrideMarginPaddingList()
-    overridesMapAll += getOverrideTransformList()
-    overridesMapAll += getOverrideMiscList()
-    return overridesMapAll
-}
-
-//Each record is a map entry that looks like this. "Short description: Long Description" : "sample command"
-def getOverrideAnimationList(){
-    return [
-    'Fade: Fades in an object on refresh.' : '#Class1#=@keyframes fade {0% {opacity: 0}100% {opacity: 1}} | #Table#=animation: fade 5s linear 0s 1 normal forwards;',
-    'Hue: Constantly change the background hue between two color values.' : '#Class1#=@keyframes hue {50%{background-color: #cc2b5e} 100%{background-color:#753a88}} | #Table#=animation: hue 10s ease 0s infinite alternate-reverse forwards;',
-    'Ping: Performs a ping effect on an object' : '#Class1#=@keyframes ping {0% {opacity: 0.8;transform: scale(0.2);} 90% {opacity: .5;transform: scale(1.2);} 100% {opacity: 1;transform: scale(1.0);}} | #Table#=animation: ping 1s ease 0s 1 normal forwards;' ,
-    'Pulse: Causes an object to pulsate' : '#Class1#=@keyframes pulse {0% {transform: scale(0.8);} 100% {transform: scale(1);}} | #Table#=animation: pulse 1s linear 0s 2 alternate-reverse forwards;',
-    'Roll: Causes an object to roll into place. ' : '#Class1#=@keyframes roll {0% {opacity: 0;transform: translateX(-125px) rotate(-500deg);}100% {opacity: 1;transform: translateX(0px) rotate(0deg);}} | #Table#=animation: roll 1s linear 0s 1 alternate forwards;',
-    'Slide: Slide an object back and forth continuously' : '#Class1#=@keyframes slide {0% {transform: translateX(-20px);} 100% {transform: translateX(20px);}} | #Table#=animation:slide 2s linear 0s 2 alternate-reverse; ',
-    'Spin: Spin an object on a refresh.' : '#Class1#=@keyframes spin {0% {opacity: 0;transform: rotate(-540deg) scale(0);}100% {opacity: 1;transform: rotate(0) scale(1);}} | #Row#=animation: spin 2s ease 0s 1 normal forwards;',
-    'Glow: Places an animated glow around text' : '#Class1#=@keyframes glow {from {text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px #ff0000;}to {text-shadow: 0 0 10px #fff, 0 0 15px #00FF00;}} | #Table#=animation: glow 5s ease-in-out infinite alternate;',
-    'Scale: Changes the X and Y scale of an object.' : '#Class1#=@keyframes scale {0% {transform: scaleY(2);}100% {transform: scaleY(1);}} | #Table#=animation: scale 1s linear'
-    ]
-}
-
-def getOverrideFieldReplacementList(){
-    return [
-    'Title: Replace the Title text, alignment, color, opacity and size.' : '#tt#=My Title | #ta#=left | #tc#=#0000FF | #to#=0.8 | #ts#=300',
-    'Header: Replace the Header alignment, color, background color, opacity and padding.' : '#hta#=left | #htc#=#0000FF | #hbc#=#813795 | #hbo#=0.5 | #hts#=150 | #hto#=0.5 | #hp#=5',
-    'Row: Replace the Row alignment, color, background color, opacity and padding.' : '#rta#=left | #rtc#=#0000FF | #rbc#=#813795 | #rbo#=0.5 | #rts#=150 | #rto#=0.5 | #rp#=5',
-    'Border: Replace the Border color, style, radius, width and padding.' : '#bc#=#0000FF | #bs#=dotted | #br#=25 | #bw#=10 | #bp#=5',
-    'Footer: Replace the Footer text, alignment, color and size.' : '#ft#=My Footer | #fa#=right | #fc#=#FF00FF| #fs#=100',
-    'Named: Replace Named Variables: Place a border around the title, footer and table objects if visible.' : '#title#=border: 5px dashed red | #footer#=border: 5px groove green |  #border#=border: 6px solid white' 
-    ]
-}
-
-def getOverrideBackgroundList(){
-    return [
-    'Solid Color: Sets the background color of an object.' : '#Table#=background-color: #ff0000;',
-    'Color Gradient #1: Sets the background of an object as a gradient between 2 or more colors. Also sets the row background opacity to 0.5.' : '#Table#=background: linear-gradient(70deg, #6c2b5e 0%, #c5cc88 100%) | #rbo#=0.2',
-    'Color Gradient #2: From https://bennettfeely.com/gradients/ ' : '#Table#=background:linear-gradient(cyan,transparent),linear-gradient(-45deg,magenta,transparent),linear-gradient(45deg,yellow,transparent);background-blend-mode: multiply;',
-    'Conical Gradient: Sets a repeating gradient in a cone from a central point.' : '#Table#=background-image: repeating-conic-gradient(red 10%, yellow 15%);border-radius: 5% | #hbo#=0.3 | #rbo#=0.9;',
-    'Radial Gradient: Sets a circular gradient that diffuses at the edges.' : '#Table#=background: radial-gradient(circle at 100%, #333, #333 50%, #eee 75%, #333 75%);',
-    'Repeating Pattern #1: Sets a repeating set of slanted lines.' : '#Row#=background-image: repeating-linear-gradient(45deg, red 0px, red 10px, red 10px, yellow 10px, yellow 20px) | #rbo#=0.6',
-	'Repeating Pattern #2: Sets a repeating swirl background effect.' : '#Table#=background-image: repeating-radial-gradient(#0000 0% 6%,#c39f76 7% 13% ); background-size:40px 40px | #Row#=font-weight:bold',
-    'Transparent Texture : From https://www.transparenttextures.com/patterns/wood-pattern.png' : "#Table#=background-color: #695100;background-image: url('https://www.transparenttextures.com/patterns/wood-pattern.png');",
-
-'Background Blend Mode: From https://bennettfeely.com/gradients/'  : '#Table#=background: radial-gradient(circle at bottom left,transparent 0,transparent 2em,beige 2em,beige 4em,transparent 4em,transparent 6em,khaki 6em,khaki 8em,transparent 8em,transparent 10em),\
-radial-gradient(circle at top right,transparent 0,transparent 2em,beige 2em,beige 4em,transparent 4em,transparent 6em,khaki 6em,khaki 8em,transparent 8em,transparent 10em),\
-radial-gradient(circle at top left,transparent 0,transparent 2em,navajowhite 2em,navajowhite 4em,transparent 4em,transparent 6em,peachpuff 6em,peachpuff 8em,transparent 8em,transparent 10em),\
-radial-gradient(circle at bottom right,transparent 0,transparent 2em,palegoldenrod 2em,palegoldenrod 4em,transparent 4em,transparent 6em,peachpuff 6em,peachpuff 8em,transparent 8em,transparent 10em),\
-blanchedalmond;background-blend-mode: multiply;background-size: 10em 10em;background-position: 0 0, 0 0, 5em 5em, 5em 5em;',
-        
-'Repeating Linear Gradient: Creates a plaid style effect.' : '#Table#=background:repeating-linear-gradient(50deg,#F7A37B,#F7A37B 1em,#FFDEA8 1em,#FFDEA8 2em,#D0E4B0 2em,#D0E4B0 3em,#7CC5D0 3em,#7CC5D0 4em,#00A2E1 4em,#00A2E1 5em,#0085C8 5em,#0085C8 6em),\
-repeating-linear-gradient(-50deg,#F7A37B,#F7A37B 1em,#FFDEA8 1em,#FFDEA8 2em,#D0E4B0 2em,#D0E4B0 3em,#7CC5D0 3em,#7CC5D0 4em,#00A2E1 4em,#00A2E1 5em,#0085C8 5em,#0085C8 6em);background-blend-mode: multiply;',           
-
-'Repeating Radial Gradient: From https://blog.logrocket.com/advanced-effects-with-css-background-blend-modes-4b750198522a/' : '#Table#= background:radial-gradient(khaki 40px,transparent 0,transparent 100%),radial-gradient(skyblue 40px,transparent 0,transparent 100%),\
-radial-gradient(pink 40px,transparent 0,transparent 100%), snow;background-blend-mode: multiply;background-size: 100px 100px;background-position: 0 0, 33px 33px, -33px -33px;',
-
-'Repeating Isometric : From https://www.magicpattern.design/tools/css-backgrounds' : '#Table#=background-color: #e5e5f7; opacity: 0.8;background-image: linear-gradient(30deg, #444cf7 12%, transparent 12.5%, transparent 87%, #444cf7 87.5%, #444cf7),\
-linear-gradient(150deg, #444cf7 12%, transparent 12.5%, transparent 87%, #444cf7 87.5%, #444cf7), linear-gradient(30deg, #444cf7 12%, transparent 12.5%, transparent 87%, #444cf7 87.5%, #444cf7), linear-gradient(150deg, #444cf7 12%, transparent 12.5%, transparent 87%, #444cf7 87.5%, #444cf7),\
-linear-gradient(60deg, #444cf777 25%, transparent 25.5%, transparent 75%, #444cf777 75%, #444cf777), linear-gradient(60deg, #444cf777 25%, transparent 25.5%, transparent 75%, #444cf777 75%, #444cf777);background-size: 20px 35px;background-position: 0 0, 0 0, 10px 18px, 10px 18px, 0 0, 10px 18px;'
-    ]
-}
-
-def getOverrideBorderList(){
-    return [
-    "Border Spacing: Sets the distance between adjacent borders. When combined with border mode 'seperate', border radius of 20 and color gradient it can produce a pleasing gradient button effect as shown here." : '#Table#=border-spacing: 15px 10px | #bs#=seperate | #br#=20 | #Data#=background: linear-gradient(0deg, #43cea2 0%, #185a9d 100%) | #Row#=font-weight: bold;',
-    'Border Properties: Sets a border, border width, border type and border color.' : '#Header#=border: 5px dashed #B15656;',
-    'Border Radius: Sets the radius of a border corner. If only one value is specified it applies to all corners' : '#Border#=border-radius:30px;',
-    'Border Effect1: Eliminate outside edges of a grid for a tic-tac-toe appearance.' : '#Table#=border-collapse: collapse; border-style: hidden;',
-	'Border Effect2: Use a Radial Gradient to highlight row data when using Border Mode=Seperate.' : '#Border#=background: radial-gradient(transparent 65%, #90C226 95%) | #Data#=font-weight: bold; letter-spacing: 2px; | #bs#=seperate' 
-    ]
-}
-
-def getOverrideClassList(){
-    return [ 
-	'Class Example 1: Rotate an element 540 degrees when activated. Called with #element#=animation etc.' : '#Class1#=@keyframes myAnim {0% {opacity: 0;transform: rotate(-540deg) scale(0);}100% {opacity: 1;transform: rotate(0) scale(1);} } | #Row#=animation: myAnim 2s ease 0s 1 normal forwards;',
-    'Class Example 2: Blink an element twice when activated. Called with #element#=animation etc.' : '#Class1#=@keyframes myAnim {0%,50%,100% {opacity: 1;}25%,75% {opacity: 0;} } | #Title#=animation: myAnim 2s ease 0s 1 normal forwards;',
-	'Class Example 3: Change background color to red when activated. Called with [div class=cl99]My Value[/div] in highlights.' : '#Class1#=.cl99{background-color: #ff0000;} ',
-	'Class Example 4: Add box chadow to element when activated. Called with [div class=cl99]My Value[/div] in highlights.' : '#Class1#=.cl99{box-shadow: 0px 0px 10px 10px #E8DD95;} ',
-	'Class Example 5: Move element back and forth continuously when activated. Called with [div class=cl99]█[/div] in highlights.' : '#Class1#=.cl99{animation: myAnim 1s linear 0s infinite alternate-reverse;} @keyframes myAnim {0% {transform: translateX(-20px);}100% {transform: translateX(20px);} }',
-	'Class Example 6: Spin an element continuously when activated. Called with [div class=cl99]❌[/div] in highlights.' : '#Class1#=.cl99{animation: myAnim 1s linear 0s infinite normal forwards;} @keyframes myAnim {0% {transform: rotate(0deg);}100% {transform: rotate(360deg);} }',	
-	'Class Example 7: Call off-loaded Animation Class: Call an animation class YOU defined in the Dashboard CSS file as .spin{animation: spin 1s linear 0s 2 normal forwards;} @keyframes spin {0% {transform: rotate(0deg);}100% {transform: rotate(360deg);}}' : '#Row#=animation: spin 1s linear 0s 2 normal forwards;',
-	'Class Example 8: Define two classes at once, .on and .off. Called with [div class=on]💡[/div] or [div class=off]💡[/div] in highlights.' :  '#Class1#=.off{opacity:0.5} .on{text-shadow: 0px 0px 15px #ffff00;}' 
-    ]
-}
-
-def getOverrideTextList(){
-    return [
-    'Text - Alignment: Sets the alignment of text.' : '#Header#=text-align: left;',
-    'Text - Alignment Data: Set the alignment of the data column differently than the device column' : '#Class1#=td:nth-child(2){text-align: right;}',
-	'Text - Bold: Sets text to a font-weight equivalent of bold.' : '#Data#=font-weight:700',
-	'Text - Decoration: Sets decorative elements for text such as underlining.' : '#Header#=text-decoration: underline wavy #C34E4E;',
-	'Text - Letter Spacing: Change the letter spacing of text.' : '#Data#=letter-spacing:5px',
-	'Text - Shadow: Sets a diffuse shadow effect of one or more specified colors around text.' : '#Data#=text-shadow: 5px 5px 10px #F33E25, 0px 0px 16px #EAA838;',
-    'Text - Transform: Sets the afffected text to Capitalized, Lower Case or Upper Case.' : 'text-transform: uppercase;',
-	'Text - Word Spacing: Sets the spacing between words in pixels.' : '#Data#=word-spacing: 20px;' 
-    ]
-}
-
-def getOverrideMarginPaddingList(){
-    return [
-    'Margin: Adds a margin to an element to increase space between elements for visual appeal. Margin can be a negative number. See also padding.' : "#Title#=margin-top:10px; margin-bottom:5px; margin-left:-50px | #Footer#=margin-top:5px",    
-	'Padding: Show a border around all primary elements to help diagnose\\understand margin & padding issues.' : '#Title#=outline: 2px dotted red | #Table#=outline: 2px dotted yellow | #Footer#=outline: 2px dotted blue | #Box#=outline: 2px dotted green | #Alternaterow#=outline: 2px dashed purple;',
-    'Padding: Adds a minimum amount of space between or within an object. If you have Borders enabled use border padding to control row height. If not, use text padding. Example uses both.' : '#Border#=padding:5px; | #Title#=padding-bottom:10px; | #Data#=padding:5px;' 
-    ]
-}
-
-def getOverrideMiscList(){
-    return [
-    'Box Shadow: Sets a diffuse color box around the edge of an object.' : '#Table#=box-shadow: 0px 0px 10px 10px #E8DD95;',
-    'Color: Sets the color of an object.' : '#Header#=color: #5049EA;',
-    'Hover: Sets the mouse cursor shape when hovering over an object. Applies to all tiles on a dashboard.' : '#Row#=cursor: se-resize;',
-    'Hover: Changes the text color and size of data [td] cells when it is hovered over. Applies to all tiles on a dashboard.' : '#Class1#=td:hover {color:green;transform:scale(1.2)}',
-    'Hover: Sets a linear repeating gradient on an object when it is hovered over. Applies to all tiles on a dashboard.' : '#Class1#=td:hover{background-image: repeating-linear-gradient(45deg, red 0px, red 10px, red 10px, yellow 10px, yellow 20px)!important;opacity:0.5}',
-    'Hover: Puts a yellow border around an object whe it is hovered over. Applies to all tiles on a dashboard:' : '#Class1#=td:hover {outline: 10px solid #ffff00} | #Table#={outline: 10px solid #ffff00;outline: 1px solid #C34545; transition: outline 1s ease 0s;}',
-    'Macros: Show the available macro terms that can be expanded. <b>Enable Title First!</b>' : "#ts#=80% | #ta#=Left | #tt#=Day = %day% (abbreviated day)[br]Time = %time% (abbreviated time) [br] Units = '%units%' (Selected units, if any)[br] Count = %count% (Results in table)",
-    'Opacity: Sets the opacity of an object in the range 0 (transparent) to 1 (opaque).' : '#Header#=opacity: 0.5;',
-    'Outline: Draws an outline around the OUTSIDE of an object.' : '#Table#=outline: 2px solid red;'   
-    ]     
-}
-
-def getOverrideTransformList(){
-    return [
-    'Rotate in 2D: Rotates an object in 2 dimensions.' : '#Table#=transform: rotate(3deg) | #Title#=transform: rotate(-3deg); | #ts#=160;',
-    'Rotate in 3D: Rotates an object in 3 dimensions.' : '#Header#=transform: rotateX(20deg) rotateY(15deg) rotateZ(5deg);',
-    'Scale: Changes the scale of an object to make it smaller or larger.' : '#Table#=transform: scale(0.9);',
-    'Skew: Skews an object to give it a 3D look.' : '#Data#=transform: skew(24deg, 2deg) | #Header#=transform: skew(-24deg, -2deg);',
-    'Perspective: Changes the perspective of the affected object.' : '#Row#=Perspective: 150px; transform: rotateX(25deg) rotateY(20deg);transform-style: preserve-3d;',
-    'Translate: Moves an object up, down, left or right.' : '#Row#=transform: translate(20px, -10px) | #Title#=transform: translate(0px, 300px);'
-    ]     
-}
-
-
-//************************************************************************************************************************************************************************************************************************
-//************************************************************************************************************************************************************************************************************************
-//************************************************************************************************************************************************************************************************************************
-//**************
-//**************  Child Functions Notes - These are the on-screen help text during the design process.
-//**************
-//************************************************************************************************************************************************************************************************************************
-//************************************************************************************************************************************************************************************************************************
-//************************************************************************************************************************************************************************************************************************
-
-
-
-def filterNotes() {
-    myText = 'You can filter a result set to match only those items matching\\not matching certain criteria. For example you may only want to see open doors, temperatures above 80°F or lights that are on.<br>'
-    myText += '<b>Filtering has several advantages:</b><br>'
-	myText += '<b>1)</b> It produces a smaller result set so tile can be smaller on the dashboard.<br>' 
-	myText += '<b>2)</b> The tile will be smaller in bytes, leaving more room for embellishment if desired.<br>'
-	myText += '<b>3)</b> A table with filtered results can really focus a dshboard on what is truly important and alleviate the need to scan a dashboard looking for out of compliance conditions.<br>'
-	myText += '<b>Filtering of floating point numbers occurs based on the database value</b>, not the rounded value shown in the table based upon your decimal point preference.<br>'
-	myText += 'Filter settings with a mismatch between a text\\numeric filter type and an appropriate datatype will be ignored.<br>'
-	myText += 'Filtering is only available in <b>Tile Builder Advanced</b>.'
-    return myText
-}
-
-def generalNotes() {
-    myText = 'Generally you should leave the table width and height at the default values (W=100%, H=Auto) and change the border padding (if border is enabled) or change the row text and header text padding if the border is not enabled.<br>'
-    myText += '<b>Base Font Size</b> is the reference point for all other text sizes which use % values. Changing this value allows you to match the tile preview with the published Dashboard version and make the design process more accurate. '
-    myText += "The default value of 18px provides a visual match for the Dashboard default 'Font Size' of 12 unknown units.<br>"
-    myText += '<b>Font Family</b> allows you to choose an alternate font, but you must check whether your Dashboard devices can render the font you specify. The default font is <b>Roboto. </b>'
-    myText += 'You can use overrides to specify an alternate font not included in the menu system, for example: <b>#tff#:Helvetica or #tff#:Blackadder ITC</b> are examples of overrides to specify an alternate device font.<br>'
-    myText +=  'A <b>frame adds about 65 bytes</b> plus any other settings that may be added via overrides. Frame padding is set to 20px. With the Advanced version you can override this with #Frame#=padding:20px;.'
-    myText += 'If your frame shows as top and bottom stripes it means you have a background color applied to the table, but a table width of 100%. Reduce the table width for proper border appearance.</br>'
-    myText += '<b>Use Custom Preview Size:</b> If you use a Hubitat dashboard tile size other than the default of 200 x 190 you can match that by enabling this setting and entering your planned tile size. Preview is still an approximation dependent on Hubitat dashboard padding.<br>'
-    myText +=  'A <b>comment adds 11 bytes</b> plus the comment text. Comments are saved within the HTML but are not visible.<br>'
-    return myText
-}
-
-def titleNotes() {
-    myText = 'You can add HTML tags to text fields using square brackets such as [b][u]My Header[/u][/b].<br>'
-    myText += "You can use %day%, %time%, %units% or %count% in any text field. They will be replaced by current day, current time, selected units (when applicable) or number of data lines in the table. Using %count% is especially useful if you employ scrolling tables on a dashboard. "
-    myText += "Using '[b]My Title[/b][br][font size=2]%day% %time%[/font]' spreads the title and time across two lines and provides a more attractive display. "
-    myText += "This option let's you avoid the overhead of a footer when space is tight. You can use the same technique in the footer or header fields.<br>"
-	myText += "You can use <b>Hyperlinks</b> in the texct fields using the form: [a href='http://192.168.0.200']My Title[/a].<br>"
-    myText += 'Enabling <b>a title adds 112 bytes</b> to the HTML size plus the title text. Enabling <b>a title shadow adds 35 bytes</b> to the HTML size.<br>'
-    myText += 'When space is tight you can disable the Title and use a merged header field instead.'
-    return myText
-}
-
-def headerNotes() {
-    myText = 'Header padding settings are ignored whenever a Border is enabled and Border padding is > 0.<br>'
-    myText += 'You can add HTML tags to text fields using square brackets such as [b][u]My Header[/u][/b].<br>'
-	myText += "You can use <b>Hyperlinks</b> in the Header fields using the form: [a href='http://192.168.0.200']My Header[/a]. <br>"
-    myText += 'Enabling column <b>headers adds about 45 bytes</b> plus the header text.<br>'
-    myText += '<b>Merge Headers</b> provides an alternate way of adding a title to a table and is very space efficient.'
-    return myText
-}
-
-def borderNotes() {
-    myText = 'Header and Row padding settings are ignored whenever a Border is enabled and Border padding is > 0.<br>'
-    myText += "Using a setting of 'Border Mode' = 'Seperate' on the General Tab can give the appearance of a border but consumes less space as borders can be turned off. The perceived 'border' color is actually the table background color.<br>"
-    myText += 'Border Radius applies to each individual cell, not the table as a whole. A <b>border adds about 85 bytes</b>.<br>'
-    return myText
-}
-
-def rowNotes() {
-    myText = 'Row padding settings are ignored whenever a Border is enabled and Border padding is > 0.<br>'
-    myText += '<b>The default opacity for the row background color is 0.</b> This effectively makes the Table background (General tab) the default row color. In this configuration, enabling Alternate Row colors visually works as you would expect. '
-	myText += 'Changing the Row Opacity to a non zero value alters the colors but not in an intuitive way. Using these settings with Border Mode Seperate creates a border effect, without borders being enabled and saves significant space when employed.<br>'
-	myText += 'Enabling <b>alternate rows adds about 70 bytes</b>.'
-    return myText
-}
-
-def footerNotes() {
-    myText = 'You can add HTML tags to text fields using square brackets such as [b][u]My FooterH[/u][/b].<br>'
-    myText += "You can use %day%, %time%, %units% or %count% in any text field. They will be replaced by current day, current time, selected units (when applicable) or number of data lines in the table. "
-    myText += 'Enabling <b>a footer adds about 95 bytes</b> plus the footer text.'
-    return myText
-}
-
-def highlightNotes() {
-    myText = "<b>Keywords:</b> These are used to match a string value and can be enhanced with color, size or completely replaced. For example, rather than display the word 'closed', a ✔️ mark could be displayed instead or "
-    myText += "the phrase 'not present' could be replaced with 'Away' or 'Out' if preferred. You can use HTML tags as part of the replacement string, for example replace 'closed' with '[b]OK[/b]' will make the result show as bolded.<br>"
-    myText += "<b>Thresholds:</b> These allow numeric values that meet >=, ==, or <= conditions to be highlighted. These use the same highlight controls as Keywords and have the same impact on HTML size. You can use replacement values for numeric data. "
-    myText += "On a battery monitoring tile you could change the display for all batteries <= 50 to 'Replace' and highlight it in red.<br>"
-	myText += "You can animate a result by using something like this: '[div class=cl99]❌[/div]' as the replacement text. The class must be defined in the Advanced Tab - Overrides field or in the dashboard CSS. See Overrides Helper for examples.<br>"
-    myText += "Each active <b>highlight style adds 35 bytes plus 11 bytes per affected row</b> to the HTML size. This may be partially offset by replacing longer phrases like 'not present' with 'Away'. <br>"
-    myText += "<b>Note:</b> By applying a highlight color that matches the background color you can make certain values invisible, effectively making it a lowlight."
-    return myText
-}
-
-def styleNotes() {
-    myText = 'Styles are a collection of settings for quickly and consistently modifying how data is displayed. Here you can apply built-in styles, create new styles or retrieve styles that you have created previously and apply them to the current table. '
-    myText += 'Styles are stored in the parent app so a style created here will be available in other field compatible child apps. The same holds true of deletions.<br>'
-    myText += "<b>Style Names:</b> Style names are <b>automatically</b> pre-fixed with 'Style-AM '. A style with a leading * is a built-in style that will always sort to the top of the list. You can delete Built-In styles but they will be restored if the <b>Tile Builder</b> parent app is re-installed.<br>"
-    myText += "<b>Important:</b> When saving a new style <b>you must hit enter or tab</b> to leave the 'Save as Style' field and save that value. Then you can click the 'Save Current Style' button.<br>"
-    myText += '<b>Import\\Export</b> allows you to easily share styles that you create with other Hubitat users by simply cutting and pasting the displayed strings to\\from Hubitat community forums.'
-    return myText
-}
-
-def advancedNotes() {
-    myText = '<b>Scrubbing:</b> Removes unneccessary content and shrinks the final HTML size by about 20%. Leave on unless your Tile Preview does not render correctly.<br>'
-    myText += "<b>Enable Overrides:</b> Turns on\\off the processing of the contents of the '<b>Settings Overrides</b>' field. Using overrides you can achieve many styles and effects not available through the 'Customize Table' interface.<br>"
-    myText += '<b>Show Effective settings:</b> Displays the merged result of the basic settings with the overrides applied. It is primarily a diagnostic tool and will normally be left off.<br>'
-    myText += "<b>Show Pseudo HTML:</b> Displays the HTML generated with any '<' or '>' tags replaced with '[' and ']'. This can be helpful in visualizing the HTML for the purposes of optimization. Normally this will be turned off.<br>"
-    return myText
-}
-
-def overrideNotes() {
-    myText = "<b>Overrides</b> allow any value to be overridden using the field code and the replacement value. Field replacement overrides are entered in the form #fc1#=XX1 | #fc2#=XX1 etc. for field replacements where 'fc?' is the field code and 'XX?' is the value. "
-    myText += 'Field codes are an abbreviated version of the field name, for example #tt# is the title text, #fc# is the footer color, #rta# is the row text alignment and "| is the seperator between multiple entries. <b>You can find a full list of the field codes in Appendix A of the documentation at link below.</b> '
-    myText += 'Enable the Title and try this --> <mark>#ta#=Left | #tc#=#00FF00 | #ts#=80</mark> <-- '
-    myText += "The Title text should move to the left and change it's color and size.<br>"
-    myText += '<b>Why use field codes?</b> Basically they allow you to get outcomes not achievable via the GUI controls. For example using <mark>#tff#=Arial Rounded MT</mark> allows the user to specify a font that is not an option in the menu system.'
-    myText += 'This approach also allows you to take an existing style, modify it in a few small ways without creating a whole new style. Using overrides keeps the variances from the base style obvious.<br>'
-    myText += "<b>Style Enhancements:</b> These are very powerful enhancements that allow the user to extend the properties of different elements such as 'Table', 'Border', 'Title' to add capabilities such as adding animations, shadows, gradients and transformations. "
-    myText += "You can see examples of these in the <b>'Overrides Helper'</b>. A full discussion of the properties can be found in the documentation at link below.<br>"
-    myText += "<b>Show Overrides Helper:</b> Overrides are very powerful, but not intuitive. To reduce the learning curve the <b>Overrides Helper</b> provides 40+ examples to perform a variety of operations on different components of the table."
-    myText += "The best thing to do is just try them out. Simply pick a <b>Sample Override</b> to try out, click the <b>Copy to Overrides</b> and then click <b>Refresh Table</b> to apply them. Most efects will be visible right away, some might only be visible during a browser refresh."
-    myText += 'In some cases an effect may not be visible at all. For example setting the table background to a gradient will only be visible if the table rows and\\or the table header have an opacity less than 1.<br>'
-	myText += '<b>#Class1#</b> names are: #Table#, #Title#, #Header#, #Row#, #Data#, #Footer# and #Border#. See documentation for others.<br>'
-    myText += "See the full <b>Tile Builder</b> documentation at this <a href='https://github.com/GaryMilne/Documentation/blob/main/Tile%20Builder%20Help.pdf'>link.</a> There are multiple web resources for building these CSS strings but here is an easy one to get you started: https://webcode.tools/generators/css"
-    return myText
-}
-
-def displayTips() {
-    myText =  'This is a <b>close approximation</b> of how the table will display within a dashboard tile. Once the table is published to a tile you can quickly make changes and publish them to see exactly how they look. '
-    myText += "If the Hubitat Dashboard says, 'Please Configure an Attribute' then make sure an attribute is selected and then reload the dashboard to correct it.<br>"
-    myText += '<b>Adjusting Height and Width:</b> The final dimensions of the table are affected by many factors, especially the height. The number of rows of data, border size, border padding, text size, base font size, font face, frame, title, title padding etc all impact the height. '
-    myText += 'To start with adjust the Border padding OR Row padding, then the text sizes and finally the table height and width.<br>'
-    myText += '<b>Hubitat Dashboard:</b> Because <b>Tile Builder</b> tiles hold data from multiple devices you will likely use 1x2 or 2x2 tiles vs the default 1x1 Hubitat Dashboard. The tile background color and opacity shown here are for visualization only. The Hubitat Dashboard settings '
-    myText += "will determine these settings when the tiles are published. To make the tile background transparent you can add a line like this to your Hubitat Dashboard CSS <b><i>'#tile-XX {background-color: rgba(128,128,128,0.0) !important;}'</i></b> where XX is your <b>Hubitat Dashboard tile number.</b> "
-    myText += ' (This is not the same as the Tile Builder tile number you assigned during publishing.)<br>'
-    myText += '<b>Dashboard Background:</b> You can use the dropper tool within the Dashboard Color dialog to get an exact match for your dashboard background to make selecting your color palette easier. Once placed on a dashboard the <b>tiles will automatically be centered vertically</b>.<br>'
-    myText += '<b>Use Custom Preview Size:</b> If you use a Hubitat dashboard tile size other than the default of 200 x 190 you can match that by enabling this setting and entering your preferred grid size. Preview is still an approximation dependant on Hubitat dashboard padding.'
-    return myText
-}
-
-
-
-//************************************************************************************************************************************************************************************************************************
-//************************************************************************************************************************************************************************************************************************
-//************************************************************************************************************************************************************************************************************************
-//**************
-//**************  Installation and Update Functions
-//**************
-//************************************************************************************************************************************************************************************************************************
-//************************************************************************************************************************************************************************************************************************
-//************************************************************************************************************************************************************************************************************************
-
-def installed() {
-    if (isLogTrace) log.trace ('installed: Entering installed')
-    if (isLogInfo) log.info "Installed with settings: ${settings}"
-}
-
-def updated() {
-    if (isLogTrace) log.trace ('updated: Entering updated')
-    if (isLogInfo) log.info "Updated with settings: ${settings}"
-    unschedule()
-    unsubscribe()
-}
-
-def initialize() {
-    if (isLogTrace) log.trace ('initialized: Entering initialize')
-    if (isLogInfo) log.info ('Running Initialize.')
-    if ( state.initialized == true ) {
-        if (isLogInfo) log.info ('initialize has already been run. Exiting')
-        return
+//Receives a string and determines if a highlighting class has been applied. Returns the name of the class or null.
+def getHighlightClass(attributeValue) {
+    def highlightClasses = ['hqq1', 'hqq2', 'hqq3', 'hqq4', 'hqq5', 'hqq6', 'hqq7', 'hqq8', 'hqq9', 'hqq10']
+    for (myClass in highlightClasses) {
+        if (attributeValue.contains(myClass)) {
+            return myClass
+        }
     }
-    makeDefaultStyles()
+    return null
+}
 
-    //Set the flag so that this should only ever run once.
-    state.initialized = true
+//Tests a string to see if it contains any special characters that would need to be escaped for a variety of actions.
+boolean containsSpecialCharacters(String input) {
+    myString = unHTML(input)
+    try {
+        // List of special characters to check
+        def specialCharacters = ['\\', '[', ']', '(', ')', '{', '}', '*', '+', '?', '|', '^', '$']
+        // Iterate over each special character and check if it exists in the input string
+        for (char specialChar : specialCharacters) {
+            if (input.contains(specialChar.toString())) return true
+        }
+        return false
+    }
+    catch (Exception e) {
+    // Handling the exception
+    log.info ("An exception occurred: ${e.message}")
+        return true
+    }
+}
 
-    //Set initial Log settings
-    app.updateSetting('isLogDebug', false)
-    app.updateSetting('isLogTrace', false)
-    app.updateSetting('isLogInfo', false)
-    app.updateSetting('isLogWarn', true)
-    app.updateSetting('isLogError', true)
+//Tests a string to see if it starts with startString
+def beginsWith(data, startString){
+    subString = data.substring(0, startString.size())
+    //log.info ("$data     $subString  ")
+    if (subString == startString) {
+        return true
+    }
+    else {
+        return false
+    }
+}
 
-    state.setupState = 0
-    state.showIntro = true
-    state.showLicense = false
-    state.showDevice = false
-    state.showCreateEdit = false
-    state.showManage = false
-    state.showMore = false
-    state.descTextEnable = false
-    state.debugOutput = false
-    state.isStorageConnected = false
-    state.flags = [selectedDeviceChanged: false]
-    state.selectedDeviceHistory = [new: 'seed1', old: 'seed']
-    state.isAdvancedLicense = false
-    state.activationState = "Not Activated"
+//Converts a seperated text string into a map.
+def overridesToMap(myString , recordSeperator, fieldSeperator ){
+    myoverrides = [:]
+    //if (isLogDebug) log.debug ("myString is: ${myString}")
+    if (myString == null || myString.size() < 7 ) return myoverrides
     
-    app.updateSetting("myInput", [value:"#c61010", type:"color"])
-    app.updateSetting('selectedDevice', 'Tile Builder Storage Device 1')
+    myString = myString + " "
+    //Put the contents of the highlight setting into a map
+    try{
+        myArr = myString.tokenize(recordSeperator)
+            myArr.each{
+                int equalsLoc = it.indexOf("=")
+                String d0 = it.substring(0, equalsLoc)
+                d0 = d0.trim()
+                String d1 = it.substring(equalsLoc+1, it.size())
+                //if (isLogDebug) log.debug ("it is: ${it}   equalsLoc:${equalsLoc}  myString is: ${myString}  d0 is:${d0} and d1 is:${d1}")
+                myoverrides."${d0.toLowerCase()}" = d1.trim()
+            }
+        }
+        catch (Exception e) { log.error ("Exception ${e} in overridesToMap. Probably a malformed overrides string.") }
+    //if (isLogDebug) log.debug("overrides: ${overrides}")
+    return myoverrides
+}
+
+//Removes any unneccessary content from the payload. Is controlled by the isScrubHTML setting on the Advanced tab.
+def scrubHTML(HTML, iFrame){
+    
+    if (isLogTrace) log.trace ("scrubHTML: Entering scrubHTML")
+    //These are all of the tags that will be stripped in all cases if unused.
+    //This is the basic level of scrubbing.
+    if ( scrubHTMLlevel != null && scrubHTMLlevel.toInteger() >= 0  ) {
+        //Strip the unused placeholders
+        myHTML = HTML.replace("#head#", "")
+        myHTML = myHTML.replace("#title#", "")
+        myHTML = myHTML.replace("#table#", "")
+        myHTML = myHTML.replace("#header#", "")
+        myHTML = myHTML.replace("#row#", "")
+        myHTML = myHTML.replace("#alternaterow#", "")
+        myHTML = myHTML.replace("#data#", "")
+        myHTML = myHTML.replace("#footer#", "")
+        myHTML = myHTML.replace("#titleShadow#", "")
+        //#class# remains in for legacy compatibility but is not referenced in documentation.
+        myHTML = myHTML.replace("#class#", "")
+        myHTML = myHTML.replace("#class1#", "")
+        myHTML = myHTML.replace("#class2#", "")
+        myHTML = myHTML.replace("#class3#", "")
+        myHTML = myHTML.replace("#class4#", "")
+        myHTML = myHTML.replace("#class5#", "")
+        myHTML = myHTML.replace("#border#", "")
+        myHTML = myHTML.replace("#frame#", "")
+        myHTML = myHTML.replace("#high1#", "")
+        myHTML = myHTML.replace("#high2#", "")
+        myHTML = myHTML.replace("#high3#", "")
+        myHTML = myHTML.replace("#high4#", "")
+        myHTML = myHTML.replace("#high5#", "")
+        myHTML = myHTML.replace("#high6#", "")
+        myHTML = myHTML.replace("#high7#", "")
+        myHTML = myHTML.replace("#high8#", "")
+        myHTML = myHTML.replace("#high9#", "")
+        myHTML = myHTML.replace("#high10#", "")
+    }
+    
+    //This is the normal level of scrubbing.
+    if ( scrubHTMLlevel != null && scrubHTMLlevel.toInteger() >= 1  ) {
+        //Replace any repeating tags
+        myHTML = myHTML.replace("</style><style>", "")
+        myHTML = myHTML.replace("</style> <style>", "")
+        myHTML = myHTML.replace("<style> ", "<style>")
+       
+        //Remove any values that are actually defaults and do not need to be specified.
+        myHTML = myHTML.replace("font-family:Roboto", "")
+        myHTML = myHTML.replace("font-size:100%", "")
+        myHTML = myHTML.replace("text-align:Left", "")
+        myHTML = myHTML.replace("auto%", "auto")
+        myHTML = myHTML.replace("Auto%", "auto")
+        myHTML = myHTML.replace("width:auto", "")
+        myHTML = myHTML.replace("height:auto", "")
+        myHTML = myHTML.replace("border-radius:0px", "")
+        myHTML = myHTML.replace("padding:0px", "")
+        myHTML = myHTML.replace("border-collapse:Seperate", "")
+        
+        //Remove any objects that had been detected as opacity=0
+        myHTML = myHTML.replaceAll("(?i)background:#00000000", "")
+        myHTML = myHTML.replaceAll("(?i)color:#00000000", "")
+        
+        if (iFrame == true ) myHTML = myHTML.replace("#iFrame1#", "")
+    }
+    
+    //This is the Aggressive level of scrubbing
+    //This removes a variety of closing tags whose presence may not be required.
+    //Note: </tiqq> </th> are required when the opening tag is present or the formatting will bleed to the next object.
+    if ( scrubHTMLlevel != null && scrubHTMLlevel.toInteger() >= 2 ) {
+        myHTML = myHTML.replace("</td>", "")
+        myHTML = myHTML.replace("</tr>", "")
+        myHTML = myHTML.replace("</hqq1>", "")
+        myHTML = myHTML.replace("</hqq2>", "")
+        myHTML = myHTML.replace("</hqq3>", "")
+        myHTML = myHTML.replace("</hqq4>", "")
+        myHTML = myHTML.replace("</hqq5>", "")
+        myHTML = myHTML.replace("</hqq6>", "")
+        myHTML = myHTML.replace("</hqq7>", "")
+        myHTML = myHTML.replace("</hqq8>", "")
+        myHTML = myHTML.replace("</hqq9>", "")
+        myHTML = myHTML.replace("</hqq10>", "")
+        myHTML = myHTML.replace("</ftqq>", "")
+        myHTML = myHTML.replace("</tbody>", "")
+    }
+        
+    //Replace any excess spaces, parentheses or punctuation. These often occur as the result of other values being stripped so these are processed last.
+    if ( scrubHTMLlevel != null && scrubHTMLlevel.toInteger() >= 1  ) {        
+        myHTML = myHTML.replace(" :", ":")
+        myHTML = myHTML.replace(": ", ":")
+        myHTML = myHTML.replace(" {", "{")
+        myHTML = myHTML.replace("} ", "}")
+        myHTML = myHTML.replace("{;", "{")
+        myHTML = myHTML.replace(";;;", ";")
+        myHTML = myHTML.replace(";;", ";")
+        myHTML = myHTML.replace(";}", "}")
+        myHTML = myHTML.replace(",,", ",")
+        myHTML = myHTML.replace("    ", "  ")
+        myHTML = myHTML.replace("   ", "  ")
+        myHTML = myHTML.replace("> ", ">")
+    }
+    
+    //This is the Extreme level of scrubbing
+    if ( scrubHTMLlevel != null && scrubHTMLlevel.toInteger() >= 3 ) {
+        if (isFooter == false ) myHTML = myHTML.replace("</table>", "")
+        //Removal of the </body> tag prevents the calculation of stats.
+        myHTML = myHTML.replace("</body>", "")
+
+        //White Objects
+        myHTML = myHTML.replaceAll("(?i)background:#FFFFFFFF", "")
+        myHTML = myHTML.replaceAll("(?i)background:#FFFFFF", "")
+        myHTML = myHTML.replaceAll("(?i)background:#FFF", "")
+        
+        //Black Objects     
+        myHTML = myHTML.replaceAll("(?i)background:#00000000", "")
+        myHTML = myHTML.replaceAll("(?i)background:#000000", "")
+        
+        //Replace any remaining excess spaces.
+        myHTML = myHTML.replace("  ", " ")
+        myHTML = myHTML.replace("%%", "%")
+        myHTML = myHTML.replace(", ", ",")
+        
+    }
+
+    return myHTML
+}
+
+//Counts the number of characters between two strings including the start and end characters.
+//Used to calculate the sizes of various portion of the HTML string.
+def countBetween(String searchString, String match1, String match2){
+    item1 = searchString.indexOf(match1)
+    item2 = searchString.indexOf(match2, item1)
+    length = item2 - item1 + match2.size()
+    //if (isLogDebug) log.debug ("Length is: ${length}  ${item1} : ${item2} : ${length}")
+    
+    if (item1 == -1 || item2 == -1 ) return 0
+    else return (length)
+}
+
+//Convert <HTML> tags to (HTML) for storage.
+def unHTML(HTML){
+    myHTML = HTML.replace("<", "[")
+    myHTML = myHTML.replace(">", "]")
+    return myHTML
+}
+
+//Convert (HTML) tags to <HTML> for display.
+def toHTML(HTML){    
+    if (HTML == null) return ""
+    myHTML = HTML.replace("[", "<")
+    myHTML = myHTML.replace("]", ">")
+    return myHTML
+}
+
+//Finds all occurrences of a space within a string and returns the substring from the first character to the specified nth occurrence.
+def findSpace(String myDevice, int myOccurrence){
+    i = 1
+    n = myDevice.size()
+    def spaceList = []
+    
+    if (n > 30) n = 30
+    while (i < (n - 1) ) {
+        thisChar = myDevice.substring(i,i+1)
+        if (thisChar == " ") { 
+            spaceList.add(i)
+        } 
+        i++
+    }
+    cutOff = spaceList.get(myOccurrence - 1)
+    myShortDevice = myDevice.substring(0, cutOff)
+    if (isLogDebug) log.debug("myShortDevice ${myShortDevice}")
+    return myShortDevice
+}
+
+//Receives a string and determines whether it is a float, integer or string value.
+def getDataType(String myVal){
+    if (myVal == null || myVal == "null") return "Null"
+    float myFloat
+    int myInteger
+    if (isLogDebug) log.debug( "getDataType: myVal is: $myVal")
+    //First try float.
+    isFloat = false
+    try {
+        myFloat = myVal.toFloat()
+        isFloat = true
+        if (isLogDebug) log.debug( "getNumberType: myVal: $myVal is a float")
+    }
+    catch (ex){ if (isLogDebug) log.debug( "getNumberType: myVal: $myVal cannot be converted to float") }
+    //Next try Int.
+    isInteger = false
+    try {
+        myInteger = myVal.toInteger()
+        isInteger = true
+        if (isLogDebug) log.debug( "getNumberType: myVal $myVal is an integer")
+    }
+    catch (ex){ if (isLogDebug) log.info( "getNumberType: myVal: $myVal cannot be converted to integer") }
+    //Return in preferred order.
+    if ( isInteger == true ) return "Integer"
+    if ( isFloat == true ) return "Float"
+    return "String"
 }
 
 
-//Determine if something has changed in the command list.
-def isSelectedDeviceChanged() {
-    if (state.selectedDeviceHistory.new != selectedDevice) {
-        state.selectedDeviceHistory.old = state.selectedDeviceHistory.new
-        state.selectedDeviceHistory.new = selectedDevice
-        state.flags.selectedDeviceChanged = true
+//************************************************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************************************************
+//**************
+//**************  Color Related functions.
+//**************
+//************************************************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************************************************
+ 
+//Receives a 6 digit hex color and an opacity and converts them to HEX8
+def convertToHex8(String hexColor, float opacity) {
+    if (isLogDebug) log.info ("convertToHex8: Received color: $hexColor with opacity: $opacity")
+    
+    if (hexColor != null ) hexColor = hexColor.replace("#", "")
+    // Ensure opacity is within the range 0 to 1
+    opacity = Math.max(0, Math.min(1, opacity))
+    // Convert the Hex color to HEX8 format
+    def red = Integer.parseInt(hexColor.substring(0, 2), 16)
+    def green = Integer.parseInt(hexColor.substring(2, 4), 16)
+    def blue = Integer.parseInt(hexColor.substring(4, 6), 16)
+    def alpha = Math.round(opacity * 255).toInteger()
+    
+    // Format the values as a hex string
+    def Hex8 = String.format("#%02X%02X%02X%02X", red, green, blue, alpha)
+    
+    if (isLogDebug) log.info ("convertToHex8: Reecived color: $hexColor with opacity: $opacity  - Returned color $Hex8")
+        
+    return Hex8
+}
+
+//Receives a #3, #6 or #8 digit hex RGB value and returns the shortest possible version of it.
+def compress(String hexValue) {
+    //if (isLogDebug)  log.info ("compress: Received Color: ${hexValue}")
+    def isCompressible = false
+    if (hexValue == null || hexValue == "null") return null
+    String opacity = ""
+    
+    hexValue = hexValue.replace("#", "")
+    // Check if the hexValue is already in the short hex RGB format. If so return it.
+    if (hexValue.length() == 3) {
+        if (isLogDebug) log.info ("compress:Received 3 Digit Color. Using original: #${hexValue}")
+        return "#" + hexValue
     }
-    else { state.flags.selectedDeviceChanged = false }
+    
+    // Check if the color values are compressible
+    def red = hexValue.substring(0, 2)
+    def green = hexValue.substring(2, 4)
+    def blue = hexValue.substring(4, 6)
+    if (red[0] == red[1] && green[0] == green[1] && blue[0] == blue[1]) isCompressible = true
+
+    //If the color is only six digits then object is fully opaque and this color may qualify to be in the form #fff to save space.
+    if (hexValue.length() == 6) {
+        if (isCompressible == true) { 
+            if (isLogDebug) log.info ("compress:Received 6 Digit Color #${hexValue}. Converted to 3 digit color: ${"#" + red[0] + green[0] + blue[0]}")
+            return "#" + red[0] + green[0] + blue[0]
+        }
+        else {
+            if (isLogDebug) log.info ("compress:Received 6 Digit Color #${hexValue}. Returning 6 digit color: ${"#" + hexValue}")
+        }
+    }
+    
+    //Check 8 digit colors.
+    if (hexValue.length() == 8) {    
+        opacity = hexValue.substring(6, 8)
+        // Check if opacity value is fully opaque
+        if ( opacity == "FF" && isCompressible == true ) {
+            newColor = "#" + red[0] + green[0] + blue[0]
+            if (isLogDebug) log.info ("compress:Received 8 Digit Color #${hexValue} with opacity == FF. Converted to 3 digit color: $newColor")
+            return newColor
+            }
+        }
+    
+        //8 digits with no transparency can be represented in 6 digits.
+        if (opacity == "FF" && isCompressible == false ) {
+            newColor = "#" + red + green + blue
+            if (isLogDebug) log.info ("compress:Received 8 Digit Color #${hexValue} with opacity == FF. Converted to 6 digit color: ${newColor}")
+            return newColor
+        }
+    
+        //8 digits with some alpha. Nothing to be done.
+        if (opacity != "FF" ) {
+            if (isLogDebug) log.info ("compress:Received 8 Digit Color #${hexValue} with opacity != FF. Returning 8 digit color: #${hexValue}")
+            return "#" + hexValue
+        }        
 }
