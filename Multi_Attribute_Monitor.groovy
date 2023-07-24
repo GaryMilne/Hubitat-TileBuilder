@@ -12,14 +12,16 @@
 *  Version 0.9.1 - Minor Updates
 *  Version 0.9.2 - Added seperate Rules control for each line and appropriate handling.
 *  Version 1.0.0 - Public Release
-*  Gary Milne - July 17th, 2023 3:59PM
+*  Version 1.0.1 - Only displays Rules fields if running Advanced Mode.
+*  Version 1.1.0 - Multiple bug fixes. Fixed errors with subscription handling. Added eventTimeout and runInMillis logic to reduce publishing load.
+*  Gary Milne - July 23rd, 2023 11:06PM
 *
 *  This code is Multi-Attribute Monitor which is largely derived from Attribute Monitor but is still substantially different.
 *
 **/
 
 import groovy.transform.Field
-@Field static final Version = "<b>Tile Builder Multi Attribute Monitor v1.0.0 (7/17/23)</b>"
+@Field static final Version = "<b>Tile Builder Multi Attribute Monitor v1.1.0 (7/23/23)</b>"
 
 definition(
     name: "Tile Builder - Multi Attribute Monitor",
@@ -67,7 +69,7 @@ def mainPage() {
                     input "myAttribute1", "enum", title: "&nbsp<b>Attribute</b>", options: getAttributeList(myDevice1), multiple:false, submitOnChange:true, width: 2, required: true, newLine: false
                     input "append1", "string", title: "<b>Append</b>", submitOnChange:true, width:1, defaultValue: "", newLine:false
                     input "actionA1", "enum", title: "<b>Cleanup</b>",  options: parent.cleanups(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
-                    input "actionB1", "enum", title: "<b>Rules</b>",  options: parent.rules(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
+                    if (parent.checkLicense() == true) input "actionB1", "enum", title: "<b>Rules</b>",  options: parent.rules(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
                     }
                 
                 if (myDeviceCount != null && myDeviceCount.toInteger() >= 2 ){
@@ -77,7 +79,7 @@ def mainPage() {
                     input "myAttribute2", "enum", title: "&nbsp<b>Attribute</b>", options: getAttributeList(myDevice2), multiple:false, submitOnChange:true, width: 2, required: true, newLine: false
                     input "append2", "string", title: "<b>Append</b>", submitOnChange:true, width:1, defaultValue: "", newLine:false
                     input "actionA2", "enum", title: "<b>Cleanup</b>",  options: parent.cleanups(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
-                    input "actionB2", "enum", title: "<b>Rules</b>",  options: parent.rules(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
+                    if (parent.checkLicense() == true) input "actionB2", "enum", title: "<b>Rules</b>",  options: parent.rules(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
                     }
                 
                 if (myDeviceCount != null && myDeviceCount.toInteger() >= 3 ){
@@ -87,7 +89,7 @@ def mainPage() {
                     input "myAttribute3", "enum", title: "&nbsp<b>Attribute</b>", options: getAttributeList(myDevice3), multiple:false, submitOnChange:true, width: 2, required: true, newLine: false
                     input "append3", "string", title: "<b>Append</b>", submitOnChange:true, width:1, defaultValue: "", newLine:false
                     input "actionA3", "enum", title: "<b>Cleanup</b>",  options: parent.cleanups(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
-                    input "actionB3", "enum", title: "<b>Rules</b>",  options: parent.rules(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
+                    if (parent.checkLicense() == true) input "actionB3", "enum", title: "<b>Rules</b>",  options: parent.rules(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
                     }
                 
                 if (myDeviceCount != null && myDeviceCount.toInteger() >= 4 ){
@@ -97,7 +99,7 @@ def mainPage() {
                     input "myAttribute4", "enum", title: "&nbsp<b>Attribute</b>", options: getAttributeList(myDevice4), multiple:false, submitOnChange:true, width: 2, required: true, newLine: false
                     input "append4", "string", title: "<b>Append</b>", submitOnChange:true, width:1, defaultValue: "", newLine:false
                     input "actionA4", "enum", title: "<b>Cleanup</b>",  options: parent.cleanups(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
-                    input "actionB4", "enum", title: "<b>Rules</b>",  options: parent.rules(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
+                    if (parent.checkLicense() == true) input "actionB4", "enum", title: "<b>Rules</b>",  options: parent.rules(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
                     }
                 
                 if (myDeviceCount != null && myDeviceCount.toInteger() >= 5 ){
@@ -107,7 +109,7 @@ def mainPage() {
                     input "myAttribute5", "enum", title: "&nbsp<b>Attribute</b>", options: getAttributeList(myDevice5), multiple:false, submitOnChange:true, width: 2, required: true, newLine: false
                     input "append5", "string", title: "<b>Append</b>", submitOnChange:true, width:1, defaultValue: "", newLine:false
                     input "actionA5", "enum", title: "<b>Cleanup</b>",  options: parent.cleanups(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
-                    input "actionB5", "enum", title: "<b>Rules</b>",  options: parent.rules(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
+                    if (parent.checkLicense() == true) input "actionB5", "enum", title: "<b>Rules</b>",  options: parent.rules(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
                     }
                 
                 if (myDeviceCount != null && myDeviceCount.toInteger() >= 6 ){
@@ -117,7 +119,7 @@ def mainPage() {
                     input "myAttribute6", "enum", title: "&nbsp<b>Attribute</b>", options: getAttributeList(myDevice6), multiple:false, submitOnChange:true, width: 2, required: true, newLine: false
                     input "append6", "string", title: "<b>Append</b>", submitOnChange:true, width:1, defaultValue: "", newLine:false
                     input "actionA6", "enum", title: "<b>Cleanup</b>",  options: parent.cleanups(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
-                    input "actionB6", "enum", title: "<b>Rules</b>",  options: parent.rules(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
+                    if (parent.checkLicense() == true) input "actionB6", "enum", title: "<b>Rules</b>",  options: parent.rules(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
                     }
                 
                 if (myDeviceCount != null && myDeviceCount.toInteger() >= 7 ){
@@ -127,7 +129,7 @@ def mainPage() {
                     input "myAttribute7", "enum", title: "&nbsp<b>Attribute</b>", options: getAttributeList(myDevice7), multiple:false, submitOnChange:true, width: 2, required: true, newLine: false
                     input "append7", "string", title: "<b>Append</b>", submitOnChange:true, width:1, defaultValue: "", newLine:false
                     input "actionA7", "enum", title: "<b>Cleanup</b>",  options: parent.cleanups(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
-                    input "actionB7", "enum", title: "<b>Rules</b>",  options: parent.rules(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
+                    if (parent.checkLicense() == true) input "actionB7", "enum", title: "<b>Rules</b>",  options: parent.rules(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
                     }
                 
                 if (myDeviceCount != null && myDeviceCount.toInteger() >= 8 ){
@@ -137,7 +139,7 @@ def mainPage() {
                     input "myAttribute8", "enum", title: "&nbsp<b>Attribute</b>", options: getAttributeList(myDevice8), multiple:false, submitOnChange:true, width: 2, required: true, newLine: false
                     input "append8", "string", title: "<b>Append</b>", submitOnChange:true, width:1, defaultValue: "", newLine:false
                     input "actionA8", "enum", title: "<b>Cleanup</b>",  options: parent.cleanups(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
-                    input "actionB8", "enum", title: "<b>Rules</b>",  options: parent.rules(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
+                    if (parent.checkLicense() == true) input "actionB8", "enum", title: "<b>Rules</b>",  options: parent.rules(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
                     }
                 
                 if (myDeviceCount != null && myDeviceCount.toInteger() >= 9 ){
@@ -147,7 +149,7 @@ def mainPage() {
                     input "myAttribute9", "enum", title: "&nbsp<b>Attribute</b>", options: getAttributeList(myDevice9), multiple:false, submitOnChange:true, width: 2, required: true, newLine: false
                     input "append9", "string", title: "<b>Append</b>", submitOnChange:true, width:1, defaultValue: "", newLine:false
                     input "actionA9", "enum", title: "<b>Cleanup</b>",  options: parent.cleanups(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
-                    input "actionB9", "enum", title: "<b>Rules</b>",  options: parent.rules(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
+                    if (parent.checkLicense() == true) input "actionB9", "enum", title: "<b>Rules</b>",  options: parent.rules(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
                     }
                 
                 if (myDeviceCount != null && myDeviceCount.toInteger() >= 10 ){
@@ -155,9 +157,9 @@ def mainPage() {
                     input "name10", "string", title: "<b>Item Name</b>", submitOnChange:true, width:2, defaultValue: "?", newLine:false
                     input "prepend10", "string", title: "<b>Prepend</b>", submitOnChange:true, width:1, defaultValue: "", newLine:false
                     input "myAttribute10", "enum", title: "&nbsp<b>Attribute</b>", options: getAttributeList(myDevice10), multiple:false, submitOnChange:true, width: 2, required: true, newLine: false
-                    input "append610", "string", title: "<b>Append</b>", submitOnChange:true, width:1, defaultValue: "", newLine:false
+                    input "append10", "string", title: "<b>Append</b>", submitOnChange:true, width:1, defaultValue: "", newLine:false
                     input "actionA10", "enum", title: "<b>Cleanup</b>",  options: parent.cleanups(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
-                    input "actionB10", "enum", title: "<b>Rules</b>",  options: parent.rules(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
+                    if (parent.checkLicense() == true) input "actionB10", "enum", title: "<b>Rules</b>",  options: parent.rules(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
                     }
         }
         else input(name: 'btnShowDevices', type: 'button', title: 'Select Devices and Attributes ▶', backgroundColor: 'dodgerBlue', textColor: 'white', submitOnChange: true, width: 3)  //▼ ◀ ▶ ▲
@@ -209,6 +211,7 @@ def mainPage() {
                         input (name: "customHeight", type: "text", title: bold("Tile Height"), required:false, defaultValue: "190", submitOnChange: true, width: 1)
                     }
                     input (name: "iFrameColor", type: "color", title: bold2("Dashboard Color", iFrameColor ), required: false, defaultValue: "#000000", submitOnChange: true, width: 3)
+                    
 
                     if (isCompactDisplay == false) {
                         paragraph line(1)
@@ -492,9 +495,11 @@ def mainPage() {
                 if (activeButton == 9){
                     if (isCompactDisplay == false) paragraph titleise("Advanced Settings")
                     input (name: "scrubHTMLlevel", type: "enum", title: bold("HTML Scrub Level"), options: parent.htmlScrubLevel(), required: false, submitOnChange: true, defaultValue: 1, width: 2, newLineAfter:false)
+                    
                     input (name: "isOverrides", type: "bool", title: "<b>Enable Overrides?</b>", required: false, multiple: false, defaultValue: false, submitOnChange: true, width: 2, newLineAfter: false)
                     input (name: "isShowSettings", type: "bool", title: "<b>Show Effective Settings?</b>", required: false, multiple: false, defaultValue: false, submitOnChange: true, width: 2)
                     input (name: "isShowHTML", type: "bool", title: "<b>Show Pseudo HTML?</b>", required: false, multiple: false, defaultValue: false, submitOnChange: true, width: 2)
+                    
                     if (isOverrides == true) {
                         paragraph line(1) 
                         input (name: "overrideHelperCategory", type: "enum", title: bold("Override Category"), options: parent.overrideCategory().sort(), required: true, width:2, submitOnChange: true, newLineAfter: true)
@@ -584,15 +589,16 @@ def mainPage() {
             if (state.show.Publish == true) {
                 input(name: 'btnShowPublish', type: 'button', title: 'Publish Table ▼', backgroundColor: 'navy', textColor: 'white', submitOnChange: true, width: 3, newLineAfter: true)  //▼ ◀ ▶ ▲
                 myText = "Here you will configure where the table will be stored. It will be refreshed at the frequency you specify."
-                
-                //myText += "HTML data is less than 1,024 bytes it will be published via a tile attribute on the storage device.<br>"
-                //myText += "If HTML data is greater than 1,024 it will be published via file with the tile attribute being link to that file.<br>"
                 paragraph myText
                 input (name: "myTile", title: "<b>Which Tile Attribute will store the table?</b>", type: "enum", options: parent.allTileList(), required:true, submitOnChange:true, width:3, defaultValue: 0, newLine:false)
                 input (name:"myTileName", type:"text", title: "<b>Name this Tile</b>", submitOnChange: true, width:3, newLine:false, required: true)
-                input (name: "tilesAlreadyInUse", type: "enum", title: bold("For Reference Only: Tiles already in Use"), options: parent.getTileList(), required: false, defaultValue: "Tile List", submitOnChange: false, width: 3, newLineAfter:true)
+                input (name: "tilesAlreadyInUse", type: "enum", title: bold("For Reference Only: Tiles already in Use"), options: parent.getTileList(), required: false, defaultValue: "Tile List", submitOnChange: false, width: 3)
+                input (name: "eventTimeout", type: "enum", title: "<b>Event Timeout (millis)</b>", required: false, multiple: false, defaultValue: "2000", options: ["0","250","500","1000","2000","5000","10000"], submitOnChange: true, width: 2, newLineAfter:true)
                 if(myTileName) app.updateLabel(myTileName)
-                paragraph note("Note:", " The Tile Name given here will also be used as the name for this instance of Multi Attribute Monitor.")
+                myText =  "The <b>Tile Name</b> given here will also be used as the name for this instance of Multi Attribute Monitor.<br>"
+                myText += "The <b>Event Timeout</b> period is how long Tile Builder will wait for subsequent events before publishing the table. Devices like Hub Info or Weather devices that do polling and bulk update multiple attributes and can create a lot of publishing requests in a short period of time.<br>"
+                myText += "In Multi Attribute Monitor the default timeout period is 2000 millieseconds (2 seconds). If you want a more responsive table you can lower this number but it will increase the CPU utilization."
+                paragraph note("Notes: ", myText)
                 paragraph line(1)
             
                 if ( state.HTMLsizes.Final < 4096 && settings.myTile != null && myTileName != null ) {
@@ -612,6 +618,7 @@ def mainPage() {
                 input (name: "isLogDebug", type: "bool", title: "<b>Enable debug logging?</b>", defaultValue: false, submitOnChange: true, width: 2)
                 input (name: "isLogWarn",  type: "bool", title: "<b>Enable warn logging?</b>", defaultValue: true, submitOnChange: true, width: 2)
                 input (name: "isLogError",  type: "bool", title: "<b>Enable error logging?</b>", defaultValue: true, submitOnChange: true, width: 2)
+                input (name: "isLogEvents",  type: "bool", title: "<b>Enable Device Event logging?</b>", defaultValue: false, submitOnChange: true, width: 2)
             }   
             
         //Now add a footer.
@@ -652,7 +659,7 @@ def getAttributeList (thisDevice){
 //************************************************************************************************************************************************************************************************************************
 
 //This is the refresh routine called at the start of the page. This is used to replace\clear screen values that do not respond when performed in the mainline code.
-//This function is unique between Activity Monitor and Attribute Monitor
+//This function is unique between Activity Monitor and Attribute Monitor\Multi-Attribute Monitor
 void refreshUIbefore(){
     //Get the oveerrides helper selection and look it up in the global map and use the key pair value as an on-screen guide.
     state.currentHelperCommand = ""
@@ -1146,12 +1153,7 @@ void makeHTML(data, int myRows){
             //Replace any () or [] characters with <>
             newDataValue = toHTML(newDataValue)
             interimHTML = interimHTML.replaceAll("<td>${it}</td>", "${newDataValue}")
-            
-            //What needs to be done here is that we must check the newDataValue to see if it contains any highlight strings <hqq1>..<hqq10>
-            //if it does and the switch is enabled that wrap the device name in <hqq1> tags for example.
-            //The device name is located in the template at "#A + myIndex + #" all of which the myIndex should be padded with a leading 0 if required.
-            //We then have to do a search and replace on the interimHTML = interimHTML.replaceAll(deviceName , <hqq1>deviceName</hqq1>)
-            
+
             //We will test to see if the data contains a highlight class. If it does and device highlighting is selected that the appropriate <hqq?> tags are added to the deviceName
             def myClass = getHighlightClass(newDataValue)
             if (myClass != null){
@@ -1159,14 +1161,13 @@ void makeHTML(data, int myRows){
                 String oldDeviceString = myTemplate[deviceTemplateLocation]
                 
                 //If the name does not contain any special characters and device name highlighting is true then we can do search and replace operations on it and add the <hqq?> tags.
-                if (containsSpecialCharacters(oldDeviceString) == false && isHighlightDeviceNames == true){
-                    newDeviceString = "<" + myClass + ">" + oldDeviceString + "</" + myClass + ">"
-                
-                    //String cleanDeviceName = cleanSpecialCharacters(oldDeviceName)
-                    //log.info ("Old Name: $oldDeviceString      New Name: $newDeviceString")
-                    interimHTML = interimHTML.replaceAll("<td>" + oldDeviceString + "</td>", "<td>" + newDeviceString + "</td>")                
+                if ( isHighlightDeviceNames == true ){
+                    if (containsSpecialCharacters(oldDeviceString) == false){
+                        newDeviceString = "<" + myClass + ">" + oldDeviceString + "</" + myClass + ">"
+                        interimHTML = interimHTML.replaceAll("<td>" + oldDeviceString + "</td>", "<td>" + newDeviceString + "</td>")
+                    }
+                    else log.warn("makeHTML: The device name ${oldDeviceString} contains reserved characters and the style ${myClass} could not be applied.")
                 }
-                else log.info("makeHTML: The device name ${oldDeviceString} contains reserved characters and the style ${myClass} could not be applied.")
             } //End of if(myClass......
         }
         
@@ -1317,29 +1318,27 @@ def highlightValue(attributeValue, myIndex){
 //************************************************************************************************************************************************************************************************************************
 //************************************************************************************************************************************************************************************************************************
 
-//Deletes all event subscriptions. Only used by Attribute Monitor but retained for ease of maintenance.
+//Deletes all event subscriptions.
 void deleteSubscription(){
+    if (isLogEvents) ("deleteSubscription: Deleted all subscriptions. To verify click on the App ⚙️ Symbol and look for the Event Subscriptions section. ")
     unsubscribe()
 }
 
 //This function removes all existing subscriptions for this app and replaces them with new ones corresponding to the devices and attributes being monitored.
 void publishSubscribe(){
-    if (isLogTrace) log.trace("createSubscription: Entering.")
-    //if (isLogInfo) 
-    if (isLogInfo) log.info("createSubscription: Creating subscription for Tile: $myTile with description: $myTileName.")
-    //Remove all existing subscriptions.
+    if (isLogEvents) log.info("createSubscription: Creating subscriptions for Tile: $myTile with description: $myTileName.")
+    //Remove all existing subscriptions
     unsubscribe()
-    
-    if (myDevice1 != null && myAttribute1 != null )  { subscribe (myDevice1, myAttribute1.toLowerCase(), handler) }
-    if (myDevice2 != null && myAttribute2 != null )  { subscribe (myDevice2, myAttribute2.toLowerCase(), handler) }
-    if (myDevice3 != null && myAttribute3 != null )  { subscribe (myDevice3, myAttribute3.toLowerCase(), handler) }
-    if (myDevice4 != null && myAttribute4 != null )  { subscribe (myDevice4, myAttribute4.toLowerCase(), handler) }
-    if (myDevice5 != null && myAttribute5 != null )  { subscribe (myDevice5, myAttribute5.toLowerCase(), handler) }
-    if (myDevice6 != null && myAttribute6 != null )  { subscribe (myDevice6, myAttribute6.toLowerCase(), handler) }
-    if (myDevice7 != null && myAttribute7 != null )  { subscribe (myDevice7, myAttribute7.toLowerCase(), handler) }
-    if (myDevice8 != null && myAttribute8 != null )  { subscribe (myDevice8, myAttribute8.toLowerCase(), handler) }
-    if (myDevice9 != null && myAttribute9 != null )  { subscribe (myDevice9, myAttribute9.toLowerCase(), handler) }
-    if (myDevice10 != null && myAttribute10 != null ){ subscribe (myDevice10, myAttribute10.toLowerCase(), handler) }
+    if (myDevice1 != null && myAttribute1 != null )  { subscribe (myDevice1, myAttribute1, handler) }
+    if (myDevice2 != null && myAttribute2 != null )  { subscribe (myDevice2, myAttribute2, handler) }
+    if (myDevice3 != null && myAttribute3 != null )  { subscribe (myDevice3, myAttribute3, handler) }
+    if (myDevice4 != null && myAttribute4 != null )  { subscribe (myDevice4, myAttribute4, handler) }
+    if (myDevice5 != null && myAttribute5 != null )  { subscribe (myDevice5, myAttribute5, handler) }
+    if (myDevice6 != null && myAttribute6 != null )  { subscribe (myDevice6, myAttribute6, handler) }
+    if (myDevice7 != null && myAttribute7 != null )  { subscribe (myDevice7, myAttribute7, handler) }
+    if (myDevice8 != null && myAttribute8 != null )  { subscribe (myDevice8, myAttribute8, handler) }
+    if (myDevice9 != null && myAttribute9 != null )  { subscribe (myDevice9, myAttribute9, handler) }
+    if (myDevice10 != null && myAttribute10 != null ){ subscribe (myDevice10, myAttribute10, handler) }
     
     //Populate the Initial Table based on the present state.
     publishTable()
@@ -1347,20 +1346,23 @@ void publishSubscribe(){
 
 //This should get executed whenever any of the subscribed devices receive an update to the monitored attribute.
 def handler(evt) {
-    if (isLogInfo) log.info("handler: Subscription event handler called with event: $evt. ") 
-    publishTable()   
+    if (isLogEvents) log.info "Event received from Device:${evt.device}  -  Attribute:${evt.name}  -  Value:${evt.value}"
+    //This schedules a call to publishTable() 1 second into the future. If another event comes along within that second it re-schedules the call to publishTable another 1 second into the future.
+    //This greaty improves the efficiency when multiple attributes on the same device are being monitored. This is true for polling devices such as Hub Info or a Weather driver which receive batch updates to multiple attributes all at the same time.
+    //This logic reduces these multiple calls into a single call to publishTable() once things go quiet.
+    runInMillis(eventTimeout.toInteger(), publishTable, [overwrite: true])
 }
 
 //Save the current HTML to the variable. This is the function that is called by the scheduler.
 void publishTable(){
-    if (isLogTrace==true) log.trace("publishTable: Entering publishTable.")
+    if (isLogEvents) log.trace("publishTable: Entering publishTable.")
     
     //Handles the initialization of new variables added after the original release.
     updateVariables()
     
     //Refresh the table with the new data and then save the HTML to the driver variable.
     refreshTable()
-    if (isLogInfo) log.info("publishTable: Tile $myTile ($myTileName) is being refreshed.")
+    if (isLogEvents) log.debug("publishTable: Tile $myTile ($myTileName) is being refreshed.")
     
     myStorageDevice = parent.getStorageDevice()
     if ( myStorageDevice == null ) {
@@ -1368,15 +1370,15 @@ void publishTable(){
         return
     }
     
-    if (isLogInfo) log.info ("Size is: ${state.HTML.size()}")
-    //If the tile is less than 1024 we just publish to the attribute. If it's more we publish the file and then the attribute to cause a refresh
+    if (isLogEvents) log.info ("Size is: ${state.HTML.size()}")
+    //If the tile is less than 1024 we just publish to the attribute. If it's more than 1,024 then we publish it as a file then update the attribute to cause it to reload the file.
     if (state.HTML.size() < 1024 ) {
         myStorageDevice.createTile(settings.myTile, state.HTML, settings.myTileName)
         }
     else {
         def prefix = parent.getStorageShortName()
         def fileName = prefix + "_Tile_" + myTile.toString() + ".html"
-        if (isLogDebug) log.debug ("filename is: ${fileName}")
+        if (isLogEvents) log.debug ("filename is: ${fileName}")
         def myBytes = state.HTML.getBytes("UTF-8")
         //Now try and upload the file to the hub. There is no return value so we must do try catch
         try {
@@ -1385,18 +1387,8 @@ void publishTable(){
             //Put in a slight delay to allow the file upload to complete.
             pauseExecution (100)
             def src = "http://" + myIP + "/local/" + fileName
-            
-            // This is working without any jumpiness. def stubHTML = '<div style="height:100%; width:100%; scrolling:'no'"><iframe src=' + src + ' style="height: 100%; width:100%; border: none; scrolling:no"></iframe><div>'
-            // This is working without any jumpiness. App Settings: Preview Size = 2 x 4, Width = 100, Height = Auto, Border Padding = 0, Row Text Padding = 0, #tile-3 .tile-primary {outline: 2px solid yellow;} , #tile-3 .tile-contents {overflow: hidden; !important}
-            // This is working without any jumpiness. Dash Settings: Width = 200, Height = 190, Tile 4H x 2W
-            // This is working without any jumpiness. Dash CSS : #tile-3 .tile-primary {vertical-align: top; overflow: hidden; !important} , #tile-3 .tile-title, .tile-title {visibility: hidden; display: none !important} , 
-            //Somehow the following formatting causes the actual HTML equivalent to be ingested into the device driver attribute. Something to do with the comma's I believe. 
-            //*** def stubHTML = '<div style="height:100%; width:100%; scrolling:'no'"><iframe src=' + src + ' style="height: 100%; width:100%; border: none; scrolling:no"></iframe><div>' ***
-            //It will temporarily display on the dashboard even though it exceeds the 1,024 byte limit. Because of this the table refreshes on the dash are very smooth. If you reload the dashboard you will get the "Please Select an Attribute" message because it is oversize.
-            //def stubHTML = """<div style="height:100%; width:100%; scrolling='no'"><iframe src=""" + src + """ style="height: 100%; width:100%; border: none; scrolling='no'"></iframe><div>"""
-            //Although we tell the iFrame to not have scroll bars and to hide any overflow this gets ignored by the Hubitat Dashboard whenever a scrollbar is required. I have not yet found the CSS that hides this particular scrollbar!!!
             def stubHTML = """<div style='height:100%; width:100%; scrolling:no; overflow:hidden;'><iframe src=""" + src + """ style='height: 100%; width:100%; border: none; scrolling:no; overflow: hidden;'></iframe><div>"""
-            if (isLogDebug) log.debug ("stub is : ${unHTML(stubHTML)}")
+            if (isLogEvents) log.debug ("stub is : ${unHTML(stubHTML)}")
         
             //Then we will update the Storage Device attribute which will cause the file to be reloaded into the dashboard.
             myStorageDevice.createTile(settings.myTile, stubHTML, settings.myTileName)
@@ -1862,6 +1854,7 @@ def initialize(){
     app.updateSetting("bfs", "18")
     app.updateSetting("tff", "Roboto")
     app.updateSetting("scrubHTMLlevel", 1)
+    app.updateSetting("eventTimeout", "2000")
     app.updateSetting("isShowImportExport", false)
     app.updateSetting("isShowHTML", false)
     app.updateSetting("importStyleText", "?")
@@ -2033,7 +2026,7 @@ boolean containsSpecialCharacters(String input) {
     myString = unHTML(input)
     try {
         // List of special characters to check
-        def specialCharacters = ['\\', '[', ']', '(', ')', '{', '}', '*', '+', '?', '|', '^', '$']
+        def specialCharacters = ['\\', '(', ')', '{', '}', '*', '+', '?', '|', '^', '$']
         // Iterate over each special character and check if it exists in the input string
         for (char specialChar : specialCharacters) {
             if (input.contains(specialChar.toString())) return true
@@ -2131,7 +2124,6 @@ def scrubHTML(HTML, iFrame){
         //Remove any values that are actually defaults and do not need to be specified.
         myHTML = myHTML.replace("font-family:Roboto", "")
         myHTML = myHTML.replace("font-size:100%", "")
-        myHTML = myHTML.replace("text-align:Left", "")
         myHTML = myHTML.replace("auto%", "auto")
         myHTML = myHTML.replace("Auto%", "auto")
         myHTML = myHTML.replace("width:auto", "")
