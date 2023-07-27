@@ -14,14 +14,16 @@
 *  Version 1.0.0 - Public Release
 *  Version 1.0.1 - Only displays Rules fields if running Advanced Mode.
 *  Version 1.1.0 - Multiple bug fixes. Fixed errors with subscription handling. Added eventTimeout and runInMillis logic to reduce publishing load.
-*  Gary Milne - July 23rd, 2023 11:06PM
+*  Version 1.1.1 - Fixed bug where Threshold5 was in effect and "Also Highlight Device Names" was selected but the device name would fail to format correctly.																																							  
+*
+*  Gary Milne - July 26th, 2023 7:58 PM
 *
 *  This code is Multi-Attribute Monitor which is largely derived from Attribute Monitor but is still substantially different.
 *
 **/
 
 import groovy.transform.Field
-@Field static final Version = "<b>Tile Builder Multi Attribute Monitor v1.1.0 (7/23/23)</b>"
+@Field static final Version = "<b>Tile Builder Multi Attribute Monitor v1.1.1 (7/26/23)</b>"
 
 definition(
     name: "Tile Builder - Multi Attribute Monitor",
@@ -618,7 +620,7 @@ def mainPage() {
                 input (name: "isLogDebug", type: "bool", title: "<b>Enable debug logging?</b>", defaultValue: false, submitOnChange: true, width: 2)
                 input (name: "isLogWarn",  type: "bool", title: "<b>Enable warn logging?</b>", defaultValue: true, submitOnChange: true, width: 2)
                 input (name: "isLogError",  type: "bool", title: "<b>Enable error logging?</b>", defaultValue: true, submitOnChange: true, width: 2)
-                input (name: "isLogEvents",  type: "bool", title: "<b>Enable Device Event logging?</b>", defaultValue: false, submitOnChange: true, width: 2)
+                input (name: "isLogEvents",  type: "bool", title: "<b>Enable Device Event logging?</b>", defaultValue: false, submitOnChange: true, width: 2, newLine:true)
             }   
             
         //Now add a footer.
@@ -1134,7 +1136,8 @@ void makeHTML(data, int myRows){
     myIndex = 0
 
     //Now replace the placeholders with the actual data values for cells B1 - B10.
-    myTemplate.each{ it, value ->   
+    myTemplate.each{ it, value -> 
+        //log.info ("1)  Iterating myTemplate: it is: $it and value is: $value")
         //If it's the data colum it will begin #B1# thru #B30#. Anything else we can just process normally.
         if ( beginsWith(it, "#B") == false || beginsWith(it,"#B00") == true ){
             interimHTML = interimHTML.replaceAll(it, value.toString())    
@@ -1143,32 +1146,37 @@ void makeHTML(data, int myRows){
             {
             if ( beginsWith(it, "#B") == true ){ 
                 myIndex = myIndex + 1 
-                //log.info ("it is: $it  Index is $myIndex   value is: $value")
+																			   
             }
-            //interimHTML = interimHTML.replace(it, value.toString())    
-            newDataValue = highlightValue(value, myIndex)
+            //If the index is greater than the device count then it can be ignored.
+            if ( myIndex <= myDeviceCount.toInteger() ) {
+                //interimHTML = interimHTML.replace(it, value.toString()) 
+                newDataValue = highlightValue(value, myIndex)
             
-            //It get a little tricky to debug because many of the <HTML> tags do not not print in the log window.
-            //if (isLogDebug == true && newValue != null ) log.debug("makeHTML: Replacing: <td>${it}</td> with: ${unHTML(newValue)}")
-            //Replace any () or [] characters with <>
-            newDataValue = toHTML(newDataValue)
-            interimHTML = interimHTML.replaceAll("<td>${it}</td>", "${newDataValue}")
+                //It get a little tricky to debug because many of the <HTML> tags do not not print in the log window.
+                //if (isLogDebug == true && newValue != null ) log.debug("makeHTML: Replacing: <td>${it}</td> with: ${unHTML(newValue)}")
+                //Replace any () or [] characters with <>
+                newDataValue = toHTML(newDataValue)
+                interimHTML = interimHTML.replaceAll("<td>${it}</td>", "${newDataValue}")
 
-            //We will test to see if the data contains a highlight class. If it does and device highlighting is selected that the appropriate <hqq?> tags are added to the deviceName
-            def myClass = getHighlightClass(newDataValue)
-            if (myClass != null){
-                def deviceTemplateLocation = "#A" + (myIndex as String).padLeft(2, '0') + "#"
-                String oldDeviceString = myTemplate[deviceTemplateLocation]
+                //We will test to see if the data contains a highlight class. If it does and device highlighting is selected then the appropriate <hqq?> tags are added to the deviceName
+                def myClass = getHighlightClass(newDataValue)
                 
-                //If the name does not contain any special characters and device name highlighting is true then we can do search and replace operations on it and add the <hqq?> tags.
-                if ( isHighlightDeviceNames == true ){
-                    if (containsSpecialCharacters(oldDeviceString) == false){
-                        newDeviceString = "<" + myClass + ">" + oldDeviceString + "</" + myClass + ">"
-                        interimHTML = interimHTML.replaceAll("<td>" + oldDeviceString + "</td>", "<td>" + newDeviceString + "</td>")
+                if (myClass != null){
+                    def deviceTemplateLocation = "#A" + (myIndex as String).padLeft(2, '0') + "#"
+                    String oldDeviceString = myTemplate[deviceTemplateLocation]
+                
+                    //If the name does not contain any special characters and device name highlighting is true then we can do search and replace operations on it and add the <hqq?> tags.
+                    if ( isHighlightDeviceNames == true ){
+                        if (containsSpecialCharacters(oldDeviceString) == false){
+                            newDeviceString = "<" + myClass + ">" + oldDeviceString + "</" + myClass + ">"
+                            interimHTML = interimHTML.replaceAll("<td>" + oldDeviceString + "</td>", "<td>" + newDeviceString + "</td>")
+                        }
+                        else log.warn("makeHTML: The device name ${oldDeviceString} contains reserved characters and the style ${myClass} could not be applied.")
                     }
-                    else log.warn("makeHTML: The device name ${oldDeviceString} contains reserved characters and the style ${myClass} could not be applied.")
-                }
-            } //End of if(myClass......
+                } //End of if(myClass......
+            }
+            //else log.info ("2B) Bybassping it: $it because it does not contain data")
         }
         
     } //end of myTemplate.each
@@ -1238,8 +1246,8 @@ def highlightValue(attributeValue, myIndex){
     
     //If the data is a string then we must process it for Keywords.
     int i = 1
+														  
     if ( dataType == "String" && ( settings["actionB$myIndex"] == "All Keywords" ) ){  
-          
         for (i = 1; i <= myKeywordCount.toInteger(); i++) {
             if (isLogDebug) log.info ("Processing keyword i is: $i.")
             if ( settings["k$i"] != null && settings["k$i"] != "") {
@@ -1269,23 +1277,27 @@ def highlightValue(attributeValue, myIndex){
         myVal1 = settings["tcv$i"]
         myVal2 = settings["top$i"]
         myThresholdText = "Threshold " + ( i - 5).toString()
-        if (isLogDebug) log.info ("i is: $i.  tcv$i is: $myVal1  top$i is: $myVal2  dataType is $dataType  Threshold is: $myText")
+						  
+        if (isLogDebug) log.info ("i is: $i.  tcv$i is: $myVal1  top$i is: $myVal2  dataType is $dataType  Threshold is: $myThresholdText")
         if (settings["tcv$i"] != null && settings["tcv$i"] != "" && settings["tcv$i"] != "None" && ( ( settings["actionB$myIndex"] == "All Thresholds" )  || settings["actionB$myIndex"] == myThresholdText ) )  {
             
-            //This is the ideal place for a switch statement but using a greak within a switch causes it to exit the for loop also.
+            //This is the ideal place for a switch statement but using a break within switch causes it to exit the while loop also.
             if ( ( settings["top$i"] == "1" || settings["top$i"] == "<=" ) && attributeValue.toInteger() <= settings["tcv$i"].toInteger() ) {
+								   
                 if (isLogDebug)  log.debug("highlightThreshold: A <= than condition was met.")
                 if ( ( settings["ttr$i"] != null && settings["ttr$i"] != " " ) && settings["ttr$i"] != "?") { returnValue = settings["ttr$i"] } 
                 lastThreshold = i
                 }
             
             if ( ( settings["top$i"] == "2" || settings["top$i"] == "==" ) && attributeValue.toInteger() == settings["tcv$i"].toInteger() ) {
+								  
                 if (isLogDebug) log.debug("highlightThreshold: An == condition was met.")
                 if (settings["ttr$i"] != null && settings["ttr$i"] != " " && settings["ttr$i"] != "?") { returnValue = settings["ttr$i"] } 
                 lastThreshold = i
                 }
             
             if ( ( settings["top$i"] == "3" || settings["top$i"] == ">=" ) && attributeValue.toInteger() >= settings["tcv$i"].toInteger() ) {
+								  
                 if (isLogDebug) log.debug("highlightThreshold: A >= than condition was met.")
                 if (settings["ttr$i"] != null && settings["ttr$i"] != " " && settings["ttr$i"] != "?") { returnValue = settings["ttr$i"] } 
                 lastThreshold = i
@@ -2011,8 +2023,9 @@ def chooseButtonText(buttonNumber, buttonText){
 //************************************************************************************************************************************************************************************************************************
 
 //Receives a string and determines if a highlighting class has been applied. Returns the name of the class or null.
+//It is important that hqq10 preceeds hqq1 in the list because a search for hqq1 would get a false positive because it's also a match for the leading part of hqq10.																																									
 def getHighlightClass(attributeValue) {
-    def highlightClasses = ['hqq1', 'hqq2', 'hqq3', 'hqq4', 'hqq5', 'hqq6', 'hqq7', 'hqq8', 'hqq9', 'hqq10']
+    def highlightClasses = ['hqq10', 'hqq1', 'hqq2', 'hqq3', 'hqq4', 'hqq5', 'hqq6', 'hqq7', 'hqq8', 'hqq9']
     for (myClass in highlightClasses) {
         if (attributeValue.contains(myClass)) {
             return myClass
