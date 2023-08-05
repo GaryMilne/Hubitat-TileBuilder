@@ -29,9 +29,10 @@
 *  Version 1.2.7 - Fixed bug in applyStyle not handling "textArea" data type introduced in 1.2.3 
 *  Version 1.2.8 - Cleaned up handling of some style settings.
 *  Version 1.3.0 - Multiple updates and fixes. Implements %value% macro, use search and replace strings vs just strip strings. Added button type to Activity Monitor list, added valve, healthStatus and variable types, added padding to floats, \
-                   reduced floating point options to 0 or 1. Added opacity option to table background. Converted Thresholds to use numbered comparators. Changed storage of #top variables. Implemented supportFunction for child recovery.
+*                  reduced floating point options to 0 or 1. Added opacity option to table background. Converted Thresholds to use numbered comparators. Changed storage of #top variables. Implemented supportFunction for child recovery.
+*  Version 1.3.1 - Added null checking to multiple lines to correct app errors, especially when picking "No Selection" which returns null. Fixed bug with substituting values for fields #22 and #27. Fixed bug when subscribing to camelCase attributes.
 * 
-*  Gary Milne - June 2nd, 2023
+*  Gary Milne - Aug 5th, 2023
 *
 *  This code is Activity Monitor and Attribute Monitor combined.
 *  The personality is dictated by @Field static moduleName a few lines ahead of this.
@@ -49,17 +50,17 @@ import groovy.transform.Field
 //These are unknown as to whether they report integer or float values.
 //capabilitiesUnknown = [" "carbonDioxideMeasurement":"carbonDioxide","pressureMeasurement":"pressure","relativeHumidityMeasurement":"humidity", "ultravioletIndex":"ultravioletIndex"]
 
-@Field static final Version = "<b>Tile Builder Activity Monitor v1.3.0 (6/2/23)</b>"
-@Field static final moduleName = "Activity Monitor"
-//@Field static final moduleName = "Attribute Monitor"
+@Field static final Version = "<b>Tile Builder Attribute Monitor v1.3.1 (8/5/23)</b>"
+//@Field static final moduleName = "Activity Monitor"
+@Field static final moduleName = "Attribute Monitor"
 
 definition(
-    name: "Tile Builder - Activity Monitor",
-    description: "Monitors a list of devices to look for those that are inactive\\overactive and may need attention. Publishes an HTML table of results for a quick and attractive display in the Hubitat Dashboard environment.",
-    importUrl: "https://raw.githubusercontent.com/GaryMilne/Hubitat-TileBuilder/main/Activity_Monitor.groovy",
-    //name: "Tile Builder - Attribute Monitor",
-    //description: "Monitors a single attribute for a list of devices. Publishes an HTML table of results for a quick and attractive display in the Hubitat Dashboard environment.",
-    //importUrl: "https://raw.githubusercontent.com/GaryMilne/Hubitat-TileBuilder/main/Attribute_Monitor.groovy",
+    //name: "Tile Builder - Activity Monitor",
+    //description: "Monitors a list of devices to look for those that are inactive\\overactive and may need attention. Publishes an HTML table of results for a quick and attractive display in the Hubitat Dashboard environment.",
+    //importUrl: "https://raw.githubusercontent.com/GaryMilne/Hubitat-TileBuilder/main/Activity_Monitor.groovy",
+    name: "Tile Builder - Attribute Monitor",
+    description: "Monitors a single attribute for a list of devices. Publishes an HTML table of results for a quick and attractive display in the Hubitat Dashboard environment.",
+    importUrl: "https://raw.githubusercontent.com/GaryMilne/Hubitat-TileBuilder/main/Attribute_Monitor.groovy",
     namespace: "garyjmilne",
     author: "Gary J. Milne",
     category: "Utilities",
@@ -1085,9 +1086,14 @@ def getDeviceMapAttrMon(){
         else {
             //log.info("Not filtering")
             if (dataType == "Float") {
-                float myFloat = myVal.toFloat()
-                if (myDecimalPlaces.toInteger() == 0) myMap["${deviceName}"] = myFloat.toInteger()
-                else myMap["${deviceName}"] = myFloat.round(myDecimalPlaces.toInteger())
+			    try {
+					float myFloat = myVal.toFloat()
+					if (myDecimalPlaces.toInteger() == 0) myMap["${deviceName}"] = myFloat.toInteger()
+					else myMap["${deviceName}"] = myFloat.round(myDecimalPlaces.toInteger())
+					}
+				catch (ex) {
+					log.error('getDeviceMapAttrMon(): Cannot cast myVal:$myVal to type Float.')
+				}
              }
             else myMap["${deviceName}"] = myVal
         }
@@ -1200,10 +1206,10 @@ void refreshTable(){
             
             //Truncate the name if required
             //if (isLogDebug) log.debug ("refreshTable: myTruncateLength.toInteger() is ${myTruncateLength.toInteger() }")
-            if (myTruncateLength.toInteger() == 96) shortName = findSpace(shortName, 3)
-            if (myTruncateLength.toInteger() == 97) shortName = findSpace(shortName, 2)
-            if (myTruncateLength.toInteger() == 98) shortName = findSpace(shortName, 1)
-            if (myTruncateLength.toInteger() <= 30) {
+            if ( myTruncateLength != null && myTruncateLength.toInteger() == 96) shortName = findSpace(shortName, 3)
+            if ( myTruncateLength != null && myTruncateLength.toInteger() == 97 ) shortName = findSpace(shortName, 2)
+            if ( myTruncateLength != null && myTruncateLength.toInteger() == 98 ) shortName = findSpace(shortName, 1)
+            if ( myTruncateLength != null && myTruncateLength.toInteger() <= 30 ) {
                 if ( key.size() > myTruncateLength.toInteger() ) {
                     shortName = shortName.substring(0, myTruncateLength.toInteger() )
                 }
@@ -1259,8 +1265,8 @@ void makeHTML(data, int myRows){
     String HTMLR6 = "<tr><td>#A06#</td><td>#B06#</td></tr>"; String HTMLR7 = "<tr><td>#A07#</td><td>#B07#</td></tr>"; String HTMLR8 = "<tr><td>#A08#</td><td>#B08#</td></tr>"; String HTMLR9 = "<tr><td>#A09#</td><td>#B09#</td></tr>"; String HTMLR10 = "<tr><td>#A10#</td><td>#B10#</td></tr>"
     String HTMLR11 = "<tr><td>#A11#</td><td>#B11#</td></tr>"; String HTMLR12 = "<tr><td>#A12#</td><td>#B12#</td></tr>"; String HTMLR13 = "<tr><td>#A13#</td><td>#B13#</td></tr>"; String HTMLR14 = "<tr><td>#A14#</td><td>#B14#</td></tr>"; String HTMLR15 = "<tr><td>#A15#</td><td>#B15#</td></tr>"
     String HTMLR16 = "<tr><td>#A16#</td><td>#B16#</td></tr>"; String HTMLR17 = "<tr><td>#A17#</td><td>#B17#</td></tr>"; String HTMLR18 = "<tr><td>#A18#</td><td>#B18#</td></tr>"; String HTMLR19 = "<tr><td>#A19#</td><td>#B19#</td></tr>"; String HTMLR20 = "<tr><td>#A20#</td><td>#B20#</td></tr>"
-    String HTMLR21 = "<tr><td>#A21#</td><td>#B21#</td></tr>"; String HTMLR22 = "<tr><td>#A12#</td><td>#B22#</td></tr>"; String HTMLR23 = "<tr><td>#A23#</td><td>#B23#</td></tr>"; String HTMLR24 = "<tr><td>#A24#</td><td>#B24#</td></tr>"; String HTMLR25 = "<tr><td>#A25#</td><td>#B25#</td></tr>"
-    String HTMLR26 = "<tr><td>#A26#</td><td>#B26#</td></tr>"; String HTMLR27 = "<tr><td>#A17#</td><td>#B27#</td></tr>"; String HTMLR28 = "<tr><td>#A28#</td><td>#B28#</td></tr>"; String HTMLR29 = "<tr><td>#A29#</td><td>#B29#</td></tr>"; String HTMLR30 = "<tr><td>#A30#</td><td>#B30#</td></tr>"
+    String HTMLR21 = "<tr><td>#A21#</td><td>#B21#</td></tr>"; String HTMLR22 = "<tr><td>#A22#</td><td>#B22#</td></tr>"; String HTMLR23 = "<tr><td>#A23#</td><td>#B23#</td></tr>"; String HTMLR24 = "<tr><td>#A24#</td><td>#B24#</td></tr>"; String HTMLR25 = "<tr><td>#A25#</td><td>#B25#</td></tr>"
+    String HTMLR26 = "<tr><td>#A26#</td><td>#B26#</td></tr>"; String HTMLR27 = "<tr><td>#A27#</td><td>#B27#</td></tr>"; String HTMLR28 = "<tr><td>#A28#</td><td>#B28#</td></tr>"; String HTMLR29 = "<tr><td>#A29#</td><td>#B29#</td></tr>"; String HTMLR30 = "<tr><td>#A30#</td><td>#B30#</td></tr>"
     String HTMLTABLEEND = "</tbody></table>"
     String HTMLFOOTER = "<style>ft#id#{display:block;text-align:#fa#;font-size:#fs#%;color:#fc#;#footer#</style><ft#id#>#ft#</ft#id#>"        //Footer Style and Footer - May be omitted
     String HTMLDIVEND = "</div>"    
@@ -1441,24 +1447,24 @@ def highlightValue(attributeValue){
         //Note: I've tried using evaluate() to process all of this into a single loop and it works, but it's extremely slow.
         
         //Process the first threshold value.
-        if (myThresholdCount.toInteger() >= 1 && tcv1 != null && tcv1 != "") {
+        if ( myThresholdCount != null && myThresholdCount.toInteger() >= 1 && tcv1 != null && tcv1 != "") {
             switch(settings.top1) { 
                 case ["1", "<="]:
-                    if (attributeValue.toInteger() <= tcv1.toInteger() ) {
+                    if ( attributeValue != null && attributeValue.toInteger() <= tcv1.toInteger() ) {
                         if (isLogDebug) log.debug("highlightThreshold: A <= than condition was met.")
                         if (ttr1 != null && ttr1 != " " && ttr1 != "?") { returnValue = ttr1 ; myUnit = "" }
                         lastThreshold = 1
                     }
                     break
                 case ["2", "=="]:
-                    if (attributeValue.toInteger() == tcv1.toInteger() ) {
+                    if ( attributeValue != null && attributeValue.toInteger() == tcv1.toInteger() ) {
                         if (isLogDebug) log.debug("highlightThreshold: An == to condition was met.")
                         if (ttr1 != null && ttr1 != " " && ttr1 != "?") { returnValue = ttr1 ; myUnit = "" }
                         lastThreshold = 1
                     }
                     break
                 case ["3", ">="]:
-                    if (attributeValue.toInteger() >= tcv1.toInteger() ) {
+                    if ( attributeValue != null && attributeValue.toInteger() >= tcv1.toInteger() ) {
                         if (isLogDebug) log.debug("highlightThreshold: A >= than condition was met.")
                         if (ttr1 != null && ttr1 != " "  && ttr1 != "?") { returnValue = ttr1 ; myUnit = "" }
                         lastThreshold = 1
@@ -1467,10 +1473,10 @@ def highlightValue(attributeValue){
                 }
         }
         //Process the second threshold value.
-        if (myThresholdCount.toInteger() >= 2  && tcv2 != null && tcv2 != "") {
+        if ( myThresholdCount != null && myThresholdCount.toInteger() >= 2  && tcv2 != null && tcv2 != "") {
             switch(settings.top2) { 
                 case ["1", "<="]:
-                    if (attributeValue.toInteger() <= tcv2.toInteger() ) {
+                    if ( attributeValue != null && attributeValue.toInteger() <= tcv2.toInteger() ) {
                         if (isLogDebug) log.debug("highlightThreshold: A <= than condition was met.")
                         if (ttr2 != null && ttr2 != " " && ttr2 != "?") { returnValue = ttr2 ; myUnit = ""}
                         lastThreshold = 2
@@ -1478,14 +1484,14 @@ def highlightValue(attributeValue){
                     
                     break
                 case ["2", "=="]:
-                    if (attributeValue.toInteger() == tcv2.toInteger() ) {
+                    if ( attributeValue != null && attributeValue.toInteger() == tcv2.toInteger() ) {
                         if (isLogDebug) log.debug("highlightThreshold: An == to condition was met.")
                         if (ttr2 != null && ttr2 != " " && ttr2 != "?") { returnValue = ttr2 ; myUnit = ""}
                         lastThreshold = 2
                     }
                     break
                 case ["3", ">="]:
-                    if (attributeValue.toInteger() >= tcv2.toInteger() ) {
+                    if ( attributeValue != null && attributeValue.toInteger() >= tcv2.toInteger() ) {
                         if (isLogDebug) log.debug("highlightThreshold: A >= than condition was met.")
                         if (ttr2 != null && ttr2 != " " && ttr2 != "?") { returnValue = ttr2 ; myUnit = ""}
                         lastThreshold = 2
@@ -1495,24 +1501,24 @@ def highlightValue(attributeValue){
         }
         
         //Process the third threshold value.
-        if (myThresholdCount.toInteger() >= 3  && tcv3 != null && tcv3 != "") {
+        if ( myThresholdCount != null && myThresholdCount.toInteger() >= 3  && tcv3 != null && tcv3 != "") {
             switch(settings.top3) { 
                 case ["1", "<="]:
-                    if (attributeValue.toInteger() <= tcv3.toInteger() ) {
+                    if ( attributeValue != null && attributeValue.toInteger() <= tcv3.toInteger() ) {
                         if (isLogDebug) log.debug("highlightThreshold: A <= than condition was met.")
                         if (ttr3 != null && ttr3 != " " && ttr3 != "?") { returnValue = ttr3 ; myUnit = ""}
                         lastThreshold = 3
                     }
                     break
                 case ["2", "=="]:
-                    if (attributeValue.toInteger() == tcv3.toInteger() ) {
+                    if ( attributeValue != null && attributeValue.toInteger() == tcv3.toInteger() ) {
                         if (isLogDebug) log.debug("highlightThreshold: An == to condition was met.")
                         if (ttr3 != null && ttr3 != " " && ttr3 != "?") { returnValue = ttr3 ; myUnit = ""}
                         lastThreshold = 3
                     }
                     break
                 case ["3", ">="]:
-                    if (attributeValue.toInteger() >= tcv3.toInteger() ) {
+                    if ( attributeValue != null && attributeValue.toInteger() >= tcv3.toInteger() ) {
                         if (isLogDebug) log.debug("highlightThreshold: A >= than condition was met.")
                         if (ttr3 != null && ttr3 != " " && ttr3 != "?") { returnValue = ttr3 ; myUnit = ""}
                         lastThreshold = 3
@@ -1522,24 +1528,24 @@ def highlightValue(attributeValue){
         }
         
         //Process the fourth threshold value.
-        if (myThresholdCount.toInteger() >= 4  && tcv4 != null && tcv4 != "") {
+        if ( myThresholdCount != null && myThresholdCount.toInteger() >= 4  && tcv4 != null && tcv4 != "") {
             switch(settings.top4) { 
                 case ["1", "<="]:
-                    if (attributeValue.toInteger() <= tcv4.toInteger() ) {
+                    if ( attributeValue != null && attributeValue.toInteger() <= tcv4.toInteger() ) {
                         if (isLogDebug) log.debug("highlightThreshold: A <= than condition was met.")
                         if (ttr4 != null && ttr4 != " " && ttr4 != "?") { returnValue = ttr4 ; myUnit = ""}
                         lastThreshold = 4
                     }
                     break
                 case ["2", "=="]:
-                    if (attributeValue.toInteger() == tcv4.toInteger() ) {
+                    if ( attributeValue != null && attributeValue.toInteger() == tcv4.toInteger() ) {
                         if (isLogDebug) log.debug("highlightThreshold: An == to condition was met.")
                         if (ttr4 != null && ttr4 != " " && ttr4 != "?") { returnValue = ttr4 ; myUnit = ""}
                         lastThreshold = 4
                     }
                     break
                 case ["3", ">="]:
-                    if (attributeValue.toInteger() >= tcv4.toInteger() ) {
+                    if ( attributeValue != null && attributeValue.toInteger() >= tcv4.toInteger() ) {
                         if (isLogDebug) log.debug("highlightThreshold: A >= than condition was met.")
                         if (ttr4 != null && ttr4 != " " && ttr4 != "?") { returnValue = ttr4 ; myUnit = ""}
                         lastThreshold = 4
@@ -1549,24 +1555,24 @@ def highlightValue(attributeValue){
         }
         
         //Process the fifth threshold value.
-        if (myThresholdCount.toInteger() >= 5  && tcv5 != null && tcv5 != "") {
+        if ( myThresholdCount != null && myThresholdCount.toInteger() >= 5  && tcv5 != null && tcv5 != "") {
             switch(settings.top5) { 
                 case ["1", "<="]:
-                    if (attributeValue.toInteger() <= tcv5.toInteger() ) {
+                    if ( attributeValue != null && attributeValue.toInteger() <= tcv5.toInteger() ) {
                         if (isLogDebug) log.debug("highlightThreshold: A <= than condition was met.")
                         if (ttr5 != null && ttr5 != " " && ttr5 != "?") { returnValue = ttr5 ; myUnit = ""}
                         lastThreshold = 5 
                     }
                     break
                 case ["2", "=="]:
-                    if (attributeValue.toInteger() == tcv5.toInteger() ) {
+                    if ( attributeValue != null && attributeValue.toInteger() == tcv5.toInteger() ) {
                         if (isLogDebug) log.debug("highlightThreshold: An == to condition was met.")
                         if (ttr5 != null && ttr5 != " " && ttr5 != "?") { returnValue = ttr5 ; myUnit = ""}
                         lastThreshold = 5 
                     }
                     break
                 case ["3", ">="]:
-                    if (attributeValue.toInteger() >= tcv5.toInteger() ) {
+                    if ( attributeValue != null && attributeValue.toInteger() >= tcv5.toInteger() ) {
                         if (isLogDebug) log.debug("highlightThreshold: A >= than condition was met.")
                         if (ttr5 != null && ttr5 != " " && ttr5 != "?") { returnValue = ttr5 ; myUnit = ""}
                         lastThreshold = 5 
@@ -1667,7 +1673,7 @@ void publishSubscribe(){
     capabilities = capabilitiesInteger.clone() + capabilitiesFloat.clone() + capabilitiesString.clone()
     deviceType = capabilities.get(myCapability)
     if (myDeviceLimit.toInteger() >= 1 && myDeviceList ) {
-        subscribe(myDeviceList, deviceType.toLowerCase(), handler)
+        subscribe(myDeviceList, deviceType, handler)
         //Populate the Initial Table based on the present state.
         publishTable()
     }
