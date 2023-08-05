@@ -50,7 +50,7 @@ import groovy.transform.Field
 //These are unknown as to whether they report integer or float values.
 //capabilitiesUnknown = [" "carbonDioxideMeasurement":"carbonDioxide","pressureMeasurement":"pressure","relativeHumidityMeasurement":"humidity", "ultravioletIndex":"ultravioletIndex"]
 
-@Field static final Version = "<b>Tile Builder Attribute Monitor v1.3.1 (8/5/23)</b>"
+@Field static final Version = "<b>Tile Builder Activity Monitor v1.3.1 (8/5/23)</b>"
 //@Field static final moduleName = "Activity Monitor"
 @Field static final moduleName = "Attribute Monitor"
 
