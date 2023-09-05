@@ -48,14 +48,18 @@
 *                  Added logic to remove any settings related to Highlights from the Style string before saving it.
 *                  Added htmlScrubLevel for use with Multi-Attribute Monitor. Use with AM modules when they are revved.
 *				   Added rules() data lookup for Multi Attribute Monitor Support
-*  Gary Milne - July 17th, 2023 @ 5:03 PM
+*                  Donation minimum increased by $1 to $6 for additional module - MAM.
+*  Version 1.4.1 - Added error checking to getTileList() to prevent a crash if the storage device is unavailable\deleted.
+*                  Donation minimum increased by $1 to $7 for additional module - Rooms.
+*
+*  Gary Milne - August 28th, 2023 @ 8:06 PM
 *
 **/
 import groovy.transform.Field
-@Field static final Version = "<b>Tile Builder Parent v1.4.0 (7/17/23)</b>"
+@Field static final Version = "<b>Tile Builder Parent v1.4.1 (8/28/23)</b>"
 
 //These are the data for the pickers used on the child forms.
-def elementSize() { return ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20'] }
+def elementSize() { return ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '30', '40', '50', '75', '100'] }
 def textScale() { return ['50', '55', '60', '65', '70', '75', '80', '85', '90', '95', '100', '105', '110', '115', '120', '125', '130', '135', '140', '145', '150', '175', '200', '250', '300', '350', '400', '450', '500'] }
 def fontFamily() { return ['Arial', 'Arial Sans Serif', 'Arial Black', 'Brush Script MT', 'Comic Sans MS', 'Courier New', 'Garamond', 'Georgia', 'Hubitat', 'Lucida', 'Monospace', 'Palatino', 'Roboto', 'Tahoma', 'Times New Roman', 'Trebuchet MS', 'Verdana'] }
 def borderStyle() { return ['Dashed', 'Dotted', 'Double', 'Groove', 'Hidden', 'Inset', 'Outset', 'Ridge', 'Solid'] }
@@ -69,7 +73,7 @@ def truncateLength() { return [99:'No truncation.', 98:'First Space', 97:'Second
 def refreshInterval() { return [0:'Never', 1:'1 minute', 2:'2 minutes', 5:'5 minutes', 10:'10 minutes', 15:'15 minutes', 30:'30 minutes', 60:'1 hour', 120:'2 hours', 240:'4 hours', 480:'8 hours', 720:'12 hours', 1440:'24 hours'] }
 def pixels() { return ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '-1', '-2', '-3', '-4', '-5', '-6', '-7', '-8', '-9', '-10', '-11', '-12', '-13', '-14', '-15', '-16', '-17', '-18', '-19', '-20'] }
 def borderRadius() { return ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26', '27', '28', '29', '30'] }
-def baseFontSize() { return ['10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '22', '24', '26', '28', '30'] }
+def baseFontSize() { return ['10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '22', '24', '26', '28', '30', '32', '34', '36', '38', '40'] }
 def tilePreviewList() { return [1:'1 x 1', 2:'1 x 2', 3:'1 x 3', 4:'1 x 4', 5:'2 x 1', 6:'2 x 2', 7:'2 x 3', 8:'2 x 4'] }
 def storageDevices() { return ['Tile Builder Storage Device 1', 'Tile Builder Storage Device 2', 'Tile Builder Storage Device 3', 'Tile Builder Storage Device 4', 'Tile Builder Storage Device 5'] }
 def allTileList() { return [1:'tile1', 2:'tile2', 3:'tile3', 4:'tile4', 5:'tile5', 6:'tile6', 7:'tile7', 8:'tile8', 9:'tile9', 10:'tile10', 11:'tile11', 12:'tile12', 13:'tile13', 14:'tile14', 15:'tile15', 16:'tile16', 17:'tile17', 18:'tile18', 19:'tile19', 20:'tile20', 21:'tile21', 22:'tile22', 23:'tile23', 24:'tile24', 25:'tile25'] }
@@ -156,7 +160,9 @@ def mainPage() {
 			        myString += 'Click <a href="https://github.com/GaryMilne/Hubitat-TileBuilder/blob/main/Tile%20Builder%20Help.pdf" target="_blank">here</a> for more information.</br></br>'
             
                     myString = myString + "To purchase the license for <b>Tile Builder Advanced</b> you must do the following:<br>"
-                    myString += '<b>1)</b> Donate at least <b>\$6</b> to ongoing development via PayPal using this <a href="https://www.paypal.com/donate/?business=YEAFRPFHJCTFA&no_recurring=1&item_name=A+donation+of+\$5+or+more+grants+you+license+to+Tile+Builder+Advanced.+Please+leave+your+Hubitat+Community+ID.&currency_code=USD" target="_blank">link.</a></br>'			
+                    myString += '<b>1)</b> Donate at least <b>\$6</b> to ongoing development via PayPal using this <a href="https://www.paypal.com/donate/?business=YEAFRPFHJCTFA&no_recurring=1&item_name=A+donation+of+\$6+or+more+grants+you+license+to+Tile+Builder+Advanced.+Please+leave+your+Hubitat+Community+ID.&currency_code=USD" target="_blank">link.</a></br>'			
+                    //myString += '<b>1)</b> Donate at least <b>\$7</b> to ongoing development via PayPal using this <a href="https://www.paypal.com/donate/?business=YEAFRPFHJCTFA&no_recurring=0&item_name=A+donation+of+%247+or+more+grants+you+a+license+to+Tile+Builder+Advanced.+Please+leave+your+Hubitat+Community+ID.&currency_code=USD" target="_blank">link.</a></br>'			
+                    //New $7 page. https://www.paypal.com/donate/?business=YEAFRPFHJCTFA&no_recurring=0&item_name=A+donation+of+%247+or+more+grants+you+a+license+to+Tile+Builder+Advanced.+Please+leave+your+Hubitat+Community+ID.&currency_code=USD
                     myString += "<b>2)</b> Forward the paypal eMail receipt along with your ID (<b>" + getID() + "</b>) to <b>TileBuilderApp@gmail.com</b>. Please include your Hubitat community ID for future notifications.<br>"
                     myString += "<b>3)</b> Wait for license key eMail notification (usually within 24 hours).<br>"
                     myString += "<b>4)</b> Apply license key using the input box below.<br>"
@@ -237,12 +243,15 @@ def mainPage() {
                     //if (true ){
                     input(name: 'btnShowCreateEdit', type: 'button', title: 'Create\\Edit Tiles ▼', backgroundColor: 'navy', textColor: 'white', submitOnChange: true, width: 2, newLineBefore: true, newLineAfter: false)  //▼ ◀ ▶ ▲
                     myString = '<b>Tile Builder</b> has two types of tile:<br>'
-                    myString += '<b>1) Activity Monitor:</b> Tiles monitor a group of devices for activity\\inactivity using the <b>lastActivityAt</b> attribute. These tiles are refreshed at routine intervals.<br>'
-                    myString += '<b>2) Attribute Monitor:</b> Tiles are event driven and aggregate multiple devices\\single attribute into a single tile. For example, all room temps on a single tile.<br>'
+                    myString += '<b>1) Activity Monitor:</b> Generates a table containing data for activity\\inactivity using the <b>lastActivityAt</b> attribute. These tiles are refreshed at routine intervals.<br>'
+                    myString += '<b>2) Attribute Monitor:</b> Generates a table containing data for multiple devices\\single attribute into a single tile. For example, all room temps on a single tile.<br>'
+                    myString += '<b>3) Multi Attribute Monitor:</b> Generates a table containing data for multiple devices\\multiple attributes into a single tile. For example, indoor temperature, humidity, AC\\Heat status and weather in a single tile.<br>'
+                    myString += '<b>4) Rooms:</b> Generates a graphical layout of Icons representing devices within a room. Icons change appearance depending on the state of the device.<br>'
                     paragraph note('', myString)
                     app(name: 'TBPA', appName: 'Tile Builder - Activity Monitor', namespace: 'garyjmilne', title: 'Add New Activity Monitor', multiple: true)
                     app(name: 'TBPA', appName: 'Tile Builder - Attribute Monitor', namespace: 'garyjmilne', title: 'Add New Attribute Monitor', multiple: true)
                     app(name: 'TBPA', appName: 'Tile Builder - Multi Attribute Monitor', namespace: 'garyjmilne', title: 'Add New Multi Attribute Monitor', multiple: true)
+                    app(name: 'TBPA', appName: 'Tile Builder - Rooms', namespace: 'garyjmilne', title: 'Add New Room', multiple: true)
                     }
                 else {
                     input(name: 'btnShowCreateEdit', type: 'button', title: 'Create\\Edit Tiles ▶', backgroundColor: 'DodgerBlue', textColor: 'white', submitOnChange: true, width: 2, newLineBefore: true, newLineAfter: false)  //▼ ◀ ▶ ▲
@@ -590,8 +599,16 @@ def getTileList() {
     def tileList = []
     myDevice = getChildDevice(state.myStorageDeviceDNI)
     if (isLogDebug) log.debug("getTileList: myDevice: $myDevice")
-    if (state.isStorageConnected == true) tileList = myDevice.getTileList()
-    return tileList
+    
+    if (state.isStorageConnected == true) {    
+        try { tileList = myDevice.getTileList() }
+        catch (ex) {
+            log.error("getTileList(): Failed - Error connecting to $selectedDevice. Exception:$ex")
+            state.hasMessage = "<b>Exception encountered. Connection to '${selectedDevice}' failed.</b>"
+            state.isStorageConnected = false
+           }
+        }
+        return tileList
 }
 
 //Get a list of tiles from the device sorted by activity date.
@@ -600,8 +617,16 @@ def getTileListByActivity() {
     def tileList = []
     myDevice = getChildDevice(state.myStorageDeviceDNI)
     if (isLogDebug) log.debug("getTileList: myDevice: $myDevice")
-    if (state.isStorageConnected == true) tileList = myDevice.getTileListByActivity()
-    return tileList
+    
+    if (state.isStorageConnected == true) {
+        try { tileList = myDevice.getTileListByActivity() }
+        catch (ex) {
+            log.error("getTileListByActivity(): Failed - Error connecting to $selectedDevice. Exception:$ex")
+            state.hasMessage = "<b>Exception encountered. Connection to '${selectedDevice}' failed.</b>"
+            state.isStorageConnected = false
+           }
+        return tileList
+        }
 }
 
 //Delete a Tile Builder Tile on connected Storage Device.

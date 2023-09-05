@@ -1,9 +1,9 @@
 {
   "packageName": "Tile Builder",
   "author": "Gary J. Milne",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "minimumHEVersion": "2.3.4.132",
-  "dateReleased": "2023-07-17",
+  "dateReleased": "2023-09-05",
   "apps": [
     {
       "id": "82c4cdaf-cadc-48b0-afc9-624d53543498",
@@ -13,7 +13,7 @@
       "required": true,
       "oauth": false,
       "primary": false,
-      "version": "1.4.0"
+      "version": "1.4.1"
     },
     {
       "id": "ad995bcd-c6a8-4c48-b683-4f280aeff4f6",
@@ -43,7 +43,7 @@
       "required": false,
       "oauth": false,
       "primary": false,
-      "version": "1.0.0"
+      "version": "1.1.1"
     }
   ],
   "drivers": [
@@ -53,7 +53,7 @@
       "namespace": "garyjmilne",
       "location": "https://raw.githubusercontent.com/GaryMilne/Hubitat-TileBuilder/main/Tile_Builder_Storage_Driver.groovy",
       "required": true,
-      "version": "1.2.6"
+      "version": "1.3.2"
     }
   ]
 }

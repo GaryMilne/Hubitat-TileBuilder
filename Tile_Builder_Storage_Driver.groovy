@@ -30,7 +30,7 @@
 *  Version 1.2.0 - Revved version to match other components for initial public release.
 *  Version 1.2.1 - Changed allocation of classIdDigit to be automatic based upon the device network ID. 
 *  Version 1.2.6 - Version revved to match Tile Builder Modules.
-*  Version 1.3.0 - Added command to forcibly align Room tiles within the storage driver. Added som description to the Log Level.
+*  Version 1.3.0 - Added command to forcibly align Room tiles within the storage driver. Added some description to the Log Level.
 *  Version 1.3.1 - Added command to import Tile Builder Rooms CSS so that tiles render more fully.
 *  Version 1.3.2 - Added logic to ensure that the CSS to align the Rooms tiles is automatically applied by the first publication event.
 *  
