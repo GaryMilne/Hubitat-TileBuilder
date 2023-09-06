@@ -1198,7 +1198,7 @@ def mainPage() {
             }   
             
         //Now add a footer.
-        myDocURL = "<a href='https://github.com/GaryMilne/Hubitat-TileBuilder/blob/main/Tile%20Builder%20Help.pdf' target=_blank> <i><b>Tile Builder Help</b></i></a>"
+        myDocURL = "<a href='https://github.com/GaryMilne/Hubitat-TileBuilder/blob/main/Tile%20Builder%20Rooms%20Help.pdf' target=_blank> <i><b>Tile Builder Help</b></i></a>"
         myText = '<div style="display: flex; justify-content: space-between;">'
         myText += '<div style="text-align:left;font-weight:small;font-size:12px"> <b>Documentation:</b> ' + myDocURL + '</div>'
         myText += '<div style="text-align:center;font-weight:small;font-size:12px">Version: ' + Version + '</div>'
