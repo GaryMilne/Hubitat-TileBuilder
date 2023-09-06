@@ -51,12 +51,13 @@
 *                  Donation minimum increased by $1 to $6 for additional module - MAM.
 *  Version 1.4.1 - Added error checking to getTileList() to prevent a crash if the storage device is unavailable\deleted.
 *                  Donation minimum increased by $1 to $7 for additional module - Rooms.
+*  Version 1.4.2 - Added recovery options to messageList() for Rooms.
 *
-*  Gary Milne - August 28th, 2023 @ 8:06 PM
+*  Gary Milne - September 6th, 2023 @ 9:40 AM
 *
 **/
 import groovy.transform.Field
-@Field static final Version = "<b>Tile Builder Parent v1.4.1 (8/28/23)</b>"
+@Field static final Version = "<b>Tile Builder Parent v1.4.2 (9/6/23)</b>"
 
 //These are the data for the pickers used on the child forms.
 def elementSize() { return ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '30', '40', '50', '75', '100'] }
@@ -79,7 +80,7 @@ def storageDevices() { return ['Tile Builder Storage Device 1', 'Tile Builder St
 def allTileList() { return [1:'tile1', 2:'tile2', 3:'tile3', 4:'tile4', 5:'tile5', 6:'tile6', 7:'tile7', 8:'tile8', 9:'tile9', 10:'tile10', 11:'tile11', 12:'tile12', 13:'tile13', 14:'tile14', 15:'tile15', 16:'tile16', 17:'tile17', 18:'tile18', 19:'tile19', 20:'tile20', 21:'tile21', 22:'tile22', 23:'tile23', 24:'tile24', 25:'tile25'] }
 def filterList() { return [0:'No Filter', 1:'String ==', 2:'String !=', 3:'Numeric ==', 4:'Numeric <=', 5:'Numeric >='] }
 def overrideCategory() { return ['Animation', 'Background', 'Border', 'Cell Operations', 'Classes', 'Field Replacement', 'Font', 'Margin & Padding',  'Misc',  'Text', 'Transform'] }
-def messageList() { return ['clearOverrides','disableOverrides', 'disableKeywords', 'disableThresholds', 'clearDeviceList'] }
+def messageList() { return ['clearOverrides','disableOverrides', 'disableKeywords', 'disableThresholds', 'clearDeviceList','clearIconBarADevices','clearIconBarBDevices'] }
 def unitsMap() { return ['None', '°F', '_°F', '°C', '_°C', '%', '_%', 'A', '_A', 'V', '_V', 'W', '_W', 'kWh', '_kWH', 'K', '_K', 'ppm', '_ppm', 'lx', '_lx'] }
 def comparators() { return [0:'None', 1:'<=', 2:'==', 3:'>='] }
 def htmlScrubLevel(){ return [0:'Basic', 1:'Normal', 2:'Aggressive', 3:'Extreme'] }
@@ -155,13 +156,14 @@ def mainPage() {
             if (state.setupState == 99) {
                 if (state.showLicense == true) {
                     input(name: 'btnShowLicense', type: 'button', title: 'Licensing ▼', backgroundColor: 'navy', textColor: 'white', submitOnChange: true, width: 2, newLineBefore: true, newLineAfter: false)  //▼ ◀ ▶ ▲
+                    link1 = 'Click <a href="https://github.com/GaryMilne/Hubitat-TileBuilder/blob/main/Tile%20Builder%20Help.pdf" target="_blank">here</a> for more information.'
+                    link2 = 'Click <a href="https://github.com/GaryMilne/Hubitat-TileBuilder/blob/main/Tile%20Builder%20Rooms%20Help.pdf" target="_blank">here</a> for more information.'
                     myString = "<b>Tile Builder Standard is free</b> and provides a highly functional addition to the basic Hubitat Dashboard capabilities.<br>"
-                    myString += "<b>Tile Builder Advanced</b> adds Filters, Highlights, Styles and a range of powerful customizations options. "
-			        myString += 'Click <a href="https://github.com/GaryMilne/Hubitat-TileBuilder/blob/main/Tile%20Builder%20Help.pdf" target="_blank">here</a> for more information.</br></br>'
+                    myString += "<b>Tile Builder Advanced</b> adds Filters, Highlights, Styles and a range of powerful customizations options for Activity Monitor, Attribute Monitor and Multi-Attribute Monitor. " + link1 + " <br>"
+                    myString += "<b>Tile Builder Advanced</b> supports up to 10 devices plus 2 Icon Bars in Rooms. This is reduced to 3 devices and no Icon Bars for the Standard version. " + link2 + " <br><br>"
             
                     myString = myString + "To purchase the license for <b>Tile Builder Advanced</b> you must do the following:<br>"
-                    myString += '<b>1)</b> Donate at least <b>\$6</b> to ongoing development via PayPal using this <a href="https://www.paypal.com/donate/?business=YEAFRPFHJCTFA&no_recurring=1&item_name=A+donation+of+\$6+or+more+grants+you+license+to+Tile+Builder+Advanced.+Please+leave+your+Hubitat+Community+ID.&currency_code=USD" target="_blank">link.</a></br>'			
-                    //myString += '<b>1)</b> Donate at least <b>\$7</b> to ongoing development via PayPal using this <a href="https://www.paypal.com/donate/?business=YEAFRPFHJCTFA&no_recurring=0&item_name=A+donation+of+%247+or+more+grants+you+a+license+to+Tile+Builder+Advanced.+Please+leave+your+Hubitat+Community+ID.&currency_code=USD" target="_blank">link.</a></br>'			
+                    myString += '<b>1)</b> Donate at least <b>\$7</b> to ongoing development via PayPal using this <a href="https://www.paypal.com/donate/?business=YEAFRPFHJCTFA&no_recurring=0&item_name=A+donation+of+%247+or+more+grants+you+a+license+to+Tile+Builder+Advanced.+Please+leave+your+Hubitat+Community+ID.&currency_code=USD" target="_blank">link.</a></br>'			
                     //New $7 page. https://www.paypal.com/donate/?business=YEAFRPFHJCTFA&no_recurring=0&item_name=A+donation+of+%247+or+more+grants+you+a+license+to+Tile+Builder+Advanced.+Please+leave+your+Hubitat+Community+ID.&currency_code=USD
                     myString += "<b>2)</b> Forward the paypal eMail receipt along with your ID (<b>" + getID() + "</b>) to <b>TileBuilderApp@gmail.com</b>. Please include your Hubitat community ID for future notifications.<br>"
                     myString += "<b>3)</b> Wait for license key eMail notification (usually within 24 hours).<br>"
