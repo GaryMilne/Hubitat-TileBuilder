@@ -244,7 +244,7 @@ def mainPage() {
                 if (state.showCreateEdit == true) {
                     //if (true ){
                     input(name: 'btnShowCreateEdit', type: 'button', title: 'Create\\Edit Tiles ▼', backgroundColor: 'navy', textColor: 'white', submitOnChange: true, width: 2, newLineBefore: true, newLineAfter: false)  //▼ ◀ ▶ ▲
-                    myString = '<b>Tile Builder</b> has two types of tile:<br>'
+                    myString = '<b>Tile Builder</b> has four types of tile:<br>'
                     myString += '<b>1) Activity Monitor:</b> Generates a table containing data for activity\\inactivity using the <b>lastActivityAt</b> attribute. These tiles are refreshed at routine intervals.<br>'
                     myString += '<b>2) Attribute Monitor:</b> Generates a table containing data for multiple devices\\single attribute into a single tile. For example, all room temps on a single tile.<br>'
                     myString += '<b>3) Multi Attribute Monitor:</b> Generates a table containing data for multiple devices\\multiple attributes into a single tile. For example, indoor temperature, humidity, AC\\Heat status and weather in a single tile.<br>'
