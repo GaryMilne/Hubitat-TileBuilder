@@ -3,7 +3,7 @@
   "author": "Gary J. Milne",
   "version": "1.4.2",
   "minimumHEVersion": "2.3.4.132",
-  "dateReleased": "2023-09-06",
+  "dateReleased": "2023-09-15",
   "apps": [
     {
       "id": "82c4cdaf-cadc-48b0-afc9-624d53543498",
@@ -53,7 +53,7 @@
       "required": false,
       "oauth": false,
       "primary": false,
-      "version": "1.0.8"
+      "version": "1.0.9"
     }
   ],
   "drivers": [
