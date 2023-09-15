@@ -5,13 +5,14 @@
 *
 *  CHANGELOG
 *  Version 1.0.8 - Initial Public Release
+*  Version 1.0.9 - Fixed bug with Multi Value Text Match not being processed. Added a few Icons. Added a second Publish button for ease of access.
 *  
 *
 **/
 
 import groovy.transform.Field
 import java.text.DecimalFormat
-@Field static final Version = "<b>Tile Builder Rooms v1.0.8 (9/06/23 @ 09:46 AM)</b>"
+@Field static final Version = "<b>Tile Builder Rooms v1.0.9 (9/15/23 @ 08:50 AM)</b>"
 
 //Device Profiles
 def deviceProfiles() { return ["Alarm 🚨 (A1)", "Battery 🔋 (B1)", "Switch - Bulb 💡 (S1)","Switch - Plug 🔌 (S2)","Switch - Plug w/Power ⚡ (S3)","Switch - Fan ❌ (S4)", "Switch - User Defined #1 (S5)","Switch - User Defined #2 (S6)", "Contact - Door 🚪 (C1)" \
@@ -47,7 +48,7 @@ def carbonDioxideIcons() { return ["Breath 💨", "Cigarette 🚬", "Skull and C
 def climateIcons() { return ["Heating 🔥", "Cooling ❄️"] }
 def contactIcons() { return ["Door 🚪", "Door 2 ⎕", "Window 🪟", "Window 2 ⊟", "Open Right ◧", "Open Left ◨", "Opening Small ███", "Opening Medium █████", "Opening Large ███████", "Opening Extra Large █████████",\
                              , "Opening Small ╠═╣", "Opening Medium ╠═══╣", "Opening Large ╠═════╣", "Opening Extra Large ╠═══════╣", "Contact Open ◀|▶","Contact Closed ▶|◀"] }
-def deviceIcons() { return ["Repeater Ⓡ", "Laptop 💻", "Desktop 🖥️", "Hub ▃", "HUB ⒽⓊⒷ", "Keypad 📟", "Dimmer 🎚️", "Speaker - Mute 🔇", "Speaker - Low 🔉", "Speaker - High 🔊", "Camera SLR 📷", "Camera Movie 📹"] }
+def deviceIcons() { return ["Repeater Ⓡ", "Laptop 💻", "Desktop 🖥️", "Hub ▃", "HUB ⒽⓊⒷ", "Keypad 📟", "Dimmer 🎚️", "Speaker - Mute 🔇", "Speaker - Low 🔉", "Speaker - High 🔊", "Camera SLR 📷", "Camera Movie 📹", "WiFi 📶","Watch ⌚"] }
 def emojiNumberIcons() { return ["Number 0 0️⃣", "Number 1 1️⃣", "Number 2 2️⃣", "Number 3 3️⃣", "Number 4 4️⃣", "Number 5 5️⃣", "Number 6 6️⃣", "Number 7 7️⃣", "Number 8 8️⃣", "Number 9 9️⃣", "Number 10 🔟"] }
 def enclosedLetterIcons() { return [ "A Ⓐ", "B Ⓑ", "C Ⓒ", "D Ⓓ", "E Ⓔ", "F Ⓕ", "G Ⓖ", "H Ⓗ", "I Ⓘ", "J Ⓙ", "K Ⓚ", "L Ⓛ", "M Ⓜ", "N Ⓝ", "O Ⓞ", "P Ⓟ", "Q Ⓠ", "R Ⓡ", "S Ⓢ", "T Ⓣ", "U Ⓤ", "V Ⓥ", "W Ⓦ", "X Ⓧ", "Y Ⓨ", "Z Ⓩ" ] }
 def letterIcons() { return [ "Letter A", "Letter B", "Letter C", "Letter D", "Letter E", "Letter F", "Letter G", "Letter H", "Letter I", "Letter J", "Letter K", "Letter L", "Letter M", "Letter N", "Letter O", "Letter P", "Letter Q",\
@@ -79,7 +80,7 @@ def buttonIcons() { return ["Button White ⚪", "Button Red 🔴", "Button Green
 
 def spacer() { return ["*******************"] }
 
-def miscIcons() { return ["No Entry ⛔", "Stop Sign 🛑","Pushpin 📍", "Warning ⚠️", "Prohibited 🚫", "Exclamation❗", "Check Mark ✅", "Question Mark ❓", \
+def miscIcons() { return ["No Entry ⛔", "Stop Sign 🛑","Pushpin 📍", "Warning ⚠️", "Prohibited 🚫", "Exclamation❗", "Check Mark ✅", "Question Mark ❓", "Wine Glass 🍷", "Bottle 🍾", "Beer 🍺", \
                           "Mailxox Open - Flag Down 📭", "Mailbox Open with Mail - Flag Up 📬","Mailbox Closed - Flag Up 📫","Mailbox Closed - Flag Down 📪","Package 📦","Envelope ✉️",\
                            "Blank  ", "None  ", "Gear ⚙️", "Text 1 🔠", "Text 2 🔡", "Numbers 🔢", "Low ⬇️", "High ⬆️", "Magnify Right 🔎", "Magnify Left 🔍", "Person Running 🏃", "Person Standing 🧍", "On 🔛"] }
 
@@ -94,7 +95,7 @@ def elementSize() { return ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '1
 definition(
     name: "Tile Builder - Rooms",
     description: "Allows you to place icons within a room that change appearance with the device state.",
-    importUrl: "https://raw.githubusercontent.com/GaryMilne/Hubitat-TileBuilder/main/Rooms.groovy",
+    importUrl: "https://raw.githubusercontent.com/GaryMilne/Hubitat-TileBuilder/main/Tile_Builder_Rooms.groovy",
     namespace: "garyjmilne",
     author: "Gary J. Milne",
     category: "Utilities",
@@ -113,6 +114,8 @@ def mainPage() {
     if (state.initialized == null ) initialize()
     //Handles the initialization of new variables added after the original release.
     //updateVariables()
+    
+    if (previewBackgroundColor == null ) app.updateSetting("previewBackgroundColor", [value:iFrameColor, type:"color"])
     
     //Checks to see if there are any messages for this child app. This is used to recover broken child apps from certain error conditions
     myMessage = parent.messageForTile( app.label )
@@ -133,8 +136,8 @@ def mainPage() {
             if (parent.checkLicense() == true) { input (name: "myDeviceCount", title: "<b>How Many Devices\\Attributes?</b>", type: "enum", options: [0,1,2,3,4,5,6,7,8,9,10], submitOnChange:true, width:2, defaultValue: 0) }
             else { input (name: "myDeviceCount", title: "<b>How Many Devices\\Attributes?</b>", type: "enum", options: [0,1,2,3], submitOnChange:true, width:2, defaultValue: 0) }
             input (name: "showDeviceList", title: "<b>Show Only this Device?</b>", type: "enum", options: ["All","1","2","3","4","5","6","7","8","9","10"], submitOnChange:true, width:2, defaultValue: 0)
-
-			if ( (myDeviceCount != null && myDeviceCount.toInteger() >= 1) && ( showDeviceList == "All" || showDeviceList == "1") ) {
+            
+            if ( (myDeviceCount != null && myDeviceCount.toInteger() >= 1) && ( showDeviceList == "All" || showDeviceList == "1") ) {
 				input "myDevice1", "capability.*", title: "<b>Device 1</b>" , required: true, submitOnChange:true, width: 2, newLine: true
 				input "myAttribute1", "enum", title: "&nbsp<b>Attribute</b>", options: getAttributeList(myDevice1), submitOnChange:true, width: 2, required: true, newLine: false
 				input (name: "X1", type: "text", title: "<b>Position X%</b>", required: true, defaultValue: 10, submitOnChange:true, width: 1)
@@ -224,7 +227,7 @@ def mainPage() {
                 input (name: 'btnEditProfile10', type: 'button', title: "Select Device<hr>", backgroundColor: '#00a2ed', textColor: 'white', submitOnChange:true, width: 1)
                 }
             if (showDeviceList == "All" ) { input (name: 'btnClearLastDevice', type: 'button', title: "Clear This Device<hr>", backgroundColor: '#00a2ed', textColor: 'yellow', submitOnChange:true, width: 1)  }
-            input (name: 'btnShowAll', type: 'button', title: "Show All Devices<hr>", backgroundColor: '#00a2ed', textColor: 'white', submitOnChange:true, width: 2, newLineBefore:true)
+            input (name: 'btnShowAll', type: 'button', title: "Show All Devices<hr>", backgroundColor: '#00a2ed', textColor: 'white', submitOnChange:true, width: 2, newLineBefore:true, newLineAfter:true)
         }
         else input(name: 'btnShowDevices', type: 'button', title: 'Select Devices and Attributes ▶', backgroundColor: 'dodgerBlue', textColor: 'white', submitOnChange:true, width: 2)  //▼ ◀ ▶ ▲
 
@@ -236,12 +239,17 @@ def mainPage() {
         
         //Section for customization of the Room.
         input (name: "Refresh", type: "button", title: "Refresh Room", backgroundColor: "#27ae61", textColor: "white", submitOnChange:true, width: 1)
+        //Second Publish room button to ease scrolling with frequent publishing actions such as X Y positioning.
+        if (state.show.Publish == true) {
+            if ( state.HTMLsizes.Final < 1024 && settings.myTile != null && myTileName != null ) { input (name: "publishSubscribe", type: "button", title: "Publish and Subscribe", backgroundColor: "#27ae61", textColor: "white", submitOnChange:true, width: 2) }
+            else input (name: "cannotPublish", type: "button", title: "Publish and Subscribe", backgroundColor: "#D3D3D3", textColor: "black", submitOnChange: false, width: 2)
+            }
         
-		//Allows the user to remove informational lines.
+        //Allows the user to remove informational lines.
 		input (name: "isCompactDisplay", type: "bool", title: bold("Compact Display"), required: false, defaultValue: false, submitOnChange:true, width: 2 )
         input (name: "isShowPreview", type: "bool", title: bold("Show Room Preview"), required: false, defaultValue: true, submitOnChange:true, width: 2 )
         if (isShowPreview == true) {
-            input (name: "isContentOverflow", type: "enum", title: bold("Allow Content Overflow"), options: ["visible","hidden"], required: false, defaultValue: "visible",  submitOnChange:true, width: 2)
+            input (name: "isContentOverflow", type: "enum", title: bold("Allow Overflow"), options: ["visible","hidden"], required: false, defaultValue: "visible",  submitOnChange:true, width: 1)
 			input (name: "isShowGridLines", type: "enum", title: bold("Show Grid Lines"), options: ["Yes - White","Yes - Black", "No"], required: false, defaultValue: "No",  submitOnChange:true, width: 1)
             input (name: "isShowObjectBoundaries", type: "enum", title: bold("<b>Show Object Boundaries?</b>"), options: ["Yes","No"], required: false, defaultValue: "No",  submitOnChange:true, width: 2)
         }
@@ -1168,7 +1176,7 @@ def mainPage() {
             paragraph line(2)
 		    //Configure Data Refresh
             if (state.show.Publish == true) {
-                input(name: 'btnShowPublish', type: 'button', title: 'Publish Room ▼', backgroundColor: 'navy', textColor: 'white', submitOnChange:true, width: 3, newLineAfter: true)  //▼ ◀ ▶ ▲
+                input(name: 'btnShowPublish', type: 'button', title: 'Publish Room ▼', backgroundColor: 'navy', textColor: 'white', submitOnChange:true, width: 3, newLine: true, newLineAfter: true)  //▼ ◀ ▶ ▲
                 myText = "Here you will configure where the table will be stored. It will be refreshed any time a monitored attribute changes."
                 paragraph myText
                 input (name: "myTile", title: "<b>Which Tile Attribute will store the table?</b>", type: "enum", options: parent.allTileList(), required:true, submitOnChange:true, width:3, defaultValue: 0, newLine:false)
@@ -1196,9 +1204,9 @@ def mainPage() {
                 input (name: "isLogWarn",  type: "bool", title: "<b>Enable warn logging?</b>", defaultValue: true, submitOnChange:true, width: 2)
                 input (name: "isLogError",  type: "bool", title: "<b>Enable error logging?</b>", defaultValue: true, submitOnChange:true, width: 2)
             }   
-            
+
         //Now add a footer.
-        myDocURL = "<a href='https://github.com/GaryMilne/Hubitat-TileBuilder/blob/main/Tile%20Builder%20Rooms%20Help.pdf' target=_blank> <i><b>Tile Builder Help</b></i></a>"
+        myDocURL = "<a href='https://github.com/GaryMilne/Hubitat-TileBuilder/blob/main/Tile%20Builder%20Rooms%20Help.pdf' target=_blank> <i><b>Tile Builder Rooms Help</b></i></a>"
         myText = '<div style="display: flex; justify-content: space-between;">'
         myText += '<div style="text-align:left;font-weight:small;font-size:12px"> <b>Documentation:</b> ' + myDocURL + '</div>'
         myText += '<div style="text-align:center;font-weight:small;font-size:12px">Version: ' + Version + '</div>'
@@ -1459,6 +1467,14 @@ def assembleObjectClasses(key, state){
             log.error ("No logic was found to handle state: <b>${state}</b>")
             break
         }
+    }
+       
+    //This is the Multi Text Match
+    if (key == "E2"){
+        prefix = "D"
+        if ((state.toString() != null && compareTextAE2 != null ) && state.toString().toLowerCase() == compareTextAE2.toLowerCase()) { prefix = "A" }
+        if ((state.toString() != null && compareTextBE2 != null ) && state.toString().toLowerCase() == compareTextBE2.toLowerCase()) { prefix = "B" }
+        if ((state.toString() != null && compareTextCE2 != null ) && state.toString().toLowerCase() == compareTextCE2.toLowerCase()) { prefix = "C" }
     }
     
     //Handle Numeric Types Here
