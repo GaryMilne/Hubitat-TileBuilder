@@ -6,13 +6,14 @@
 *  CHANGELOG
 *  Version 1.0.8 - Initial Public Release
 *  Version 1.0.9 - Fixed bug with Multi Value Text Match not being processed. Added a few Icons. Added a second Publish button for ease of access.
+*  Version 1.1.0 - Added z-index control for whole tile. Added additional icons. Added standard CSS for handling background image tiles.
 *  
 *
 **/
 
 import groovy.transform.Field
 import java.text.DecimalFormat
-@Field static final Version = "<b>Tile Builder Rooms v1.0.9 (9/15/23 @ 08:50 AM)</b>"
+@Field static final Version = "<b>Tile Builder Rooms v1.1.0 (9/21/23 @ 08:24 PM)</b>"
 
 //Device Profiles
 def deviceProfiles() { return ["Alarm 🚨 (A1)", "Battery 🔋 (B1)", "Switch - Bulb 💡 (S1)","Switch - Plug 🔌 (S2)","Switch - Plug w/Power ⚡ (S3)","Switch - Fan ❌ (S4)", "Switch - User Defined #1 (S5)","Switch - User Defined #2 (S6)", "Contact - Door 🚪 (C1)" \
@@ -48,7 +49,8 @@ def carbonDioxideIcons() { return ["Breath 💨", "Cigarette 🚬", "Skull and C
 def climateIcons() { return ["Heating 🔥", "Cooling ❄️"] }
 def contactIcons() { return ["Door 🚪", "Door 2 ⎕", "Window 🪟", "Window 2 ⊟", "Open Right ◧", "Open Left ◨", "Opening Small ███", "Opening Medium █████", "Opening Large ███████", "Opening Extra Large █████████",\
                              , "Opening Small ╠═╣", "Opening Medium ╠═══╣", "Opening Large ╠═════╣", "Opening Extra Large ╠═══════╣", "Contact Open ◀|▶","Contact Closed ▶|◀"] }
-def deviceIcons() { return ["Repeater Ⓡ", "Laptop 💻", "Desktop 🖥️", "Hub ▃", "HUB ⒽⓊⒷ", "Keypad 📟", "Dimmer 🎚️", "Speaker - Mute 🔇", "Speaker - Low 🔉", "Speaker - High 🔊", "Camera SLR 📷", "Camera Movie 📹", "WiFi 📶","Watch ⌚"] }
+def deviceIcons() { return ["Repeater Ⓡ", "Laptop 💻", "Desktop 🖥️", "Hub ▃", "HUB ⒽⓊⒷ", "Keypad 📟", "Dimmer 🎚️", "Speaker - Mute 🔇", "Speaker - Low 🔉", "Speaker - High 🔊", "Camera SLR 📷", "Camera Movie 📹", "WiFi 📶","Watch ⌚",\
+                            "Joystick 🕹️", "CPU 🏾", "Floppy Disc 💾", "CD 1 💿", "CD 2 📀","CD 3 💽"] }
 def emojiNumberIcons() { return ["Number 0 0️⃣", "Number 1 1️⃣", "Number 2 2️⃣", "Number 3 3️⃣", "Number 4 4️⃣", "Number 5 5️⃣", "Number 6 6️⃣", "Number 7 7️⃣", "Number 8 8️⃣", "Number 9 9️⃣", "Number 10 🔟"] }
 def enclosedLetterIcons() { return [ "A Ⓐ", "B Ⓑ", "C Ⓒ", "D Ⓓ", "E Ⓔ", "F Ⓕ", "G Ⓖ", "H Ⓗ", "I Ⓘ", "J Ⓙ", "K Ⓚ", "L Ⓛ", "M Ⓜ", "N Ⓝ", "O Ⓞ", "P Ⓟ", "Q Ⓠ", "R Ⓡ", "S Ⓢ", "T Ⓣ", "U Ⓤ", "V Ⓥ", "W Ⓦ", "X Ⓧ", "Y Ⓨ", "Z Ⓩ" ] }
 def letterIcons() { return [ "Letter A", "Letter B", "Letter C", "Letter D", "Letter E", "Letter F", "Letter G", "Letter H", "Letter I", "Letter J", "Letter K", "Letter L", "Letter M", "Letter N", "Letter O", "Letter P", "Letter Q",\
@@ -80,8 +82,8 @@ def buttonIcons() { return ["Button White ⚪", "Button Red 🔴", "Button Green
 
 def spacer() { return ["*******************"] }
 
-def miscIcons() { return ["No Entry ⛔", "Stop Sign 🛑","Pushpin 📍", "Warning ⚠️", "Prohibited 🚫", "Exclamation❗", "Check Mark ✅", "Question Mark ❓", "Wine Glass 🍷", "Bottle 🍾", "Beer 🍺", \
-                          "Mailxox Open - Flag Down 📭", "Mailbox Open with Mail - Flag Up 📬","Mailbox Closed - Flag Up 📫","Mailbox Closed - Flag Down 📪","Package 📦","Envelope ✉️",\
+def miscIcons() { return ["No Entry ⛔", "Stop Sign 🛑","Pushpin 📍", "Warning ⚠️", "Prohibited 🚫", "Exclamation❗", "Check Mark ✅", "Question Mark ❓", "Wine Glass 🍷", "Bottle 🍾", "Beer 🍺", "Tag 🏷️", "Graph 1 📈", "Graph 2 📉", "Graph 3 📊", "Wrench 🔧", "Tools 🛠️", \
+                          "Mailxox Open - Flag Down 📭", "Mailbox Open with Mail - Flag Up 📬","Mailbox Closed - Flag Up 📫","Mailbox Closed - Flag Down 📪","Package 📦","Envelope ✉️", "Calendar 🗓️", "Clock 🕰️", "Hour glass ⏳", \
                            "Blank  ", "None  ", "Gear ⚙️", "Text 1 🔠", "Text 2 🔡", "Numbers 🔢", "Low ⬇️", "High ⬆️", "Magnify Right 🔎", "Magnify Left 🔍", "Person Running 🏃", "Person Standing 🧍", "On 🔛"] }
 
 def allIcons() { myIconList = ( alarmIcons() + batteryIcons() + buttonIcons() + carbonDioxideIcons() + climateIcons() + contactIcons() + deviceIcons() + emojiNumberIcons() + enclosedLetterIcons() + letterIcons() + enclosedNumberIcons() +fanIcons() + furnitureIcons() + geometricIcons() + healthIcons() + illuminanceIcons() + \
@@ -275,6 +277,7 @@ def mainPage() {
 			input (name: "roomYsize", type: "text", title: bold("Room Width (px)"), required:true, defaultValue: "300", submitOnChange:true, width: 2)
             input (name: "roomColor", type: "color", title: bold2("Room Color", roomColor ), defaultValue: "#333", width:2, submitOnChange:true)
 			input (name: "roomOpacity", type: "enum", title: bold("Room Opacity"), options: parent.opacity(), required: false, defaultValue: "1", submitOnChange:true, width: 2)
+            input (name: "roomZindex", type: "enum", title: bold("Room Layer (z-index)"), options: zIndex(), defaultValue: "0", submitOnChange:true, width: 2)
             input (name: "baseFontSize", type: "enum", title: bold("Base Font Size"), options: baseFontSizes(), required: true, defaultValue: "Auto", submitOnChange:true, width: 2, newLine:true)																																									 
 			input (name: "textColor", type: "color", title: bold2("Text Color", textColor ), required:true, width:2, submitOnChange:true)
             input (name: "textPadding", type: "enum", title: bold("Text Padding"), options: parent.elementSize(), required: false, defaultValue: "0", width:2, submitOnChange:true)
@@ -1583,8 +1586,8 @@ void makeHTML(data, int myRows){
     STYLE0 = "<head><style>" //.TB{font-family:Roboto}"
     STYLE1 = ".qqC,.qqC>*{position:absolute;transform:translate(-50%,-50%);#ShowObjectBoundaries#;color:" + convert2Hex(textColor) + "}"
     
-    if ( isDisplayWalls == true ) STYLE1 += ".qqB{width:100%;height:100%;border:${wallThickness}px ${wallStyle};border-color:" + convert2Hex(wallColor1) +  " " + convert2Hex(wallColor2) + ";background:${myRoomColor};overflow:${isContentOverflow};box-sizing:border-box}"
-    else STYLE1 += ".qqB{width:100%;height:100%;background:${myRoomColor};overflow:${isContentOverflow}}"
+    if ( isDisplayWalls == true ) STYLE1 += ".qqB{width:100%;height:100%;border:${wallThickness}px ${wallStyle};border-color:" + convert2Hex(wallColor1) +  " " + convert2Hex(wallColor2) + ";background:${myRoomColor};overflow:${isContentOverflow};box-sizing:border-box;z-index:${roomZindex}}"
+    else STYLE1 += ".qqB{width:100%;height:100%;background:${myRoomColor};overflow:${isContentOverflow};z-index:${roomZindex}}"
     
     def myIconBarClass = ""
     if (IconBarADeviceCount > 0) myIconBarClass = ".qqI{transform:none}"
@@ -2133,6 +2136,7 @@ def initialize(){
     app.updateSetting("baseFontSize", "Auto")
     app.updateSetting("textColor", [value:"#000000", type:"color"])
     app.updateSetting("textPadding", "3")
+    app.updateSetting("roomZindex", "0")
     
     //Title
     app.updateSetting("isTitle", true)
@@ -2364,6 +2368,10 @@ def getTileBuilderClasses(){
     
     classes += "/* Make sure the contents expand to fill the entire tile and eliminate the gaps between the tiles. If there are still gaps make sure setting Gridgap on Layout tab is set to a 0 between quotation marks! */ \n"
     classes += "[class*='tile-contents']{width:calc(100% - var(--myRoomGap) ) !important; height:calc(100% - var(--myRoomGap) ) !important}\n\n"
+    
+    classes += "/* Make sure the image tiles are configured correctly. The image fills the tile and the tiles are place in the far background. */ \n"
+    classes += ".tile.image .inset-auto img {object-fit:fill}\n"
+    classes += ".tile.image {background-color: rgba(128,128,128,0) !important; z-index:-3 !important}\n\n"
     
     classes += "/* Hide any classes using the 3d_rotation symbol/class and then append some visible text which has the effect of replacing it. 3d_rotation is the first in the picklist so it has been picked for convenience.*/ \n"
     classes += "[class*='3d_rotation']{visibility:hidden}\n"

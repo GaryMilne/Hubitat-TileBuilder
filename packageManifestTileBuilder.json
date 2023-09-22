@@ -3,10 +3,7 @@
   "author": "Gary J. Milne",
   "version": "1.4.2",
   "minimumHEVersion": "2.3.4.132",
-  "dateReleased": "2023-09-15",
-  "releaseNotes": "Minor bug fixes in support of Rooms release.",
-  "communityLink": "https://community.hubitat.com/t/release-tile-builder-build-beautiful-dashboards/118822",
-  "documentationLink": "https://github.com/GaryMilne/Hubitat-TileBuilder/blob/main/Tile%20Builder%20Help.pdf",
+  "dateReleased": "2023-09-21",
   "apps": [
     {
       "id": "82c4cdaf-cadc-48b0-afc9-624d53543498",
@@ -56,7 +53,7 @@
       "required": false,
       "oauth": false,
       "primary": false,
-      "version": "1.0.9"
+      "version": "1.1.0"
     }
   ],
   "drivers": [
