@@ -5,15 +5,13 @@
 *
 *  CHANGELOG
 *  Version 1.0.8 - Initial Public Release
-*  Version 1.0.9 - Fixed bug with Multi Value Text Match not being processed. Added a few Icons. Added a second Publish button for ease of access.
-*  Version 1.1.0 - Added z-index control for whole tile. Added additional icons. Added standard CSS for handling background image tiles.
 *  
 *
 **/
 
 import groovy.transform.Field
 import java.text.DecimalFormat
-@Field static final Version = "<b>Tile Builder Rooms v1.1.0 (9/21/23 @ 08:24 PM)</b>"
+@Field static final Version = "<b>Tile Builder Rooms v1.0.8 (9/06/23 @ 09:46 AM)</b>"
 
 //Device Profiles
 def deviceProfiles() { return ["Alarm 🚨 (A1)", "Battery 🔋 (B1)", "Switch - Bulb 💡 (S1)","Switch - Plug 🔌 (S2)","Switch - Plug w/Power ⚡ (S3)","Switch - Fan ❌ (S4)", "Switch - User Defined #1 (S5)","Switch - User Defined #2 (S6)", "Contact - Door 🚪 (C1)" \
@@ -49,8 +47,7 @@ def carbonDioxideIcons() { return ["Breath 💨", "Cigarette 🚬", "Skull and C
 def climateIcons() { return ["Heating 🔥", "Cooling ❄️"] }
 def contactIcons() { return ["Door 🚪", "Door 2 ⎕", "Window 🪟", "Window 2 ⊟", "Open Right ◧", "Open Left ◨", "Opening Small ███", "Opening Medium █████", "Opening Large ███████", "Opening Extra Large █████████",\
                              , "Opening Small ╠═╣", "Opening Medium ╠═══╣", "Opening Large ╠═════╣", "Opening Extra Large ╠═══════╣", "Contact Open ◀|▶","Contact Closed ▶|◀"] }
-def deviceIcons() { return ["Repeater Ⓡ", "Laptop 💻", "Desktop 🖥️", "Hub ▃", "HUB ⒽⓊⒷ", "Keypad 📟", "Dimmer 🎚️", "Speaker - Mute 🔇", "Speaker - Low 🔉", "Speaker - High 🔊", "Camera SLR 📷", "Camera Movie 📹", "WiFi 📶","Watch ⌚",\
-                            "Joystick 🕹️", "CPU 🏾", "Floppy Disc 💾", "CD 1 💿", "CD 2 📀","CD 3 💽"] }
+def deviceIcons() { return ["Repeater Ⓡ", "Laptop 💻", "Desktop 🖥️", "Hub ▃", "HUB ⒽⓊⒷ", "Keypad 📟", "Dimmer 🎚️", "Speaker - Mute 🔇", "Speaker - Low 🔉", "Speaker - High 🔊", "Camera SLR 📷", "Camera Movie 📹"] }
 def emojiNumberIcons() { return ["Number 0 0️⃣", "Number 1 1️⃣", "Number 2 2️⃣", "Number 3 3️⃣", "Number 4 4️⃣", "Number 5 5️⃣", "Number 6 6️⃣", "Number 7 7️⃣", "Number 8 8️⃣", "Number 9 9️⃣", "Number 10 🔟"] }
 def enclosedLetterIcons() { return [ "A Ⓐ", "B Ⓑ", "C Ⓒ", "D Ⓓ", "E Ⓔ", "F Ⓕ", "G Ⓖ", "H Ⓗ", "I Ⓘ", "J Ⓙ", "K Ⓚ", "L Ⓛ", "M Ⓜ", "N Ⓝ", "O Ⓞ", "P Ⓟ", "Q Ⓠ", "R Ⓡ", "S Ⓢ", "T Ⓣ", "U Ⓤ", "V Ⓥ", "W Ⓦ", "X Ⓧ", "Y Ⓨ", "Z Ⓩ" ] }
 def letterIcons() { return [ "Letter A", "Letter B", "Letter C", "Letter D", "Letter E", "Letter F", "Letter G", "Letter H", "Letter I", "Letter J", "Letter K", "Letter L", "Letter M", "Letter N", "Letter O", "Letter P", "Letter Q",\
@@ -80,10 +77,13 @@ def geometricIcons() { return ["Circle Hollow ◯", "Circle with Vertical Lines 
 def buttonIcons() { return ["Button White ⚪", "Button Red 🔴", "Button Green 🟢", "Button Orange 🟠", "Button Yellow 🟡", "Button Purple 🟣", "Button Brown 🟤", "Button Black ⚫", "Button White Square ⬜", "Button Blue Square 🟦",\
                             "Button Red Square 🟥", "Button Green Square 🟩", "Button Orange Square 🟧", "Button Yellow Square ", "Button Purple Square 🟪", "Button Brown Square 🟫", "Button Black Square ⬛"] }
 
+
+                               // ⊞ ⊟ ⊙ ⊗ ⊡ ⌸ ⎕ ✤ ✢ ✣ ✥  ✕ ✓ ✔ ✗ ✘ ⌻ ◣◥ ┗ 
+
 def spacer() { return ["*******************"] }
 
-def miscIcons() { return ["No Entry ⛔", "Stop Sign 🛑","Pushpin 📍", "Warning ⚠️", "Prohibited 🚫", "Exclamation❗", "Check Mark ✅", "Question Mark ❓", "Wine Glass 🍷", "Bottle 🍾", "Beer 🍺", "Tag 🏷️", "Graph 1 📈", "Graph 2 📉", "Graph 3 📊", "Wrench 🔧", "Tools 🛠️", \
-                          "Mailxox Open - Flag Down 📭", "Mailbox Open with Mail - Flag Up 📬","Mailbox Closed - Flag Up 📫","Mailbox Closed - Flag Down 📪","Package 📦","Envelope ✉️", "Calendar 🗓️", "Clock 🕰️", "Hour glass ⏳", \
+def miscIcons() { return ["No Entry ⛔", "Stop Sign 🛑","Pushpin 📍", "Warning ⚠️", "Prohibited 🚫", "Exclamation❗", "Check Mark ✅", "Question Mark ❓", \
+                          "Mailxox Open - Flag Down 📭", "Mailbox Open with Mail - Flag Up 📬","Mailbox Closed - Flag Up 📫","Mailbox Closed - Flag Down 📪","Package 📦","Envelope ✉️",\
                            "Blank  ", "None  ", "Gear ⚙️", "Text 1 🔠", "Text 2 🔡", "Numbers 🔢", "Low ⬇️", "High ⬆️", "Magnify Right 🔎", "Magnify Left 🔍", "Person Running 🏃", "Person Standing 🧍", "On 🔛"] }
 
 def allIcons() { myIconList = ( alarmIcons() + batteryIcons() + buttonIcons() + carbonDioxideIcons() + climateIcons() + contactIcons() + deviceIcons() + emojiNumberIcons() + enclosedLetterIcons() + letterIcons() + enclosedNumberIcons() +fanIcons() + furnitureIcons() + geometricIcons() + healthIcons() + illuminanceIcons() + \
@@ -117,8 +117,6 @@ def mainPage() {
     //Handles the initialization of new variables added after the original release.
     //updateVariables()
     
-    if (previewBackgroundColor == null ) app.updateSetting("previewBackgroundColor", [value:iFrameColor, type:"color"])
-    
     //Checks to see if there are any messages for this child app. This is used to recover broken child apps from certain error conditions
     myMessage = parent.messageForTile( app.label )
     if ( myMessage != "" ) supportFunction ( myMessage ) 
@@ -138,8 +136,8 @@ def mainPage() {
             if (parent.checkLicense() == true) { input (name: "myDeviceCount", title: "<b>How Many Devices\\Attributes?</b>", type: "enum", options: [0,1,2,3,4,5,6,7,8,9,10], submitOnChange:true, width:2, defaultValue: 0) }
             else { input (name: "myDeviceCount", title: "<b>How Many Devices\\Attributes?</b>", type: "enum", options: [0,1,2,3], submitOnChange:true, width:2, defaultValue: 0) }
             input (name: "showDeviceList", title: "<b>Show Only this Device?</b>", type: "enum", options: ["All","1","2","3","4","5","6","7","8","9","10"], submitOnChange:true, width:2, defaultValue: 0)
-            
-            if ( (myDeviceCount != null && myDeviceCount.toInteger() >= 1) && ( showDeviceList == "All" || showDeviceList == "1") ) {
+
+			if ( (myDeviceCount != null && myDeviceCount.toInteger() >= 1) && ( showDeviceList == "All" || showDeviceList == "1") ) {
 				input "myDevice1", "capability.*", title: "<b>Device 1</b>" , required: true, submitOnChange:true, width: 2, newLine: true
 				input "myAttribute1", "enum", title: "&nbsp<b>Attribute</b>", options: getAttributeList(myDevice1), submitOnChange:true, width: 2, required: true, newLine: false
 				input (name: "X1", type: "text", title: "<b>Position X%</b>", required: true, defaultValue: 10, submitOnChange:true, width: 1)
@@ -229,7 +227,7 @@ def mainPage() {
                 input (name: 'btnEditProfile10', type: 'button', title: "Select Device<hr>", backgroundColor: '#00a2ed', textColor: 'white', submitOnChange:true, width: 1)
                 }
             if (showDeviceList == "All" ) { input (name: 'btnClearLastDevice', type: 'button', title: "Clear This Device<hr>", backgroundColor: '#00a2ed', textColor: 'yellow', submitOnChange:true, width: 1)  }
-            input (name: 'btnShowAll', type: 'button', title: "Show All Devices<hr>", backgroundColor: '#00a2ed', textColor: 'white', submitOnChange:true, width: 2, newLineBefore:true, newLineAfter:true)
+            input (name: 'btnShowAll', type: 'button', title: "Show All Devices<hr>", backgroundColor: '#00a2ed', textColor: 'white', submitOnChange:true, width: 2, newLineBefore:true)
         }
         else input(name: 'btnShowDevices', type: 'button', title: 'Select Devices and Attributes ▶', backgroundColor: 'dodgerBlue', textColor: 'white', submitOnChange:true, width: 2)  //▼ ◀ ▶ ▲
 
@@ -241,17 +239,12 @@ def mainPage() {
         
         //Section for customization of the Room.
         input (name: "Refresh", type: "button", title: "Refresh Room", backgroundColor: "#27ae61", textColor: "white", submitOnChange:true, width: 1)
-        //Second Publish room button to ease scrolling with frequent publishing actions such as X Y positioning.
-        if (state.show.Publish == true) {
-            if ( state.HTMLsizes.Final < 1024 && settings.myTile != null && myTileName != null ) { input (name: "publishSubscribe", type: "button", title: "Publish and Subscribe", backgroundColor: "#27ae61", textColor: "white", submitOnChange:true, width: 2) }
-            else input (name: "cannotPublish", type: "button", title: "Publish and Subscribe", backgroundColor: "#D3D3D3", textColor: "black", submitOnChange: false, width: 2)
-            }
         
-        //Allows the user to remove informational lines.
+		//Allows the user to remove informational lines.
 		input (name: "isCompactDisplay", type: "bool", title: bold("Compact Display"), required: false, defaultValue: false, submitOnChange:true, width: 2 )
         input (name: "isShowPreview", type: "bool", title: bold("Show Room Preview"), required: false, defaultValue: true, submitOnChange:true, width: 2 )
         if (isShowPreview == true) {
-            input (name: "isContentOverflow", type: "enum", title: bold("Allow Overflow"), options: ["visible","hidden"], required: false, defaultValue: "visible",  submitOnChange:true, width: 1)
+            input (name: "isContentOverflow", type: "enum", title: bold("Allow Content Overflow"), options: ["visible","hidden"], required: false, defaultValue: "visible",  submitOnChange:true, width: 2)
 			input (name: "isShowGridLines", type: "enum", title: bold("Show Grid Lines"), options: ["Yes - White","Yes - Black", "No"], required: false, defaultValue: "No",  submitOnChange:true, width: 1)
             input (name: "isShowObjectBoundaries", type: "enum", title: bold("<b>Show Object Boundaries?</b>"), options: ["Yes","No"], required: false, defaultValue: "No",  submitOnChange:true, width: 2)
         }
@@ -277,7 +270,6 @@ def mainPage() {
 			input (name: "roomYsize", type: "text", title: bold("Room Width (px)"), required:true, defaultValue: "300", submitOnChange:true, width: 2)
             input (name: "roomColor", type: "color", title: bold2("Room Color", roomColor ), defaultValue: "#333", width:2, submitOnChange:true)
 			input (name: "roomOpacity", type: "enum", title: bold("Room Opacity"), options: parent.opacity(), required: false, defaultValue: "1", submitOnChange:true, width: 2)
-            input (name: "roomZindex", type: "enum", title: bold("Room Layer (z-index)"), options: zIndex(), defaultValue: "0", submitOnChange:true, width: 2)
             input (name: "baseFontSize", type: "enum", title: bold("Base Font Size"), options: baseFontSizes(), required: true, defaultValue: "Auto", submitOnChange:true, width: 2, newLine:true)																																									 
 			input (name: "textColor", type: "color", title: bold2("Text Color", textColor ), required:true, width:2, submitOnChange:true)
             input (name: "textPadding", type: "enum", title: bold("Text Padding"), options: parent.elementSize(), required: false, defaultValue: "0", width:2, submitOnChange:true)
@@ -1179,7 +1171,7 @@ def mainPage() {
             paragraph line(2)
 		    //Configure Data Refresh
             if (state.show.Publish == true) {
-                input(name: 'btnShowPublish', type: 'button', title: 'Publish Room ▼', backgroundColor: 'navy', textColor: 'white', submitOnChange:true, width: 3, newLine: true, newLineAfter: true)  //▼ ◀ ▶ ▲
+                input(name: 'btnShowPublish', type: 'button', title: 'Publish Room ▼', backgroundColor: 'navy', textColor: 'white', submitOnChange:true, width: 3, newLineAfter: true)  //▼ ◀ ▶ ▲
                 myText = "Here you will configure where the table will be stored. It will be refreshed any time a monitored attribute changes."
                 paragraph myText
                 input (name: "myTile", title: "<b>Which Tile Attribute will store the table?</b>", type: "enum", options: parent.allTileList(), required:true, submitOnChange:true, width:3, defaultValue: 0, newLine:false)
@@ -1207,9 +1199,9 @@ def mainPage() {
                 input (name: "isLogWarn",  type: "bool", title: "<b>Enable warn logging?</b>", defaultValue: true, submitOnChange:true, width: 2)
                 input (name: "isLogError",  type: "bool", title: "<b>Enable error logging?</b>", defaultValue: true, submitOnChange:true, width: 2)
             }   
-
+            
         //Now add a footer.
-        myDocURL = "<a href='https://github.com/GaryMilne/Hubitat-TileBuilder/blob/main/Tile%20Builder%20Rooms%20Help.pdf' target=_blank> <i><b>Tile Builder Rooms Help</b></i></a>"
+        myDocURL = "<a href='https://github.com/GaryMilne/Hubitat-TileBuilder/blob/main/Tile%20Builder%20Help.pdf' target=_blank> <i><b>Tile Builder Help</b></i></a>"
         myText = '<div style="display: flex; justify-content: space-between;">'
         myText += '<div style="text-align:left;font-weight:small;font-size:12px"> <b>Documentation:</b> ' + myDocURL + '</div>'
         myText += '<div style="text-align:center;font-weight:small;font-size:12px">Version: ' + Version + '</div>'
@@ -1471,14 +1463,6 @@ def assembleObjectClasses(key, state){
             break
         }
     }
-       
-    //This is the Multi Text Match
-    if (key == "E2"){
-        prefix = "D"
-        if ((state.toString() != null && compareTextAE2 != null ) && state.toString().toLowerCase() == compareTextAE2.toLowerCase()) { prefix = "A" }
-        if ((state.toString() != null && compareTextBE2 != null ) && state.toString().toLowerCase() == compareTextBE2.toLowerCase()) { prefix = "B" }
-        if ((state.toString() != null && compareTextCE2 != null ) && state.toString().toLowerCase() == compareTextCE2.toLowerCase()) { prefix = "C" }
-    }
     
     //Handle Numeric Types Here
     if (dataType == "Integer" || dataType == "Float"){
@@ -1586,8 +1570,8 @@ void makeHTML(data, int myRows){
     STYLE0 = "<head><style>" //.TB{font-family:Roboto}"
     STYLE1 = ".qqC,.qqC>*{position:absolute;transform:translate(-50%,-50%);#ShowObjectBoundaries#;color:" + convert2Hex(textColor) + "}"
     
-    if ( isDisplayWalls == true ) STYLE1 += ".qqB{width:100%;height:100%;border:${wallThickness}px ${wallStyle};border-color:" + convert2Hex(wallColor1) +  " " + convert2Hex(wallColor2) + ";background:${myRoomColor};overflow:${isContentOverflow};box-sizing:border-box;z-index:${roomZindex}}"
-    else STYLE1 += ".qqB{width:100%;height:100%;background:${myRoomColor};overflow:${isContentOverflow};z-index:${roomZindex}}"
+    if ( isDisplayWalls == true ) STYLE1 += ".qqB{width:100%;height:100%;border:${wallThickness}px ${wallStyle};border-color:" + convert2Hex(wallColor1) +  " " + convert2Hex(wallColor2) + ";background:${myRoomColor};overflow:${isContentOverflow};box-sizing:border-box}"
+    else STYLE1 += ".qqB{width:100%;height:100%;background:${myRoomColor};overflow:${isContentOverflow}}"
     
     def myIconBarClass = ""
     if (IconBarADeviceCount > 0) myIconBarClass = ".qqI{transform:none}"
@@ -2136,7 +2120,6 @@ def initialize(){
     app.updateSetting("baseFontSize", "Auto")
     app.updateSetting("textColor", [value:"#000000", type:"color"])
     app.updateSetting("textPadding", "3")
-    app.updateSetting("roomZindex", "0")
     
     //Title
     app.updateSetting("isTitle", true)
@@ -2368,10 +2351,6 @@ def getTileBuilderClasses(){
     
     classes += "/* Make sure the contents expand to fill the entire tile and eliminate the gaps between the tiles. If there are still gaps make sure setting Gridgap on Layout tab is set to a 0 between quotation marks! */ \n"
     classes += "[class*='tile-contents']{width:calc(100% - var(--myRoomGap) ) !important; height:calc(100% - var(--myRoomGap) ) !important}\n\n"
-    
-    classes += "/* Make sure the image tiles are configured correctly. The image fills the tile and the tiles are place in the far background. */ \n"
-    classes += ".tile.image .inset-auto img {object-fit:fill}\n"
-    classes += ".tile.image {background-color: rgba(128,128,128,0) !important; z-index:-3 !important}\n\n"
     
     classes += "/* Hide any classes using the 3d_rotation symbol/class and then append some visible text which has the effect of replacing it. 3d_rotation is the first in the picklist so it has been picked for convenience.*/ \n"
     classes += "[class*='3d_rotation']{visibility:hidden}\n"
