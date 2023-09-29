@@ -1,2 +1,7 @@
 # Hubitat-TileBuilder
-Current Version of Tile Builder is V1.3.0 released on June 4th 2023.
+Current Versions
+Tile Builder Parent: V1.4.2
+Tile Builder Attribute Monitor: V1.4.0
+Tile Builder Activity Monitor: V1.4.0
+Tile Builder Multi Attribute Monitor: V1.1.1
+Tile Builder Rooms: V1.1.0
