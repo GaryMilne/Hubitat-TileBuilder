@@ -1,6 +1,6 @@
 /**  Authors Notes:
 *  For more information on Activity Monitor & Attribute Monitor check out these resources.
-*  Original posting on Hubitat Community forum: https://community.hubitat.com/t/release-tile-builder-build-beautiful-tiles-of-tabular-data-for-your-dashboard/118822
+*  Original posting on Hubitat Community forum: https://community.hubitat.com/t/release-tile-builder-build-beautiful-dashboards/118822
 *  Tile Builder Documentation: https://github.com/GaryMilne/Hubitat-TileBuilder/blob/main/Tile%20Builder%20Help.pdf
 *
 *  CHANGELOG
@@ -31,8 +31,9 @@
 *  Version 1.3.0 - Multiple updates and fixes. Implements %value% macro, use search and replace strings vs just strip strings. Added button type to Activity Monitor list, added valve, healthStatus and variable types, added padding to floats, \
 *                  reduced floating point options to 0 or 1. Added opacity option to table background. Converted Thresholds to use numbered comparators. Changed storage of #top variables. Implemented supportFunction for child recovery.
 *  Version 1.3.1 - Added null checking to multiple lines to correct app errors, especially when picking "No Selection" which returns null. Fixed bug with substituting values for fields #22 and #27. Fixed bug when subscribing to camelCase attributes.
+*  Version 1.4.0 - Added improvements first introduced in Multi-Attribute Monitor such as improved compression. Added %time1% and %time2% for proper 24hr and 12hr times. Added selector for Device Naming. Added attribute "level". Updated Threshold operators and variables from using numbers 1-5 to 6-10.
 * 
-*  Gary Milne - Aug 5th, 2023
+*  Gary Milne - Sept 29th, 2023
 *
 *  This code is Activity Monitor and Attribute Monitor combined.
 *  The personality is dictated by @Field static moduleName a few lines ahead of this.
@@ -43,14 +44,14 @@
 **/
 
 import groovy.transform.Field
-//These are supported capabilities. Layout is "device.selector":"attribute".  Keeping them in 3 seperate maps makes it more readable and easier to identify the sort criteria.
-@Field static final capabilitiesInteger = ["airQuality":"airQualityIndex", "battery":"battery", "colorTemperature":"colorTemperature","illuminanceMeasurement":"illuminance","signalStrength":"rssi"]
+//These are supported capabilities. Layout is "device.selector":"attribute".  Keeping them in 3 separate maps makes it more readable and easier to identify the sort criteria.
+@Field static final capabilitiesInteger = ["airQuality":"airQualityIndex", "battery":"battery", "colorTemperature":"colorTemperature","illuminanceMeasurement":"illuminance", "signalStrength":"rssi", "switchLevel":"level"]
 @Field static final capabilitiesString = ["*":"variable", "carbonDioxideDetector":"carbonMonoxide", "contactSensor":"contact", "healthCheck":"healthStatus", "lock":"lock", "motionSensor":"motion", "presenceSensor":"presence", "smokeDetector":"smoke", "switch":"switch", "valve":"valve", "waterSensor":"water", "windowBlind":"windowBlind"]
 @Field static final capabilitiesFloat = ["currentMeter": "amperage", "energyMeter":"energy", "powerMeter":"power", "relativeHumidityMeasurement":"humidity", "temperatureMeasurement":"temperature","voltageMeasurement":"voltage"]
 //These are unknown as to whether they report integer or float values.
 //capabilitiesUnknown = [" "carbonDioxideMeasurement":"carbonDioxide","pressureMeasurement":"pressure","relativeHumidityMeasurement":"humidity", "ultravioletIndex":"ultravioletIndex"]
 
-@Field static final Version = "<b>Tile Builder Attribute Monitor v1.3.1 (8/5/23)</b>"
+@Field static final Version = "<b>Tile Builder Attribute Monitor v1.4.0 (9/29/23)</b>"
 //@Field static final moduleName = "Activity Monitor"
 @Field static final moduleName = "Attribute Monitor"
 
@@ -80,14 +81,12 @@ preferences {
 def mainPage() {
     //Basic initialization for the initial release
     if (state.initialized == null ) initialize()
+    
     //Handles the initialization of new variables added after the original release.
     updateVariables( )
     
-    //Legacy compatibility - remove line July 31st
-    if (state.show == null) state.show=[:]
-    
     //Checks to see if there are any messages for this child app. This is used to recover broken child apps from certain error conditions
-    //Although this function is complete I'm leaving it dormant for the present release - 1.3.0
+    //Although this function is complete I'm leaving it dormant for the present release - 1.4.0
     myMessage = parent.messageForTile( app.label )
     if ( myMessage != "" ) supportFunction ( myMessage )
     
@@ -101,9 +100,9 @@ def mainPage() {
         
     section{
         if (state.show.Devices == true) {
-        //paragraph buttonLink ("test", "test", 0)
+        //paragraph buttonLink ("test", "test", 0) //Used for temporary testing.
             if (moduleName == "Attribute Monitor"){
-                input(name: 'btnShowDevices', type: 'button', title: 'Select Attribute and Devices ▼', backgroundColor: 'navy', textColor: 'white', submitOnChange: true, width: 3, newLineAfter: true)  //▼ ◀ ▶ ▲
+                input(name: 'btnShowDevices', type: 'button', title: 'Select Device and Attributes ▼', backgroundColor: 'navy', textColor: 'white', submitOnChange: true, width: 3, newLineAfter: true)  //▼ ◀ ▶ ▲
                 capabilities = capabilitiesInteger.clone() + capabilitiesString.clone() + capabilitiesFloat.clone()
         
                 //This input device list the items by attribute name but actually returns the capability.
@@ -115,7 +114,7 @@ def mainPage() {
                 if (capabilitiesInteger.get(myCapability) != null) state.attributeType = "Integer"
                 if (capabilitiesFloat.get(myCapability) != null) state.attributeType = "Float"
                 if (capabilitiesString.get(myCapability) != null) state.attributeType = "String"
-                input "myDeviceList", "capability.$myCapability", title: "<b>Select Devices to Monitor</b>" , multiple: true, required: false, submitOnChange: true, width: 6
+                input "myDeviceList", "capability.$myCapability", title: "<b>Select Devices to Monitor</b>" , multiple: true, required: false, submitOnChange: true, width: 4
             }
         
             if (moduleName == "Activity Monitor"){
@@ -140,6 +139,7 @@ def mainPage() {
                 
             if (moduleName == "Activity Monitor") input (name: "inactivityThreshold", title: "<b>Inactivity threshold</b>", type: "enum", options: parent.inactivityTime(), submitOnChange:true, width:2, defaultValue: 24)
             input (name: "myDeviceLimit", title: "<b>Device Limit Threshold</b>", type: "enum", options: parent.deviceLimit(), submitOnChange:true, width:2, defaultValue: 20)
+            input (name: "myDeviceNaming", title: "<b>Device Naming Scheme</b>", type: "enum", options: ['Use Device Name', 'Use Device Label'], submitOnChange:true, width:2, defaultValue: "Use Device Label", newLine:false)    
             input (name: "myTruncateLength", title: "<b>Truncate Device Name</b>", type: "enum", options: parent.truncateLength(), submitOnChange:true, width:2, defaultValue: 20)
             input (name: "mySortOrder", title: "<b>Sort Order</b>", type: "enum", options: sortOrder(), submitOnChange:true, width:2, defaultValue: 1 )  //Sort alphabetically by device name
             if (moduleName == "Attribute Monitor") input (name: "myDecimalPlaces", title: "<b>Decimal Places</b>", type: "enum", options: [0,1], submitOnChange:true, width:2, defaultValue: 1)
@@ -233,7 +233,7 @@ def mainPage() {
                         input (name: "customHeight", type: "text", title: bold("Tile Height"), required:false, defaultValue: "190", submitOnChange: true, width: 1)
                     }
                     input (name: "iFrameColor", type: "color", title: bold2("Dashboard Color", iFrameColor ), required: false, defaultValue: "#000000", submitOnChange: true, width: 3)
-
+					
                     if (isCompactDisplay == false) {
                         paragraph line(1)
                         paragraph summary("General Notes", parent.generalNotes() )    
@@ -355,86 +355,99 @@ def mainPage() {
                 if (activeButton == 7){
                     if (isCompactDisplay == false) paragraph titleise("Highlights")
                     if (moduleName == "Attribute Monitor"){
-                        input (name: "myKeywordCount", title: "<b>How Many Keywords?</b>", type: "enum", options: [0,1,2,3,4,5], submitOnChange:true, width:2, defaultValue: 0)
-                        //Keywords
-                        if (myKeywordCount.toInteger() >= 1 ){
+                    //Keywords
+                    if (state.show.Keywords == true) {
+                        input(name: 'btnShowKeywords', type: 'button', title: 'Show Keywords ▼', backgroundColor: 'navy', textColor: 'white', submitOnChange: true, width: 3, newLine: true)  //▼ ◀ ▶ ▲
+                        input (name: "myKeywordCount", title: "<b>How Many Keywords?</b>", type: "enum", options: [0,1,2,3,4,5], submitOnChange:true, width:2, defaultValue: 0, newLine: true, newLineAfter:true)
+						
+						if (myKeywordCount.toInteger() >= 1 ){
                             input (name: "k1", type: "text", title: bold("Enter Keyword #1"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2, newLine:true)
                             input (name: "ktr1", type: "text", title: bold("Replacement Text #1"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2)
                             input (name: "hc1", type: "color", title: bold2("Highlight 1 Color", hc1), required: false, defaultValue: "#008000", submitOnChange: true, width: 2)    //Default as green shade
-                            input (name: "hts1", type: "enum", title: bold("Highlight 1 Text Scale"), options: parent.textScale(), required: false, submitOnChange: true, defaultValue: "125", width: 2)
+                            input (name: "hts1", type: "enum", title: bold("Highlight 1 Text Scale"), options: parent.textScale(), required: false, submitOnChange: true, defaultValue: "125", width: 2, newLineAfter:true)
                         }
                         
                         if (myKeywordCount.toInteger() >= 2 ){
                             input (name: "k2", type: "text", title: bold("Enter Keyword #2"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2, newLine:true)
                             input (name: "ktr2", type: "text", title: bold("Replacement Text #2"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2)
                             input (name: "hc2", type: "color", title: bold2("Highlight 2 Color", hc2), required: false, defaultValue: "#CA6F1E", submitOnChange: true, width: 2)    //Default as orange shade
-                            input (name: "hts2", type: "enum", title: bold("Highlight 2 Text Scale"), options: parent.textScale(), required: false, submitOnChange: true, defaultValue: "125", width: 2)
+                            input (name: "hts2", type: "enum", title: bold("Highlight 2 Text Scale"), options: parent.textScale(), required: false, submitOnChange: true, defaultValue: "125", width: 2, newLineAfter:true)
                         }
                         
                         if (myKeywordCount.toInteger() >= 3 ){
                             input (name: "k3", type: "text", title: bold("Enter Keyword #3"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2, newLine:true)
                             input (name: "ktr3", type: "text", title: bold("Replacement Text #3"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2)
                             input (name: "hc3", type: "color", title: bold2("Highlight 3 Color", hc3), required: false, defaultValue: "#00FF00", submitOnChange: true, width: 2)    //Default as red shade
-                            input (name: "hts3", type: "enum", title: bold("Highlight 3 Text Scale"), options: parent.textScale(), required: false, submitOnChange: true, defaultValue: "125", width: 2)
+                            input (name: "hts3", type: "enum", title: bold("Highlight 3 Text Scale"), options: parent.textScale(), required: false, submitOnChange: true, defaultValue: "125", width: 2, newLineAfter:true)
                         }
                         
                         if (myKeywordCount.toInteger() >= 4 ){
                             input (name: "k4", type: "text", title: bold("Enter Keyword #4"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2, newLine:true)
                             input (name: "ktr4", type: "text", title: bold("Replacement Text #4"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2)
                             input (name: "hc4", type: "color", title: bold2("Highlight 4 Color", hc4), required: false, defaultValue: "#0000FF", submitOnChange: true, width: 2)    //Default as blue shade
-                            input (name: "hts4", type: "enum", title: bold("Highlight 4 Text Scale"), options: parent.textScale(), required: false, submitOnChange: true, defaultValue: "125", width: 2)
+                            input (name: "hts4", type: "enum", title: bold("Highlight 4 Text Scale"), options: parent.textScale(), required: false, submitOnChange: true, defaultValue: "125", width: 2, newLineAfter:true)
                         }
                         
                         if (myKeywordCount.toInteger() >= 5 ){
                             input (name: "k5", type: "text", title: bold("Enter Keyword #5"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2, newLine:true)
                             input (name: "ktr5", type: "text", title: bold("Replacement Text #5"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2)
                             input (name: "hc5", type: "color", title: bold2("Highlight 5 Color", hc5), required: false, defaultValue: "#FF0000", submitOnChange: true, width: 2)    //Default as orange shade
-                            input (name: "hts5", type: "enum", title: bold("Highlight 5 Text Scale"), options: parent.textScale(), required: false, submitOnChange: true, defaultValue: "125", width: 2)
+                            input (name: "hts5", type: "enum", title: bold("Highlight 5 Text Scale"), options: parent.textScale(), required: false, submitOnChange: true, defaultValue: "125", width: 2, newLineAfter:true)
                         }
-                               
-                        //Thresholds
-                        input (name: "myThresholdCount", title: "<b>How Many Thresholds?</b>", type: "enum", options: [0,1,2,3,4,5], submitOnChange:true, width:2, defaultValue: 0, newLine: true)
+					}
+                    else input(name: 'btnShowKeywords', type: 'button', title: 'Show Keywords ▶', backgroundColor: 'dodgerBlue', textColor: 'white', submitOnChange: true, width: 3, newLineAfter: true)  //▼ ◀ ▶ ▲
+					
+                    //Thresholds
+					if (state.show.Thresholds == true) {
+                        input(name: 'btnShowThresholds', type: 'button', title: 'Show Thresholds ▼', backgroundColor: 'navy', textColor: 'white', submitOnChange: true, width: 3, newLine: true)  //▼ ◀ ▶ ▲
+                        input (name: "myThresholdCount", title: "<b>How Many Thresholds?</b>", type: "enum", options: [0,1,2,3,4,5], submitOnChange:true, width:2, defaultValue: 0, newLine: true, newLineAfter:true)
+                        
                         if (myThresholdCount.toInteger() >= 1 ){
-                            input (name: "top1", type: "enum", title: bold("Operator #1"), required: false, options: parent.comparators(), displayDuringSetup: true, defaultValue: 0, submitOnChange: true, width: 1, newLine: true)
-                            input (name: "tcv1", type: "number", title: bold("Comparison Value #1"), required: false, displayDuringSetup: true, defaultValue: 1, submitOnChange: true, width: 2)
-                            input (name: "ttr1", type: "text", title: bold("Replacement Text #1"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2)
-                            input (name: "hc1", type: "color", title: bold2("Highlight 1 Color", hc1), required: false, defaultValue: "#008000", submitOnChange: true, width: 2)    //Default as green shade
-                            input (name: "hts1", type: "enum", title: bold("Highlight 1 Text Scale"), options: parent.textScale(), required: false, submitOnChange: true, defaultValue: "125", width: 2)
+                            input (name: "top6", type: "enum", title: bold("Operator #6"), required: false, options: parent.comparators(), displayDuringSetup: true, defaultValue: 0, submitOnChange: true, width: 1, newLine: true)
+                            input (name: "tcv6", type: "number", title: bold("Comparison Value #6"), required: false, displayDuringSetup: true, defaultValue: 1, submitOnChange: true, width: 2)
+                            input (name: "ttr6", type: "text", title: bold("Replacement Text #6"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2)
+                            input (name: "hc6", type: "color", title: bold2("Highlight 6 Color", hc6), required: false, defaultValue: "#008000", submitOnChange: true, width: 2)    //Default as green shade
+                            input (name: "hts6", type: "enum", title: bold("Highlight 6 Text Scale"), options: parent.textScale(), required: false, submitOnChange: true, defaultValue: "125", width: 2, newLineAfter:true)
                         }
                         
                         if (myThresholdCount.toInteger() >= 2 ){
-                            input (name: "top2", type: "enum", title: bold("Operator #2"), required: false, options: parent.comparators(), displayDuringSetup: true, defaultValue: "None", submitOnChange: true, width: 1, newLine: true)
-                            input (name: "tcv2", type: "number", title: bold("Comparison Value #2"), required: false, displayDuringSetup: true, defaultValue: 1, submitOnChange: true, width: 2)
-                            input (name: "ttr2", type: "text", title: bold("Replacement Text #2"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2)
-                            input (name: "hc2", type: "color", title: bold2("Highlight 2 Color", hc2), required: false, defaultValue: "#CA6F1E", submitOnChange: true, width: 2)    //Default as orange shade
-                            input (name: "hts2", type: "enum", title: bold("Highlight 2 Text Scale"), options: parent.textScale(), required: false, submitOnChange: true, defaultValue: "125", width: 2)
+                            input (name: "top7", type: "enum", title: bold("Operator #7"), required: false, options: parent.comparators(), displayDuringSetup: true, defaultValue: "None", submitOnChange: true, width: 1, newLine: true)
+                            input (name: "tcv7", type: "number", title: bold("Comparison Value #7"), required: false, displayDuringSetup: true, defaultValue: 1, submitOnChange: true, width: 2)
+                            input (name: "ttr7", type: "text", title: bold("Replacement Text #7"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2)
+                            input (name: "hc7", type: "color", title: bold2("Highlight 7 Color", hc7), required: false, defaultValue: "#CA6F1E", submitOnChange: true, width: 2)    //Default as orange shade
+                            input (name: "hts7", type: "enum", title: bold("Highlight 7 Text Scale"), options: parent.textScale(), required: false, submitOnChange: true, defaultValue: "125", width: 2, newLineAfter:true)
                         }
                         if (myThresholdCount.toInteger() >= 3 ){
-                            input (name: "top3", type: "enum", title: bold("Operator #3"), required: false, options: parent.comparators(), displayDuringSetup: true, defaultValue: 0, submitOnChange: true, width: 1, newLine: true)
-                            input (name: "tcv3", type: "number", title: bold("Comparison Value #3"), required: false, displayDuringSetup: true, defaultValue: 1, submitOnChange: true, width: 2)
-                            input (name: "ttr3", type: "text", title: bold("Replacement Text #3"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2)
-                            input (name: "hc3", type: "color", title: bold2("Highlight 3 Color", hc3), required: false, defaultValue: "#00FF00", submitOnChange: true, width: 2)    //Default as red shade
-                            input (name: "hts3", type: "enum", title: bold("Highlight 3 Text Scale"), options: parent.textScale(), required: false, submitOnChange: true, defaultValue: "125", width: 2)
+                            input (name: "top8", type: "enum", title: bold("Operator #8"), required: false, options: parent.comparators(), displayDuringSetup: true, defaultValue: 0, submitOnChange: true, width: 1, newLine: true)
+                            input (name: "tcv8", type: "number", title: bold("Comparison Value #8"), required: false, displayDuringSetup: true, defaultValue: 1, submitOnChange: true, width: 2)
+                            input (name: "ttr8", type: "text", title: bold("Replacement Text #8"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2)
+                            input (name: "hc8", type: "color", title: bold2("Highlight 8 Color", hc8), required: false, defaultValue: "#00FF00", submitOnChange: true, width: 2)    //Default as red shade
+                            input (name: "hts8", type: "enum", title: bold("Highlight 3 Text Scale"), options: parent.textScale(), required: false, submitOnChange: true, defaultValue: "125", width: 2, newLineAfter:true)
                         }
                         if (myThresholdCount.toInteger() >= 4 ){
-                            input (name: "top4", type: "enum", title: bold("Operator #4"), required: false, options: parent.comparators(), displayDuringSetup: true, defaultValue: 0, submitOnChange: true, width: 1, newLine: true)
-                            input (name: "tcv4", type: "number", title: bold("Comparison Value #4"), required: false, displayDuringSetup: true, defaultValue: 1, submitOnChange: true, width: 2)
-                            input (name: "ttr4", type: "text", title: bold("Replacement Text #4"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2)
-                            input (name: "hc4", type: "color", title: bold2("Highlight 4 Color", hc4), required: false, defaultValue: "#0000FF", submitOnChange: true, width: 2)    //Default as blue shade
-                            input (name: "hts4", type: "enum", title: bold("Highlight 4 Text Scale"), options: parent.textScale(), required: false, submitOnChange: true, defaultValue: "125", width: 2)
+                            input (name: "top9", type: "enum", title: bold("Operator #9"), required: false, options: parent.comparators(), displayDuringSetup: true, defaultValue: 0, submitOnChange: true, width: 1, newLine: true)
+                            input (name: "tcv9", type: "number", title: bold("Comparison Value #9"), required: false, displayDuringSetup: true, defaultValue: 1, submitOnChange: true, width: 2)
+                            input (name: "ttr9", type: "text", title: bold("Replacement Text #9"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2)
+                            input (name: "hc9", type: "color", title: bold2("Highlight 9 Color", hc9), required: false, defaultValue: "#0000FF", submitOnChange: true, width: 2)    //Default as blue shade
+                            input (name: "hts9", type: "enum", title: bold("Highlight 9 Text Scale"), options: parent.textScale(), required: false, submitOnChange: true, defaultValue: "125", width: 2, newLineAfter:true)
                         }
                         if (myThresholdCount.toInteger() >= 5 ){
-                            input (name: "top5", type: "enum", title: bold("Operator #5"), required: false, options: parent.comparators(), displayDuringSetup: true, defaultValue: 0, submitOnChange: true, width: 1, newLine: true)
-                            input (name: "tcv5", type: "number", title: bold("Comparison Value #5"), required: false, displayDuringSetup: true, defaultValue: 1, submitOnChange: true, width: 2)
-                            input (name: "ttr5", type: "text", title: bold("Replacement Text #5"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2)
-                            input (name: "hc5", type: "color", title: bold2("Highlight 5 Color", hc5), required: false, defaultValue: "#FF0000", submitOnChange: true, width: 2)    //Default as orange shade
-                            input (name: "hts5", type: "enum", title: bold("Highlight 5 Text Scale"), options: parent.textScale(), required: false, submitOnChange: true, defaultValue: "125", width: 2)
+                            input (name: "top10", type: "enum", title: bold("Operator #10"), required: false, options: parent.comparators(), displayDuringSetup: true, defaultValue: 0, submitOnChange: true, width: 1, newLine: true)
+                            input (name: "tcv10", type: "number", title: bold("Comparison Value #10"), required: false, displayDuringSetup: true, defaultValue: 1, submitOnChange: true, width: 2)
+                            input (name: "ttr10", type: "text", title: bold("Replacement Text #10"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2)
+                            input (name: "hc10", type: "color", title: bold2("Highlight 10 Color", hc10), required: false, defaultValue: "#FF0000", submitOnChange: true, width: 2)    //Default as orange shade
+                            input (name: "hts10", type: "enum", title: bold("Highlight 10 Text Scale"), options: parent.textScale(), required: false, submitOnChange: true, defaultValue: "125", width: 2, newLineAfter:true)
                         }
                         
-                        if (isCompactDisplay == false) {
-                            paragraph line(1)
-                            paragraph summary("Highlight Notes", parent.highlightNotes() )    
-                        }
+                    }
+                    else input(name: 'btnShowThresholds', type: 'button', title: 'Show Thresholds ▶', backgroundColor: 'dodgerBlue', textColor: 'white', submitOnChange: true, width: 3, newLine: true, newLineAfter:true)  //▼ ◀ ▶ ▲
+                      
+                    input (name: "isHighlightDeviceNames", type: "bool", title: bold("Also Highlight Device Names"), required: false, multiple: false, defaultValue: false, submitOnChange: true, width: 2, newLine: true)
+                        
+                    if (isCompactDisplay == false) {
+                        paragraph line(1)
+                        paragraph summary("Highlight Notes", parent.highlightNotes() )    
+                    }
                     }
                 }
                 
@@ -491,10 +504,11 @@ def mainPage() {
                 //Advanced Settings
                 if (activeButton == 9){
                     if (isCompactDisplay == false) paragraph titleise("Advanced Settings")
-                    input (name: "isScrubHTML", type: "bool", title: "<b>Scrub HTML?</b>", required: false, multiple: false, defaultValue: true, submitOnChange: true, width: 2)
+                    input (name: "scrubHTMLlevel", type: "enum", title: bold("HTML Scrub Level"), options: parent.htmlScrubLevel(), required: false, submitOnChange: true, defaultValue: 1, width: 2, newLineAfter:false)
                     input (name: "isOverrides", type: "bool", title: "<b>Enable Overrides?</b>", required: false, multiple: false, defaultValue: false, submitOnChange: true, width: 2, newLineAfter: false)
                     input (name: "isShowSettings", type: "bool", title: "<b>Show Effective Settings?</b>", required: false, multiple: false, defaultValue: false, submitOnChange: true, width: 2)
                     input (name: "isShowHTML", type: "bool", title: "<b>Show Pseudo HTML?</b>", required: false, multiple: false, defaultValue: false, submitOnChange: true, width: 2)
+					
                     if (isOverrides == true) {
                         paragraph line(1) 
                         input (name: "overrideHelperCategory", type: "enum", title: bold("Override Category"), options: parent.overrideCategory().sort(), required: true, width:2, submitOnChange: true, newLineAfter: true)
@@ -560,12 +574,12 @@ def mainPage() {
             else {
                 if (isCompactDisplay == false) paragraph "<div style='color:#17202A;text-align:left; margin-top:0em; margin-bottom:0em ; font-size:18px'>Current HTML size is: <font color = 'red'><b>${state.HTMLsizes.Final}</b></font color = '#17202A'> bytes. Maximum size for dashboard tiles is <b>4,096</b> bytes.</div>"
             }
-
+            
             if (isCustomize == true){
                 overridesSize = 0
                 if (settings.overrides?.size() != null && isOverrides == true) overridesSize = settings.overrides?.size()
                 line = "<b>Enabled Features:</b> Comment:${isComment}, Frame:${isFrame}, Title:${isTitle}, Title Shadow:${isTitleShadow}, Headers:${isHeaders}, Border:${isBorder}, Alternate Rows:${isAlternateRows}, Footer:${isFooter}, Overrides:${isOverrides} ($overridesSize bytes)<br>"
-                line += "<b>Space Usage:</b> Comment: <b>${state.HTMLsizes.Comment}</b>  Head: <b>${state.HTMLsizes.Head}</b>  Body: <b>${state.HTMLsizes.Body}</b>  Interim Size: <b>${state.HTMLsizes.Interim}</b>  Final Size: <b>${state.HTMLsizes.Final}</b> (Scrubbing is:${isScrubHTML})<br>"
+				line += "<b>Space Usage:</b> Comment: <b>${state.HTMLsizes.Comment}</b>  Head: <b>${state.HTMLsizes.Head}</b>  Body: <b>${state.HTMLsizes.Body}</b>  Interim Size: <b>${state.HTMLsizes.Interim}</b>  Final Size: <b>${state.HTMLsizes.Final}</b> (Scrubbing level is: ${parent.htmlScrubLevel()[scrubHTMLlevel.toInteger()] })<br>"
                 //line += "<b>Devices:</b> Selected: <b>${myDeviceList?.size() || 0}</b>  Limit: <b>${myDeviceLimit?.toInteger() || 0}</b>"
                 line = line.replace("true","<b><font color = 'green'> On</font color = 'black'></b>")
                 line = line.replace("false","<b><font color = 'grey'> Off</font color = 'grey'></b>")
@@ -575,7 +589,7 @@ def mainPage() {
                     else paragraph note("Note: ","Current tile is greater than 1,024 bytes and will be stored as a file in File Manager and linked with an attribute.")
                 }
               }
-            }  //End of showDesign
+            }    //End of showDesign
             else input(name: 'btnShowDesign', type: 'button', title: 'Design Table ▶', backgroundColor: 'dodgerBlue', textColor: 'white', submitOnChange: true, width: 3, newLine: true)  //▼ ◀ ▶ ▲
             paragraph line(2)
             //End of Display Table
@@ -591,9 +605,13 @@ def mainPage() {
                 paragraph myText
                 input (name: "myTile", title: "<b>Which Tile Attribute will store the table?</b>", type: "enum", options: parent.allTileList(), required:true, submitOnChange:true, width:3, defaultValue: 0, newLine:false)
                 input (name:"myTileName", type:"text", title: "<b>Name this Tile</b>", submitOnChange: true, width:3, newLine:false, required: true)
-                input (name: "tilesAlreadyInUse", type: "enum", title: bold("For Reference Only: Tiles already in Use"), options: parent.getTileList(), required: false, defaultValue: "Tile List", submitOnChange: false, width: 3, newLineAfter:true)
+                input (name: "tilesAlreadyInUse", type: "enum", title: bold("For Reference Only: Tiles already in Use"), options: parent.getTileList(), required: false, defaultValue: "Tile List", submitOnChange: false, width: 3)
+                input (name: "eventTimeout", type: "enum", title: "<b>Event Timeout (millis)</b>", required: false, multiple: false, defaultValue: "2000", options: ["0","250","500","1000","2000","5000","10000"], submitOnChange: true, width: 2, newLineAfter:true)
                 if(myTileName) app.updateLabel(myTileName)
                 paragraph note("Note:", " The Tile Name given here will also be used as the name for this instance of " + moduleName + ".")
+				myText += "The <b>Event Timeout</b> period is how long Tile Builder will wait for subsequent events before publishing the table. Devices like Hub Info or Weather devices that do polling and bulk update multiple attributes and can create a lot of publishing requests in a short period of time.<br>"
+                myText += "In Attribute Monitor the default timeout period is 2000 millieseconds (2 seconds). If you want a more responsive table you can lower this number but it will increase the CPU utilization."
+                paragraph note("Notes: ", myText)																																																																														 
                 paragraph line(1)
             
                 if ( state.HTMLsizes.Final < 4096 && settings.myTile != null && myTileName != null ) {
@@ -602,8 +620,8 @@ def mainPage() {
                         input (name: "publish", type: "button", title: "Publish Table", backgroundColor: "#27ae61", textColor: "white", submitOnChange: true, width: 12)
                         }
                     if (moduleName == "Attribute Monitor") {
-                        input (name: "publishSubscribe", type: "button", title: "Publish and Subscribe", backgroundColor: "#27ae61", textColor: "white", submitOnChange: true, width: 12)
-                        input (name: "unsubscribe", type: "button", title: "Delete Subscription", backgroundColor: "#27ae61", textColor: "white", submitOnChange: true, width: 12)
+						input (name: "publishSubscribe", type: "button", title: "Publish and Subscribe", backgroundColor: "#27ae61", textColor: "white", submitOnChange: true, width: 12)
+						input (name: "unsubscribe", type: "button", title: "Delete Subscription", backgroundColor: "#27ae61", textColor: "white", submitOnChange: true, width: 12)
                         }
                     }
                 else input (name: "cannotPublish", type: "button", title: "Publish", backgroundColor: "#D3D3D3", textColor: "black", submitOnChange: false, width: 12)
@@ -613,12 +631,13 @@ def mainPage() {
                         
             input (name:"isMore", type: "bool", title: "More Options", required: false, multiple: false, defaultValue: false, submitOnChange: true, width: 2)
             if (isMore == true){
-                paragraph "<div style='background-color:#FFFFFF; height: 1px; margin-top:0em; margin-bottom:0em ; border: 0;'></div>"    //Horizontal Line
+                paragraph "<div style='background:#FFFFFF; height: 1px; margin-top:0em; margin-bottom:0em ; border: 0;'></div>"    //Horizontal Line
                 input (name: "isLogInfo",  type: "bool", title: "<b>Enable info logging?</b>", defaultValue: false, submitOnChange: true, width: 2)
                 input (name: "isLogTrace", type: "bool", title: "<b>Enable trace logging?</b>", defaultValue: false, submitOnChange: true, width: 2)
                 input (name: "isLogDebug", type: "bool", title: "<b>Enable debug logging?</b>", defaultValue: false, submitOnChange: true, width: 2)
                 input (name: "isLogWarn",  type: "bool", title: "<b>Enable warn logging?</b>", defaultValue: true, submitOnChange: true, width: 2)
                 input (name: "isLogError",  type: "bool", title: "<b>Enable error logging?</b>", defaultValue: true, submitOnChange: true, width: 2)
+				input (name: "isLogEvents",  type: "bool", title: "<b>Enable Device Event logging?</b>", defaultValue: false, submitOnChange: true, width: 2, newLine:true)
             }   
             
         //Now add a footer.
@@ -635,6 +654,15 @@ def mainPage() {
     }
 }
 
+//Get a list of supported attributes for a given device and return a sorted list.
+def getAttributeList (thisDevice){
+    if (thisDevice != null) {
+        myAttributesList = []
+        supportedAttributes = thisDevice.supportedAttributes
+        supportedAttributes.each { attributeName -> myAttributesList << attributeName.name }
+        return myAttributesList.unique().sort()
+     }
+}
 
 
 //************************************************************************************************************************************************************************************************************************
@@ -648,11 +676,10 @@ def mainPage() {
 //************************************************************************************************************************************************************************************************************************
 
 //This is the refresh routine called at the start of the page. This is used to replace\clear screen values that do not respond when performed in the mainline code.
-//This function is unique between Activity Monitor and Attribute Monitor
+//This function is unique between modules
 void refreshUIbefore(){
     //Get the oveerrides helper selection and look it up in the global map and use the key pair value as an on-screen guide.
     state.currentHelperCommand = ""
-    //app.updateSetting("top1", [value:"2", type:"enum"])
     
     overridesHelperMap = parent.getOverridesListAll()
     state.currentHelperCommand = overridesHelperMap.get(overridesHelperSelection)
@@ -667,14 +694,14 @@ void refreshUIbefore(){
             details = mySelectedTile.tokenize(":")
             if (details[0] != null ) {
                 tileName = details[0].trim()
-                if (isLogDebug==true) log.debug ("tileName is $tileName")
+                if (isLogDebug) log.debug ("tileName is $tileName")
                 //We use the tile number when publishing so we strip off the leading word tile.
                 tileNumber = tileName.replace("tile","")
                 app.updateSetting("myTile", tileNumber)
             }
             if (details[1] != null ) {
                 tileName = details[1].trim()
-                log.info ("tileName is $tileName")
+                if (isLogInfo) log.info ("tileName is $tileName")
                 app.updateSetting("myTileName", tileName)
             }
         }
@@ -718,10 +745,11 @@ void refreshUIafter(){
 
 //Runs recovery functions when messaged from the parent app. This can be used to recoved a child app when an error condidtion arises.
 def supportFunction ( supportCode ){
+    if ( supportCode.toString() == "0" ) return
     log.info "Running supportFunction with code: $supportCode" 
     switch(supportCode) {
-           case "clearOverrides":
-               app.updateSetting("overrides", [value:"", type:"textarea"])  //Works
+           case "disableOverrides":
+               app.updateSetting("isOverrides", false)
                break
             case "disableKeywords":
                 app.updateSetting("myKeywordCount", 0)
@@ -736,26 +764,41 @@ def supportFunction ( supportCode ){
 }
 
 //Generic placeholder for test function.
-void test(){   
-    log.info ("Updating")
-    app.updateSetting("overrides", [value: "Hello", type:"textarea"])
+void test(){
+    //top6 = top1
+    app.updateSetting("scrubHTMLlevel", [value:"1", type:"enum"])
+    app.updateSetting("myDeviceNaming", "Use Device Label")
+    if (myKeywordCount > 0) state.show.Keywords = true
+    if (myThresholdCount > 0) state.show.Thresholds = true
 }
 
 //This is the standard button handler that receives the click of any button control.
 def appButtonHandler(btn) {    
     switch(btn) {
+		case 'btnShowReport':
+            if (state.show.Report == true) state.show.Report = false
+            else state.show.Report = true
+            break
+		case 'btnShowFilter':
+            if (state.show.Filter == true) state.show.Filter = false
+            else state.show.Filter = true
+            break
         case 'btnShowDevices':
             if (state.show.Devices == true) state.show.Devices = false
             else state.show.Devices = true
             break
-        case 'btnShowReport':
-            if (state.show.Report == true) state.show.Report = false
-            else state.show.Report = true
+        case 'btnShowKeywords':
+            if (state.show.Keywords == true) state.show.Keywords = false
+            else state.show.Keywords = true
             break
-        case 'btnShowFilter':
-            if (state.show.Filter == true) state.show.Filter = false
-            else state.show.Filter = true
+        case 'btnShowThresholds':
+            if (state.show.Thresholds == true) state.show.Thresholds = false
+            else state.show.Thresholds = true
             break
+		case 'btnShowFormatRules':
+            if (state.show.FormatRules == true) state.show.FormatRules = false
+            else state.show.FormatRules = true
+            break	
         case 'btnShowDesign':
             if (state.show.Design == true) state.show.Design = false
             else state.show.Design = true
@@ -879,31 +922,37 @@ def getOverrideCommands(myCategory){
         case "Animation":
             overridesHelperMap = parent.getOverrideAnimationList()
             break
-        case "Field Replacement":
-            overridesHelperMap = parent.getOverrideFieldReplacementList()
-            break
-        case "Text":
-            overridesHelperMap = parent.getOverrideTextList()
-            break
-        case "Border":
-            overridesHelperMap = parent.getOverrideBorderList()
-            break
         case "Background":
             overridesHelperMap = parent.getOverrideBackgroundList()
             break
-        case "Classes":
+		case "Border":
+            overridesHelperMap = parent.getOverrideBorderList()
+            break
+		case "Classes":
             overridesHelperMap = parent.getOverrideClassList()
+            break
+        case "Cell Operations":
+            overridesHelperMap = parent.getOverrideCellOperationsList()
+            break
+        case "Field Replacement":
+            overridesHelperMap = parent.getOverrideFieldReplacementList()
+            break
+        case "Font":
+            overridesHelperMap = parent.getOverrideFontList()
             break
         case "Margin & Padding":
             overridesHelperMap = parent.getOverrideMarginPaddingList()
             break
-        case "Transform":
-            overridesHelperMap = parent.getOverrideTransformList()
-            break
         case "Misc":
             overridesHelperMap = parent.getOverrideMiscList()
             break
-    }
+        case "Text":
+            overridesHelperMap = parent.getOverrideTextList()
+            break
+        case "Transform":
+            overridesHelperMap = parent.getOverrideTransformList()
+            break
+	}
 
     overridesHelperMap.each { 
         key = it.key.toString()
@@ -929,10 +978,14 @@ def getDeviceMapActMon(){
         
     def now = new Date()
     myDevices.each { 
+        deviceName = ""
         lastActivity = it.getLastActivity()
-        deviceName = it.toString()
-        if (isLogDebug) log.debug("getDeviceMapActMon: deviceName is: $deviceName, it is: $it, and lastActivity is: $lastActivity")
-                
+        myDeviceLabel = it.toString() 
+        myDeviceName = "${it.getName().toString()}"
+        if (isLogDebug) log.debug("getDeviceMapActMon: deviceName is: $myDeviceName, it is: $it, deviceLabel is: $myDeviceLabel and lastActivity is: $lastActivity")
+        if (myDeviceNaming == "Use Device Label") deviceName = myDeviceLabel
+        if (myDeviceNaming == "Use Device Name") deviceName = myDeviceName
+
         //Handle any null values.
         if (myReplaceText1 == null || myReplaceText1 == "?" ) myReplaceText1 = ""
         if (myReplaceText2 == null || myReplaceText2 == "?" ) myReplaceText2 = ""
@@ -1002,7 +1055,6 @@ def getDeviceMapActMon(){
 //Returns a map of device activity using the parameters provided by the selection boxes.
 //This function is used exclusively by Attribute Monitor
 def getDeviceMapAttrMon(){
-    
     if (isLogTrace) log.trace("getDeviceMapAttrMon: Entering.")
     def myMap = [:] //["My Fake":"not present"]    
         
@@ -1011,8 +1063,13 @@ def getDeviceMapAttrMon(){
         
     //Go through each of the results in the result set.
     myDeviceList.each { it ->
-        //log.info("1) getDeviceMapAttrMon: it is: $it.")
-        deviceName = it.toString()
+        deviceName = ""
+        myDeviceLabel = it.toString() 
+        myDeviceName = "${it.getName().toString()}"
+        if (isLogDebug) log.debug("getDeviceMapAttrMon: deviceName is: $myDeviceName, deviceLabel is: $myDeviceLabel")
+        
+        if (myDeviceNaming == "Use Device Label") deviceName = myDeviceLabel
+        if (myDeviceNaming == "Use Device Name") deviceName = myDeviceName
         
         //Handle any null values.
         if (myReplaceText1 == null || myReplaceText1 == "?" ) myReplaceText1 = ""
@@ -1084,7 +1141,7 @@ def getDeviceMapAttrMon(){
             }
         //If it's not going to be filtered
         else {
-            //log.info("Not filtering")
+            if (isLogInfo) log.info("Not filtering")
             if (dataType == "Float") {
 			    try {
 					float myFloat = myVal.toFloat()
@@ -1242,21 +1299,28 @@ void makeHTML(data, int myRows){
     
     //Configure all of the HTML template lines.
     String HTMLCOMMENT = "<!--#comment#-->"
-    String HTMLSTYLE1 = "<head><style>#class# #class1# #class2# #class3# #class4# #class5# #iFrame1#table.#id#{border-collapse:#bm#;width:#tw#%;height:#th#%;margin:Auto;font-family:#tff#;background-color:#tbc#;#table#;}"    //Table Style - Always included.  
-    String HTMLSTYLE2 = ".#id# tr{color:#rtc#;text-align:#rta#;#row#}.#id# td{background-color:#rbc#;font-size:#rts#%;padding:#rp#px;#data#}</style>"    //End of the Table Style block - Always included.
+    String HTMLSTYLE1 = "<head>#head#<style>#class# #class1# #class2# #class3# #class4# #class5# #iFrame1#table.#id#{border-collapse:#bm#;width:#tw#%;height:#th#%;margin:Auto;font-family:#tff#;background:#tbc#;#table#;}"    //Table Style - Always included.  
+	String HTMLSTYLE2 = ".#id# tr{color:#rtc#;text-align:#rta#;#row#}.#id# td{background:#rbc#;font-size:#rts#%;padding:#rp#px;#data#}</style>"    //End of the Table Style block - Always included.
+    //String HTMLSTYLE2 = ".#id# tr{color:#rtc#;text-align:#rta#;#row#}.#id# td{font-size:#rts#%;padding:#rp#px;#data#}</style>"    //End of the Table Style block - Always included.
     String HTMLBORDERSTYLE = "<style>.#id# th,.#id# td{border:#bs# #bw#px #bc#;padding:#bp#px;border-radius:#br#px;#border#}</style>"    //End of the Table Style block. Sets border style for TD and TH elements. - Always included.
     String HTMLTITLESTYLE = "<style>ti#id#{display:block;color:#tc#;font-size:#ts#%;font-family:#tff#;text-align:#ta#;#titleShadow#;padding:#tp#px;#title#}</style>"        //This is the row for the Title Style - May be omitted.
     String HTMLHEADERSTYLE = "<style>.#id# th{background:#hbc#;color:#htc#;text-align:#hta#;font-size:#hts#%;padding:#hp#px;#header#}</style>"        //This is the row for Header Style - Will be ommitted 
-    String HTMLARSTYLE = "<style>.#id# tr:nth-child(even){color:#ratc#;background-color:#rabc#;#alternaterow#;}</style>"                            //This is the row for Alternating Row Style - May be omitted.
+    String HTMLARSTYLE = "<style>.#id# tr:nth-child(even){color:#ratc#;background:#rabc#;#alternaterow#;}</style>"                            //This is the row for Alternating Row Style - May be omitted.
+    String HTMLFOOTERSTYLE = "<style>ft#id#{display:block;text-align:#fa#;font-size:#fs#%;color:#fc#}</style>"                                //Footer Style - May be omitted
     String HTMLHIGHLIGHT1STYLE = "<style>h#id#1{color:#hc1#;font-size:#hts1#%;#high1#}</style>"                                                        //Highlighting Styles - May be ommitted.
     String HTMLHIGHLIGHT2STYLE = "<style>h#id#2{color:#hc2#;font-size:#hts2#%;#high2#}</style>"                                                        //Highlighting Styles - May be ommitted.
     String HTMLHIGHLIGHT3STYLE = "<style>h#id#3{color:#hc3#;font-size:#hts3#%;#high3#}</style>"                                                        //Highlighting Styles - May be ommitted.
     String HTMLHIGHLIGHT4STYLE = "<style>h#id#4{color:#hc4#;font-size:#hts4#%;#high4#}</style>"                                                        //Highlighting Styles - May be ommitted.
     String HTMLHIGHLIGHT5STYLE = "<style>h#id#5{color:#hc5#;font-size:#hts5#%;#high5#}</style>"                                                        //Highlighting Styles - May be ommitted.
-    String HTMLDIVSTYLE = "<style>div.#id#{height:auto;background-color:#fbc#;padding:20px;#frame#}</style>"                                                        //Div container - May be ommitted.
-    String HTMLDIVSTART = "<div class=#id#>"                                                                                                        //Div class - May be ommitted. 
-    String HTMLTITLE = "<ti#id#>#tt#</ti#id#>"                                                                                                        //This is the row for the Title - May be omitted.
-    String HTMLTABLESTART = "</head><body><table class=#id#>"                                                                                        //Start of the Table - always present.
+    String HTMLHIGHLIGHT6STYLE = "<style>h#id#6{color:#hc6#;font-size:#hts6#%;#high6#}</style>"                                                        //Highlighting Styles - May be ommitted.
+    String HTMLHIGHLIGHT7STYLE = "<style>h#id#7{color:#hc7#;font-size:#hts7#%;#high7#}</style>"                                                        //Highlighting Styles - May be ommitted.
+    String HTMLHIGHLIGHT8STYLE = "<style>h#id#8{color:#hc8#;font-size:#hts8#%;#high8#}</style>"                                                        //Highlighting Styles - May be ommitted.
+    String HTMLHIGHLIGHT9STYLE = "<style>h#id#9{color:#hc9#;font-size:#hts9#%;#high9#}</style>"                                                        //Highlighting Styles - May be ommitted.
+    String HTMLHIGHLIGHT10STYLE = "<style>h#id#10{color:#hc10#;font-size:#hts10#%;#high10#}</style>"                                                   //Highlighting Styles - May be ommitted.
+    String HTMLDIVSTYLE = "<style>div.#id#{height:auto;background:#fbc#;padding:20px;#frame#}</style>"                                                 //Div container - May be ommitted.
+    String HTMLDIVSTART = "<div class=#id#>"                                                                                                           //Div class - May be ommitted. 
+    String HTMLTITLE = "<ti#id#>#tt#</ti#id#>"                                                                                                         //This is the row for the Title - May be omitted.
+    String HTMLTABLESTART = "</head><body><table class=#id#>"                                                                                          //Start of the Table - always present.
     String HTMLR0 = ""
     if (isMergeHeaders == true) HTMLR0 = "<tr><th colspan=2>#A00#</th></tr>"                                                                        //This is the row for Single Column Headers - May be omitted.
     else HTMLR0 = "<tr><th>#A00#</th><th>#B00#</th></tr>"                                                                                            //This is the row for Dual Column Header - May be omitted.
@@ -1268,7 +1332,7 @@ void makeHTML(data, int myRows){
     String HTMLR21 = "<tr><td>#A21#</td><td>#B21#</td></tr>"; String HTMLR22 = "<tr><td>#A22#</td><td>#B22#</td></tr>"; String HTMLR23 = "<tr><td>#A23#</td><td>#B23#</td></tr>"; String HTMLR24 = "<tr><td>#A24#</td><td>#B24#</td></tr>"; String HTMLR25 = "<tr><td>#A25#</td><td>#B25#</td></tr>"
     String HTMLR26 = "<tr><td>#A26#</td><td>#B26#</td></tr>"; String HTMLR27 = "<tr><td>#A27#</td><td>#B27#</td></tr>"; String HTMLR28 = "<tr><td>#A28#</td><td>#B28#</td></tr>"; String HTMLR29 = "<tr><td>#A29#</td><td>#B29#</td></tr>"; String HTMLR30 = "<tr><td>#A30#</td><td>#B30#</td></tr>"
     String HTMLTABLEEND = "</tbody></table>"
-    String HTMLFOOTER = "<style>ft#id#{display:block;text-align:#fa#;font-size:#fs#%;color:#fc#;#footer#</style><ft#id#>#ft#</ft#id#>"        //Footer Style and Footer - May be omitted
+    String HTMLFOOTER = "<ft#id#>#ft#</ft#id#>"        //Footer - May be omitted
     String HTMLDIVEND = "</div>"    
     String HTMLEND = "</body>" 
     
@@ -1276,25 +1340,31 @@ void makeHTML(data, int myRows){
     if (isComment == false) HTMLCOMMENT = ""
     if (isFrame == false) { HTMLDIVSTYLE = "" ; HTMLDIVSTART = "" ; HTMLDIVEND = "" }
     if (isAlternateRows == false) HTMLARSTYLE = ""
-    if ( (myKeywordCount.toInteger() == null || myKeywordCount.toInteger() < 1 ) && ( myThresholdCount.toInteger() == null || myThresholdCount.toInteger() < 1 ) ) HTMLHIGHLIGHT1STYLE = ""
-    if ( (myKeywordCount.toInteger() == null || myKeywordCount.toInteger() < 2 ) && ( myThresholdCount.toInteger() == null || myThresholdCount.toInteger() < 2 ) ) HTMLHIGHLIGHT2STYLE = ""
-    if ( (myKeywordCount.toInteger() == null || myKeywordCount.toInteger() < 3 ) && ( myThresholdCount.toInteger() == null || myThresholdCount.toInteger() < 3 ) ) HTMLHIGHLIGHT3STYLE = ""
-    if ( (myKeywordCount.toInteger() == null || myKeywordCount.toInteger() < 4 ) && ( myThresholdCount.toInteger() == null || myThresholdCount.toInteger() < 4 ) ) HTMLHIGHLIGHT4STYLE = ""
-    if ( (myKeywordCount.toInteger() == null || myKeywordCount.toInteger() < 5 ) && ( myThresholdCount.toInteger() == null || myThresholdCount.toInteger() < 5 ) ) HTMLHIGHLIGHT5STYLE = ""
+    if ( (myKeywordCount.toInteger() == null || myKeywordCount.toInteger() < 1 ) ) HTMLHIGHLIGHT1STYLE = ""
+    if ( (myKeywordCount.toInteger() == null || myKeywordCount.toInteger() < 2 ) ) HTMLHIGHLIGHT2STYLE = ""
+    if ( (myKeywordCount.toInteger() == null || myKeywordCount.toInteger() < 3 ) ) HTMLHIGHLIGHT3STYLE = ""
+    if ( (myKeywordCount.toInteger() == null || myKeywordCount.toInteger() < 4 ) ) HTMLHIGHLIGHT4STYLE = ""
+    if ( (myKeywordCount.toInteger() == null || myKeywordCount.toInteger() < 5 ) ) HTMLHIGHLIGHT5STYLE = ""
     
-    if (isFooter == false) HTMLFOOTER = ""
+    if ( (myThresholdCount.toInteger() == null || myThresholdCount.toInteger() < 1 ) ) HTMLHIGHLIGHT6STYLE = ""
+    if ( (myThresholdCount.toInteger() == null || myThresholdCount.toInteger() < 2 ) ) HTMLHIGHLIGHT7STYLE = ""
+    if ( (myThresholdCount.toInteger() == null || myThresholdCount.toInteger() < 3 ) ) HTMLHIGHLIGHT8STYLE = ""
+    if ( (myThresholdCount.toInteger() == null || myThresholdCount.toInteger() < 4 ) ) HTMLHIGHLIGHT9STYLE = ""
+    if ( (myThresholdCount.toInteger() == null || myThresholdCount.toInteger() < 5 ) ) HTMLHIGHLIGHT10STYLE = ""
+    
+    if (isFooter == false) { HTMLFOOTERSTYLE = "" ; HTMLFOOTER = "" }
     if (isBorder == false) HTMLBORDERSTYLE = ""
     if (isTitle == false) { HTMLTITLESTYLE = "" ; HTMLTITLE = "" }
-    if (isHeaders == false) { HTMLHEADERSTYLE = "" ; HTMLR0 = "" }
-        
+    if (isHeaders == false) { HTMLHEADERSTYLE = "" ; HTMLR0 = "" }    
     //Nullify the non-populated. We allow it to go to zero rows so that by turning off headers we can have just a Title field for a decorative tile.
     if (myRows <= 29) HTMLR30 = "" ; if (myRows <= 28) HTMLR29 = ""; if (myRows <= 27) HTMLR28 = ""; if (myRows <= 26) HTMLR27 = ""; if (myRows <= 25) HTMLR26 = ""; if (myRows <= 24) HTMLR25 = ""; if (myRows <= 23) HTMLR24 = ""; if (myRows <= 22) HTMLR23 = ""; if (myRows <= 21) HTMLR22 = ""; if (myRows <= 20) HTMLR21 = "";
     if (myRows <= 19) HTMLR20 = "" ; if (myRows <= 18) HTMLR19 = ""; if (myRows <= 17) HTMLR18 = ""; if (myRows <= 16) HTMLR17 = ""; if (myRows <= 15) HTMLR16 = ""; if (myRows <= 14) HTMLR15 = ""; if (myRows <= 13) HTMLR14 = ""; if (myRows <= 12) HTMLR13 = ""; if (myRows <= 11) HTMLR12 = ""; if (myRows <= 10) HTMLR11 = "";
     if (myRows <= 9) HTMLR10 = ""; if (myRows <= 8) HTMLR9 = ""; if (myRows <= 7) HTMLR8 = ""; if (myRows <= 6) HTMLR7 = ""; if (myRows <= 5) HTMLR6 = ""; if (myRows <= 4) HTMLR5 = ""; if (myRows <= 3) HTMLR4 = ""; if (myRows <= 2) HTMLR3 = ""; if (myRows <= 1) HTMLR2 = ""; if (myRows <= 0) HTMLR1 = ""
     
     //Now build the final HTML TEMPLATE string
-    def interimHTML = HTMLCOMMENT + HTMLSTYLE1 + HTMLSTYLE2 + HTMLDIVSTYLE + HTMLBORDERSTYLE + HTMLTITLESTYLE + HTMLHEADERSTYLE + HTMLARSTYLE  + HTMLHIGHLIGHT1STYLE + HTMLHIGHLIGHT2STYLE + HTMLHIGHLIGHT3STYLE + HTMLHIGHLIGHT4STYLE + HTMLHIGHLIGHT5STYLE + HTMLDIVSTART + HTMLTITLE + HTMLTABLESTART + HTMLR0 + HTMLTBODY 
-    interimHTML += HTMLR1 + HTMLR2 + HTMLR3 + HTMLR4 + HTMLR5 + HTMLR6 + HTMLR7 + HTMLR8 + HTMLR9 + HTMLR10 + HTMLR11 + HTMLR12 + HTMLR13 + HTMLR14 + HTMLR15 + HTMLR16 + HTMLR17 + HTMLR18 + HTMLR19 + HTMLR20 + HTMLR21 + HTMLR22 + HTMLR23 + HTMLR24 + HTMLR25 + HTMLR26 + HTMLR27 + HTMLR28 + HTMLR29 + HTMLR30 
+    def interimHTML = HTMLCOMMENT + HTMLSTYLE1 + HTMLSTYLE2 + HTMLDIVSTYLE + HTMLBORDERSTYLE + HTMLTITLESTYLE + HTMLHEADERSTYLE + HTMLARSTYLE  + HTMLFOOTERSTYLE + HTMLHIGHLIGHT1STYLE + HTMLHIGHLIGHT2STYLE + HTMLHIGHLIGHT3STYLE + HTMLHIGHLIGHT4STYLE + HTMLHIGHLIGHT5STYLE 
+    interimHTML += HTMLHIGHLIGHT6STYLE + HTMLHIGHLIGHT7STYLE + HTMLHIGHLIGHT8STYLE + HTMLHIGHLIGHT9STYLE + HTMLHIGHLIGHT10STYLE + HTMLDIVSTART + HTMLTITLE + HTMLTABLESTART + HTMLR0 + HTMLTBODY 
+	interimHTML += HTMLR1 + HTMLR2 + HTMLR3 + HTMLR4 + HTMLR5 + HTMLR6 + HTMLR7 + HTMLR8 + HTMLR9 + HTMLR10 + HTMLR11 + HTMLR12 + HTMLR13 + HTMLR14 + HTMLR15 + HTMLR16 + HTMLR17 + HTMLR18 + HTMLR19 + HTMLR20 + HTMLR21 + HTMLR22 + HTMLR23 + HTMLR24 + HTMLR25 + HTMLR26 + HTMLR27 + HTMLR28 + HTMLR29 + HTMLR30 																												 
     interimHTML += HTMLTABLEEND + HTMLFOOTER + HTMLDIVEND + HTMLEND
     if (isLogDebug) log.debug ("HTML Template is: ${interimHTML}")
             
@@ -1305,26 +1375,54 @@ void makeHTML(data, int myRows){
     myTemplate = myTemplate + data
     if (isLogDebug) log.debug ("makeHTML: myTemplate with Row Data is : ${myTemplate}")
 
-    //Now replace the placeholders with the actual data values for cells B1 - B30.
-    myTemplate.each{ it, value ->        
+    //We use this index to track the row number which allows us to reference the array of variables i.e. device1, attribute1 etc.
+    myIndex = 0
+
+    //Now replace the placeholders with the actual data values for cells B1 - B10.
+    myTemplate.each{ it, value -> 
+        if (isLogInfo) log.info ("1)  Iterating myTemplate: it is: $it and value is: $value")
         //If it's the data colum it will begin #B1# thru #B30#. Anything else we can just process normally.
-            if ( beginsWith(it, "#B") == false || beginsWith(it,"#B00") == true ){
-                interimHTML = interimHTML.replaceAll(it, value.toString())    
+        if ( beginsWith(it, "#B") == false || beginsWith(it,"#B00") == true ){
+            interimHTML = interimHTML.replaceAll(it, value.toString())    
             }
-            else    //It is a data column it MAY need to be modified
-                {
-                //interimHTML = interimHTML.replace(it, value.toString())    
-                newValue = highlightValue(value)
+        else    //It is a data column it MAY need to be modified
+            {
+            if ( beginsWith(it, "#B") == true ){ 
+                myIndex = myIndex + 1 
+																			   
+            }
+            //If the index is greater than the device count then it can be ignored.
+            if ( myIndex <= myRows ) {
+                //interimHTML = interimHTML.replace(it, value.toString()) 
+                newDataValue = highlightValue(value)
+            
                 //It get a little tricky to debug because many of the <HTML> tags do not not print in the log window.
                 //if (isLogDebug == true && newValue != null ) log.debug("makeHTML: Replacing: <td>${it}</td> with: ${unHTML(newValue)}")
                 //Replace any () or [] characters with <>
-                newValue = toHTML(newValue)
-                interimHTML = interimHTML.replaceAll("<td>${it}</td>", "${newValue}")
-                }
-        } //end of myTemplate.each
+                newDataValue = toHTML(newDataValue)
+                interimHTML = interimHTML.replaceAll("<td>${it}</td>", "${newDataValue}")
 
-    //Get the units we are using, if any.
-    //myUnit = parent.unitsMap.get(myUnits?.toInteger())
+                //We will test to see if the data contains a highlight class. If it does and device highlighting is selected then the appropriate <hqq?> tags are added to the deviceName
+                def myClass = getHighlightClass(newDataValue)
+                
+                if (myClass != null){
+                    def deviceTemplateLocation = "#A" + (myIndex as String).padLeft(2, '0') + "#"
+                    String oldDeviceString = myTemplate[deviceTemplateLocation]
+                
+                    //If the name does not contain any special characters and device name highlighting is true then we can do search and replace operations on it and add the <hqq?> tags.
+                    if ( isHighlightDeviceNames == true ){
+                        if (containsSpecialCharacters(oldDeviceString) == false){
+                            newDeviceString = "<" + myClass + ">" + oldDeviceString + "</" + myClass + ">"
+                            interimHTML = interimHTML.replaceAll("<td>" + oldDeviceString + "</td>", "<td>" + newDeviceString + "</td>")
+                        }
+                        else log.warn("makeHTML: The device name ${oldDeviceString} contains reserved characters and the style ${myClass} could not be applied.")
+                    }
+                } //End of if(myClass......
+            }
+                else { if (isLogInfo) log.info ("2B) Bybassping it: $it because it does not contain data") }
+        }
+        
+    } //end of myTemplate.each
     
     //Replace any %day%, %time%, %units%, %count% fields with the actual value
     //Get the units we are using and corrent the formatting.
@@ -1332,27 +1430,25 @@ void makeHTML(data, int myRows){
     else myUnit = myUnits.replace("_"," ")
     //Set an appropriate format for day and time.
     def myTime = new Date().format('HH:mm a')
+    def myTime1 = new Date().format('HH:MM')
+    def myTime2 = new Date().format('h:mm a')
     def myDay = new Date().format('E')
     
     //Replace macro values regardless of case.
     interimHTML = interimHTML.replaceAll("(?i)%day%", myDay)
     interimHTML = interimHTML.replaceAll("(?i)%time%", myTime)
+    interimHTML = interimHTML.replaceAll("(?i)%time1%", myTime1)
+    interimHTML = interimHTML.replaceAll("(?i)%time2%", myTime2)
     interimHTML = interimHTML.replaceAll("(?i)%units%", myUnit)
     interimHTML = interimHTML.replaceAll("(?i)%count%", state.recordCount.toString())
     
     //Replace any embedded tags using [] with <>
     interimHTML = toHTML(interimHTML)
     
-    //We have the Interim Version now we need to create the iFrame version and the final version
-    if ( settings.isScrubHTML == true ) {
-        iframeHTML = scrubHTML(interimHTML, false) 
-        finalHTML = scrubHTML(interimHTML, true) 
-        }
-    else {
-        iframeHTML = interimHTML
-        finalHTML = interimHTML
-    }
-    state.interimHTML = interimHTML    
+	//We have the Interim Version now we need to create the iFrame version and the final version
+    iframeHTML = scrubHTML(interimHTML, false) 
+    finalHTML = scrubHTML(interimHTML, true) 
+    state.interimHTML = interimHTML
     
     //Calculates the sizes of the elements of each and display info to user.
     getHTMLSize(finalHTML.toString(), interimHTML.toString())
@@ -1368,7 +1464,6 @@ void makeHTML(data, int myRows){
         state.HTML = "<b>HTML length exceeded 4,096 bytes for '${myTileName}' (${state.HTMLsizes.Final}).</b>"
         if (isLogDebug) log.debug("makeHTML: HTML final size is > 4,096 bytes.")
     }
-
 }
 
 //Looks at a provided attributeValue and compares it to those values provided by keywords and thresholds.
@@ -1380,52 +1475,15 @@ def highlightValue(attributeValue){
     dataType = getDataType(attributeValue.toString())
     //If the data is a string then we must process it for Keywords.
     if ( dataType == "String" ){  
-        if (myKeywordCount.toInteger() >= 1  && k1 != null && k1 != "") {
-            if (k1.trim() == attributeValue.toString().trim() ){
-                if (isLogDebug) log.debug("highlightValue: Keyword ${attributeValue} was found and is a match for Keyword1.")
-                if (ktr1 != null && ktr1.size() > 0) {
-                    returnValue = ktr1.replace ("%value%", attributeValue)
-                    return "[td][hqq1]" + returnValue + "[/hqq1][/td]"
-                }
-            }
-        }
-        
-        if (myKeywordCount.toInteger() >= 2 && k2 != null && k2 != "") {
-            if (k2.trim() == attributeValue.toString().trim() ){
-                if (isLogDebug) log.debug("highlightValue: Keyword ${attributeValue} was found and is a match for Keyword2.")
-                if (ktr2 != null && ktr2.size() > 0) {
-                    returnValue = ktr2.replace ("%value%", attributeValue)
-                    return "[td][hqq2]" + returnValue + "[/hqq2][/td]"
-                }
-            }
-        }
-        
-        if (myKeywordCount.toInteger() >= 3 && k3 != null && k3 != "") {
-            if (k3.trim() == attributeValue.toString().trim() ){
-                if (isLogDebug) log.debug("highlightValue: Keyword ${attributeValue} was found and is a match for Keyword3.")
-                if (ktr3 != null && ktr3.size() > 0) {
-                    returnValue = ktr3.replace ("%value%", attributeValue)
-                    return "[td][hqq3]" + returnValue + "[/hqq3][/td]"
-                }
-            }
-        }
-        
-        if (myKeywordCount.toInteger() >= 4 && k4 != null && k4 != "") {
-            if (k4.trim() == attributeValue.toString().trim() ){
-                if (isLogDebug) log.debug("highlightValue: Keyword ${attributeValue} was found and is a match for Keyword4.")
-                if (ktr4 != null && ktr4.size() > 0) {
-                    returnValue = ktr4.replace ("%value%", attributeValue)
-                    return "[td][hqq4]" + returnValue + "[/hqq4][/td]"
-                }
-            }
-        }
-        
-        if (myKeywordCount.toInteger() >= 5 && k5 != null && k5 != "") {
-            if (k5.trim() == attributeValue.toString().trim() ){
-                if (isLogDebug) log.debug("highlightValue: Keyword ${attributeValue} was found and is a match for Keyword5.")
-                if (ktr5 != null && ktr5.size() > 0) {
-                    returnValue = ktr5.replace ("%value%", attributeValue)
-                    return "[td][hqq5]" + returnValue + "[/hqq5][/td]"
+        for (i = 1; i <= myKeywordCount.toInteger(); i++) {
+            if (isLogDebug) log.info ("Processing keyword i is: $i.")
+            if ( settings["k$i"] != null && settings["k$i"] != "") {
+                if (settings["k$i"].trim() == attributeValue.toString().trim() ){
+                    if (isLogDebug) log.debug("highlightValue: Keyword ${attributeValue} was found and is a match for Keyword1.")
+                    if (settings["ktr$i"] != null && settings["ktr$i"].size() > 0) {
+                        returnValue = settings["ktr$i"].replace ("%value%", attributeValue)
+                        return "[td][hqq$i]" + returnValue + "[/hqq$i][/td]"
+                    }
                 }
             }
         }
@@ -1433,188 +1491,55 @@ def highlightValue(attributeValue){
         return "[td]" + attributeValue + "[/td]"
     }
     
-    //Otherwise it must be a number.
-    else {
-        
-        //Get the units we are using, if any and append them.
-        def myUnit = ""
-        def returnValue = attributeValue.toString()
-        if (myUnits == null || myUnits == "None" || isAppendUnits == false) myUnit = ""
-        else myUnit = myUnits.replace("_"," ")
-        //Use a flag to rememeber the highest threshold with a match.
-        def lastThreshold = 0
-        
-        //Note: I've tried using evaluate() to process all of this into a single loop and it works, but it's extremely slow.
-        
-        //Process the first threshold value.
-        if ( myThresholdCount != null && myThresholdCount.toInteger() >= 1 && tcv1 != null && tcv1 != "") {
-            switch(settings.top1) { 
-                case ["1", "<="]:
-                    if ( attributeValue != null && attributeValue.toInteger() <= tcv1.toInteger() ) {
-                        if (isLogDebug) log.debug("highlightThreshold: A <= than condition was met.")
-                        if (ttr1 != null && ttr1 != " " && ttr1 != "?") { returnValue = ttr1 ; myUnit = "" }
-                        lastThreshold = 1
-                    }
-                    break
-                case ["2", "=="]:
-                    if ( attributeValue != null && attributeValue.toInteger() == tcv1.toInteger() ) {
-                        if (isLogDebug) log.debug("highlightThreshold: An == to condition was met.")
-                        if (ttr1 != null && ttr1 != " " && ttr1 != "?") { returnValue = ttr1 ; myUnit = "" }
-                        lastThreshold = 1
-                    }
-                    break
-                case ["3", ">="]:
-                    if ( attributeValue != null && attributeValue.toInteger() >= tcv1.toInteger() ) {
-                        if (isLogDebug) log.debug("highlightThreshold: A >= than condition was met.")
-                        if (ttr1 != null && ttr1 != " "  && ttr1 != "?") { returnValue = ttr1 ; myUnit = "" }
-                        lastThreshold = 1
-                    }
-                    break
-                }
+	//If it get's this far it must be a number.
+	returnValue = attributeValue.toString()
+    //Use a flag to rememeber the highest threshold with a match
+    def lastThreshold = 0
+    //i is the loopcounter. It starts at 6 because the threshold controls are numbered 6 thru 10.
+    i = 6
+    while (i <= myThresholdCount.toInteger() + 5 ) {
+        //log.info ("Processing threshold i is: $i.")
+        myVal1 = settings["tcv$i"]
+        myVal2 = settings["top$i"]
+        myThresholdText = "Threshold " + ( i - 5).toString()
+						  
+        if (isLogDebug) log.info ("i is: $i.  tcv$i is: $myVal1  top$i is: $myVal2  dataType is $dataType  Threshold is: $myThresholdText")
+        if (settings["tcv$i"] != null && settings["tcv$i"] != "" && settings["tcv$i"] != "None" )  {
+            
+            //This is the ideal place for a switch statement but using a break within switch causes it to exit the while loop also.
+			if ( ( settings["top$i"] == "1" || settings["top$i"] == "<=" ) && attributeValue.toInteger() <= settings["tcv$i"].toInteger() ) {
+								   
+                if (isLogDebug)  log.debug("highlightThreshold: A <= than condition was met.")
+                if ( ( settings["ttr$i"] != null && settings["ttr$i"] != " " ) && settings["ttr$i"] != "?") { returnValue = settings["ttr$i"] } 
+                lastThreshold = i
+				}
+            if ( ( settings["top$i"] == "2" || settings["top$i"] == "==" ) && attributeValue.toInteger() == settings["tcv$i"].toInteger() ) {
+								  
+                if (isLogDebug) log.debug("highlightThreshold: An == condition was met.")
+                if (settings["ttr$i"] != null && settings["ttr$i"] != " " && settings["ttr$i"] != "?") { returnValue = settings["ttr$i"] } 
+				lastThreshold = i
+				}
+            if ( ( settings["top$i"] == "3" || settings["top$i"] == ">=" ) && attributeValue.toInteger() >= settings["tcv$i"].toInteger() ) {
+								  
+                if (isLogDebug) log.debug("highlightThreshold: A >= than condition was met.")
+                if (settings["ttr$i"] != null && settings["ttr$i"] != " " && settings["ttr$i"] != "?") { returnValue = settings["ttr$i"] } 
+                lastThreshold = i
+				}
         }
-        //Process the second threshold value.
-        if ( myThresholdCount != null && myThresholdCount.toInteger() >= 2  && tcv2 != null && tcv2 != "") {
-            switch(settings.top2) { 
-                case ["1", "<="]:
-                    if ( attributeValue != null && attributeValue.toInteger() <= tcv2.toInteger() ) {
-                        if (isLogDebug) log.debug("highlightThreshold: A <= than condition was met.")
-                        if (ttr2 != null && ttr2 != " " && ttr2 != "?") { returnValue = ttr2 ; myUnit = ""}
-                        lastThreshold = 2
-                    }
-                    
-                    break
-                case ["2", "=="]:
-                    if ( attributeValue != null && attributeValue.toInteger() == tcv2.toInteger() ) {
-                        if (isLogDebug) log.debug("highlightThreshold: An == to condition was met.")
-                        if (ttr2 != null && ttr2 != " " && ttr2 != "?") { returnValue = ttr2 ; myUnit = ""}
-                        lastThreshold = 2
-                    }
-                    break
-                case ["3", ">="]:
-                    if ( attributeValue != null && attributeValue.toInteger() >= tcv2.toInteger() ) {
-                        if (isLogDebug) log.debug("highlightThreshold: A >= than condition was met.")
-                        if (ttr2 != null && ttr2 != " " && ttr2 != "?") { returnValue = ttr2 ; myUnit = ""}
-                        lastThreshold = 2
-                    }
-                    break
-                }
-        }
-        
-        //Process the third threshold value.
-        if ( myThresholdCount != null && myThresholdCount.toInteger() >= 3  && tcv3 != null && tcv3 != "") {
-            switch(settings.top3) { 
-                case ["1", "<="]:
-                    if ( attributeValue != null && attributeValue.toInteger() <= tcv3.toInteger() ) {
-                        if (isLogDebug) log.debug("highlightThreshold: A <= than condition was met.")
-                        if (ttr3 != null && ttr3 != " " && ttr3 != "?") { returnValue = ttr3 ; myUnit = ""}
-                        lastThreshold = 3
-                    }
-                    break
-                case ["2", "=="]:
-                    if ( attributeValue != null && attributeValue.toInteger() == tcv3.toInteger() ) {
-                        if (isLogDebug) log.debug("highlightThreshold: An == to condition was met.")
-                        if (ttr3 != null && ttr3 != " " && ttr3 != "?") { returnValue = ttr3 ; myUnit = ""}
-                        lastThreshold = 3
-                    }
-                    break
-                case ["3", ">="]:
-                    if ( attributeValue != null && attributeValue.toInteger() >= tcv3.toInteger() ) {
-                        if (isLogDebug) log.debug("highlightThreshold: A >= than condition was met.")
-                        if (ttr3 != null && ttr3 != " " && ttr3 != "?") { returnValue = ttr3 ; myUnit = ""}
-                        lastThreshold = 3
-                    }
-                    break
-                }
-        }
-        
-        //Process the fourth threshold value.
-        if ( myThresholdCount != null && myThresholdCount.toInteger() >= 4  && tcv4 != null && tcv4 != "") {
-            switch(settings.top4) { 
-                case ["1", "<="]:
-                    if ( attributeValue != null && attributeValue.toInteger() <= tcv4.toInteger() ) {
-                        if (isLogDebug) log.debug("highlightThreshold: A <= than condition was met.")
-                        if (ttr4 != null && ttr4 != " " && ttr4 != "?") { returnValue = ttr4 ; myUnit = ""}
-                        lastThreshold = 4
-                    }
-                    break
-                case ["2", "=="]:
-                    if ( attributeValue != null && attributeValue.toInteger() == tcv4.toInteger() ) {
-                        if (isLogDebug) log.debug("highlightThreshold: An == to condition was met.")
-                        if (ttr4 != null && ttr4 != " " && ttr4 != "?") { returnValue = ttr4 ; myUnit = ""}
-                        lastThreshold = 4
-                    }
-                    break
-                case ["3", ">="]:
-                    if ( attributeValue != null && attributeValue.toInteger() >= tcv4.toInteger() ) {
-                        if (isLogDebug) log.debug("highlightThreshold: A >= than condition was met.")
-                        if (ttr4 != null && ttr4 != " " && ttr4 != "?") { returnValue = ttr4 ; myUnit = ""}
-                        lastThreshold = 4
-                    }
-                    break
-                }
-        }
-        
-        //Process the fifth threshold value.
-        if ( myThresholdCount != null && myThresholdCount.toInteger() >= 5  && tcv5 != null && tcv5 != "") {
-            switch(settings.top5) { 
-                case ["1", "<="]:
-                    if ( attributeValue != null && attributeValue.toInteger() <= tcv5.toInteger() ) {
-                        if (isLogDebug) log.debug("highlightThreshold: A <= than condition was met.")
-                        if (ttr5 != null && ttr5 != " " && ttr5 != "?") { returnValue = ttr5 ; myUnit = ""}
-                        lastThreshold = 5 
-                    }
-                    break
-                case ["2", "=="]:
-                    if ( attributeValue != null && attributeValue.toInteger() == tcv5.toInteger() ) {
-                        if (isLogDebug) log.debug("highlightThreshold: An == to condition was met.")
-                        if (ttr5 != null && ttr5 != " " && ttr5 != "?") { returnValue = ttr5 ; myUnit = ""}
-                        lastThreshold = 5 
-                    }
-                    break
-                case ["3", ">="]:
-                    if ( attributeValue != null && attributeValue.toInteger() >= tcv5.toInteger() ) {
-                        if (isLogDebug) log.debug("highlightThreshold: A >= than condition was met.")
-                        if (ttr5 != null && ttr5 != " " && ttr5 != "?") { returnValue = ttr5 ; myUnit = ""}
-                        lastThreshold = 5 
-                    }
-                    break
-                }
-        }
-        
-        //Configure the Units into variable myUnit
-        if (myUnits == null || myUnits == "None" || isAppendUnits == false ) myUnit = ""
-        else myUnit = myUnits.replace("_"," ")
-        
-        
-        switch(lastThreshold) {
-            case 0:      //Does not match any threshold
-                return "[td]" + attributeValue + myUnit + "[/td]"    
-                break
-            case 1:
-                returnValue = returnValue.replace("%value%", attributeValue.toString()) 
-                return "[td][hqq1]" + returnValue + myUnit +  "[/hqq1][/td]"
-                break
-            case 2:
-                returnValue = returnValue.replace("%value%", attributeValue.toString())
-                return "[td][hqq2]" + returnValue + myUnit +  "[/hqq2][/td]"
-                break
-            case 3:
-                returnValue = returnValue.replace("%value%", attributeValue.toString())
-                return "[td][hqq3]" + returnValue + myUnit +  "[/hqq3][/td]"
-                break
-            case 4:
-                returnValue = returnValue.replace("%value%", attributeValue.toString())
-                return "[td][hqq4]" + returnValue + myUnit +  "[/hqq4][/td]"
-                break
-            case 5:
-                returnValue = returnValue.replace("%value%", attributeValue.toString())
-                return "[td][hqq5]" + returnValue + myUnit +  "[/hqq5][/td]"
-                break
-        }
-        
-        
-    } //End of must be a number else     
-}
+        i = i + 1
+    }
+    
+    //log.info ("Exited For Loop and lastThreshold is: $lastThreshold ")
+    if (lastThreshold == 0) {
+        //Does not match any threshold
+        return "[td]" + returnValue + "[/td]"    
+        }                
+    else { 
+        returnValue = returnValue.replace("%value%", attributeValue.toString()) 
+        return "[td][hqq$lastThreshold]" + returnValue + "[/hqq$lastThreshold][/td]"
+	}
+} //End of function
+		
 //************************************************************************************************************************************************************************************************************************
 //************************************************************************************************************************************************************************************************************************
 //************************************************************************************************************************************************************************************************************************
@@ -1655,17 +1580,15 @@ def getDeviceList(){
 //************************************************************************************************************************************************************************************************************************
 //************************************************************************************************************************************************************************************************************************
 
-//Deletes all event subscriptions. Only used by Attribute Monitor but retained for ease of maintenance.
+//Deletes all event subscriptions.
 void deleteSubscription(){
+	if (isLogEvents) ("deleteSubscription: Deleted all subscriptions. To verify click on the App ⚙️ Symbol and look for the Event Subscriptions section. ")
     unsubscribe()
 }
 
 //This function removes all existing subscriptions for this app and replaces them with new ones corresponding to the devices and attributes being monitored.
-//Only used by Attribute Monitor but retained for ease of maintenance.
 void publishSubscribe(){
-    if (isLogTrace) log.trace("createSubscription: Entering.")
-    //if (isLogInfo) 
-    if (isLogInfo) log.info("createSubscription: Creating subscription for Tile: $myTile with description: $myTileName.")
+    if (isLogEvents) log.info("createSubscription: Creating subscriptions for Tile: $myTile with description: $myTileName.")
     //Remove all existing subscriptions.
     unsubscribe()
     
@@ -1681,20 +1604,23 @@ void publishSubscribe(){
 
 //This should get executed whenever any of the subscribed devices receive an update to the monitored attribute.
 def handler(evt) {
-    if (isLogInfo) log.info("handler: Subscription event handler called with event: $evt. ") 
-    publishTable()   
+    if (isLogEvents) log.info "Event received from Device:${evt.device}  -  Attribute:${evt.name}  -  Value:${evt.value}"
+    //This schedules a call to publishTable() 1 second into the future. If another event comes along within that second it re-schedules the call to publishTable another 1 second into the future.
+    //This greaty improves the efficiency when multiple attributes on the same device are being monitored. This is true for polling devices such as Hub Info or a Weather driver which receive batch updates to multiple attributes all at the same time.
+    //This logic reduces these multiple calls into a single call to publishTable() once things go quiet.
+    runInMillis(eventTimeout.toInteger(), publishTable, [overwrite: true])
 }
 
 //Save the current HTML to the variable. This is the function that is called by the scheduler.
 void publishTable(){
-    if (isLogTrace==true) log.trace("publishTable: Entering publishTable.")
+    if (isLogEvents) log.trace("publishTable: Entering publishTable.")
     
     //Handles the initialization of new variables added after the original release.
     updateVariables()
     
     //Refresh the table with the new data and then save the HTML to the driver variable.
     refreshTable()
-    if (isLogInfo) log.info("publishTable: Tile $myTile ($myTileName) is being refreshed.")
+    if (isLogEvents) log.debug("publishTable: Tile $myTile ($myTileName) is being refreshed.")
     
     myStorageDevice = parent.getStorageDevice()
     if ( myStorageDevice == null ) {
@@ -1702,15 +1628,15 @@ void publishTable(){
         return
     }
     
-    if (isLogInfo) log.info ("Size is: ${state.HTML.size()}")
-    //If the tile is less than 1024 we just publish to the attribute. If it's more we publish the file and then the attribute to cause a refresh
+    if (isLogEvents) log.info ("Size is: ${state.HTML.size()}")
+	//If the tile is less than 1024 we just publish to the attribute. If it's more than 1,024 then we publish it as a file then update the attribute to cause it to reload the file.
     if (state.HTML.size() < 1024 ) {
         myStorageDevice.createTile(settings.myTile, state.HTML, settings.myTileName)
         }
     else {
         def prefix = parent.getStorageShortName()
         def fileName = prefix + "_Tile_" + myTile.toString() + ".html"
-        if (isLogDebug) log.debug ("filename is: ${fileName}")
+        if (isLogEvents) log.debug ("filename is: ${fileName}")
         def myBytes = state.HTML.getBytes("UTF-8")
         //Now try and upload the file to the hub. There is no return value so we must do try catch
         try {
@@ -1719,18 +1645,8 @@ void publishTable(){
             //Put in a slight delay to allow the file upload to complete.
             pauseExecution (100)
             def src = "http://" + myIP + "/local/" + fileName
-            
-            // This is working without any jumpiness. def stubHTML = '<div style="height:100%; width:100%; scrolling:'no'"><iframe src=' + src + ' style="height: 100%; width:100%; border: none; scrolling:no"></iframe><div>'
-            // This is working without any jumpiness. App Settings: Preview Size = 2 x 4, Width = 100, Height = Auto, Border Padding = 0, Row Text Padding = 0, #tile-3 .tile-primary {outline: 2px solid yellow;} , #tile-3 .tile-contents {overflow: hidden; !important}
-            // This is working without any jumpiness. Dash Settings: Width = 200, Height = 190, Tile 4H x 2W
-            // This is working without any jumpiness. Dash CSS : #tile-3 .tile-primary {vertical-align: top; overflow: hidden; !important} , #tile-3 .tile-title, .tile-title {visibility: hidden; display: none !important} , 
-            //Somehow the following formatting causes the actual HTML equivalent to be ingested into the device driver attribute. Something to do with the comma's I believe. 
-            //*** def stubHTML = '<div style="height:100%; width:100%; scrolling:'no'"><iframe src=' + src + ' style="height: 100%; width:100%; border: none; scrolling:no"></iframe><div>' ***
-            //It will temporarily display on the dashboard even though it exceeds the 1,024 byte limit. Because of this the table refreshes on the dash are very smooth. If you reload the dashboard you will get the "Please Select an Attribute" message because it is oversize.
-            //def stubHTML = """<div style="height:100%; width:100%; scrolling='no'"><iframe src=""" + src + """ style="height: 100%; width:100%; border: none; scrolling='no'"></iframe><div>"""
-            //Although we tell the iFrame to not have scroll bars and to hide any overflow this gets ignored by the Hubitat Dashboard whenever a scrollbar is required. I have not yet found the CSS that hides this particular scrollbar!!!
             def stubHTML = """<div style='height:100%; width:100%; scrolling:no; overflow:hidden;'><iframe src=""" + src + """ style='height: 100%; width:100%; border: none; scrolling:no; overflow: hidden;'></iframe><div>"""
-            if (isLogDebug) log.debug ("stub is : ${unHTML(stubHTML)}")
+            if (isLogEvents) log.debug ("stub is : ${unHTML(stubHTML)}")
         
             //Then we will update the Storage Device attribute which will cause the file to be reloaded into the dashboard.
             myStorageDevice.createTile(settings.myTile, stubHTML, settings.myTileName)
@@ -1742,7 +1658,6 @@ void publishTable(){
             myStorageDevice.createTile(settings.myTile, "The tile did not upload\\update correctly. Check the logs. ${myTime}", settings.myTileName)
             }
         }
-    
     }
 
 //Save the current HTML to the variable and configure the refresh.
@@ -1849,16 +1764,30 @@ def importStyle(){
 //Any controls having their value restored must not be visible on the page or the operation will fail.
 def applyStyle(style){
     if (isLogInfo) log.info ("applyStyle: Received style: ${style}")
+    //We need to excluded certain settings for Highlighting from the style for MAM.
+    //This way we can import AM Styles but ignore the Highlight settings.
+    def exclusionList1 = ["hc1", "hts1", "hc2", "hts2", "hc3", "hts3", "hc4", "hts4", "hc5", "hts5", "hc6", "hts6", "hc7", "hts7", "hc8", "hts8", "hc9", "hts9", "hc10", "hts10"]
+    def exclusionList2 = ["myKeywordCount", "k1", "ktr1", "k2", "ktr2", "k3", "ktr3", "k4", "ktr4", "k5", "ktr5"]
+    def exclusionList3 = ["myThresholdCount", "top1", "tcv1", "ttr1", "top2", "tcv2", "ttr2", "top3", "tcv3", "ttr3", "top4", "tcv4", "ttr4", "top5", "tcv5", "ttr5"]
+    def combinedExclusionList = []
+    combinedExclusionList.addAll(exclusionList1)
+    combinedExclusionList.addAll(exclusionList2)
+    combinedExclusionList.addAll(exclusionList3)
+
     style.each{ mySetting, myValue ->
         mySetting = mySetting.replaceAll("#","")
-        myClass = getSettingClass(mySetting)
         if (isLogDebug) log.debug ("setting is: ${mySetting} and value is: ${myValue} and myclass is: ${myClass}")
-        if (myClass == "color" ) app.updateSetting(mySetting, [value:myValue, type:"color"]) 
-        if (myClass == "enum" ) app.updateSetting(mySetting, [value:myValue.toString(), type:"enum"]) 
-        if (myClass == "bool" ) app.updateSetting(mySetting, [value:myValue.toString(), type:"bool"]) 
-        if (myClass == "text" ) app.updateSetting(mySetting, [value:myValue.toString(), type:"text"]) 
-        if (myClass == "textarea" ) app.updateSetting(mySetting, [value:myValue.toString(), type:"textarea"]) 
-        if (myClass == null ) log.warn ("Found setting: ${mySetting} in style with value: ${myValue} but no such setting exists. This is not harmful and does not affect the operation of the program.")
+        //If the setting is not in the exclusion list then we will process it.
+        if ( !combinedExclusionList.contains(mySetting) ) {
+            myClass = getSettingClass(mySetting)
+            //if (isLogDebug) 
+            if (myClass == "color" ) app.updateSetting(mySetting, [value:myValue, type:"color"]) 
+            if (myClass == "enum" ) app.updateSetting(mySetting, [value:myValue.toString(), type:"enum"]) 
+            if (myClass == "bool" ) app.updateSetting(mySetting, [value:myValue.toString(), type:"bool"]) 
+            if (myClass == "text" ) app.updateSetting(mySetting, [value:myValue.toString(), type:"text"]) 
+            if (myClass == "textarea" ) app.updateSetting(mySetting, [value:myValue.toString(), type:"textarea"]) 
+            if (myClass == null ) log.warn ("Found setting: ${mySetting} in style with value: ${myValue} but no such setting exists. This is not harmful and does not affect the operation of the program.")
+        }
     }    
 }
 
@@ -1894,8 +1823,8 @@ def importStyleString(styleString){
 //Note:Overrides are placed at the start of the list so they take precedence over other lists. The item will be replaced in the string and won't be found by subsequent searches.
 //Returns a list of maps which contain the replacement values for the HTML template string.
 //titleScheme - tt=title text, ts=title size, tc=title color, ta=title alignment. titleShadow = composite entity for text shadow.
-//headerScheme - hbc=header background color(Composite RBGA), htc=header text color, hts=header text size, hta=header text alignment, hto=header text opacity, hp=header padding
-//rowScheme - rbc=row background color (Composite RBGA), rtc=row text color, rts=row text size, rta=header text alignment, rto=row text opacity, rabc=row alternate background color, ratc=row alternate text color, rp = row padding (applies to data area)
+//headerScheme - hbc=header background color, htc=header text color, hts=header text size, hta=header text alignment, hto=header text opacity, hp=header padding
+//rowScheme - rbc=row background color, rtc=row text color, rts=row text size, rta=header text alignment, rto=row text opacity, rabc=row alternate background color, ratc=row alternate text color, rp = row padding (applies to data area)
 //tableScheme - th=table height, tw=table width, tml=table margin left, tmr=table margin right.
 //borderScheme - bw=border width, bc=border color, bp=border padding, bs=border style
 //footerScheme - ft=footer text, fs=footer size, fc=footer color, fa=footer alignment
@@ -1918,37 +1847,37 @@ def fillStyle(){
     //Calculate the composite values here.
     if (isTitleShadow == true) myTitleShadow = "text-shadow:" + shhor + "px " + shver + "px " + shblur + "px " + shcolor
     
-    //Color values that support opacity must be converted to rgba.
-    //For example hbc = Header Background Color. It is created by combining Header Background Color (hbc) and Header Background Opacity (hbo) to make a composite rgba value.
+    //Color values that support opacity must be converted to HEX8.
+    //For example hbc = Header Background Color. It is created by combining Header Background Color (hbc) and Header Background Opacity (hbo) to make a HEX8 value.
     //Table
-    mytbc = getRGBA(tbc, tbo.toString())
+    def mytbc = convertToHex8(tbc, tbo.toFloat())  
     //Title
-    mytc = getRGBA(tc, to.toString())
+    def mytc = convertToHex8(tc, to.toFloat())  
     //Border
-    mybc = getRGBA(bc, bo.toString())
+    def mybc = convertToHex8(bc, bo.toFloat())  
     //Table Header
-    myhbc = getRGBA(hbc, hbo.toString())
-    myhtc = getRGBA(htc, hto.toString())
+    def myhbc = convertToHex8(hbc, hbo.toFloat())  
+    def myhtc = convertToHex8(htc, hto.toFloat())  
     //Table Rows
-    myrbc = getRGBA(rbc, rbo.toString())
-    myrtc = getRGBA(rtc, rto.toString())
+    def myrbc = convertToHex8(rbc, rbo.toFloat())  
+    def myrtc = convertToHex8(rtc, rto.toFloat())  
     
-    rgbaColorScheme = ["#tbc#":mytbc, "#tc#":mytc,"#hbc#":myhbc, "#htc#":myhtc,"#rbc#":myrbc, "#rtc#":myrtc, "#bc#":mybc]    
+    Hex8ColorScheme = ["#tbc#":mytbc, "#tc#":mytc,"#hbc#":myhbc, "#htc#":myhtc,"#rbc#":myrbc, "#rtc#":myrtc, "#bc#":mybc]    
     titleScheme = ["#tt#":tt, "#ts#":ts, "#tc#":tc, "#tp#":tp, "#ta#":ta, "#to#":to, "#shcolor#":shcolor, "#shver#":shver, "#shhor#":shhor, "#shblur#":shblur, "#titleShadow#":myTitleShadow]
     headerScheme = ["#A00#":A0, "#B00#":B0, "#hbc#":hbc, "#hbo#":hbo, "#htc#":htc, "#hto#":hto, "#hts#":hts, "#hta#":hta , "#hp#":myHP]         
     rowScheme = ["#rbc#":rbc, "#rtc#":rtc, "#rts#":rts, "#rta#":rta ,"#rabc#":rabc, "#ratc#":ratc, "#rp#":myRP, "#rto#":rto, "#rbo#":rbo]            
     //Add a temporary class ID of 'qq'. A double qq is not used in the english language. The final one will be assigned by the Tile Builder Storage Device when the Tile is published.
     tableScheme = ["#id#":"qq", "#th#":th,"#tw#":tw, "#tbc#":tbc, "#tbo#":tbo ]        
     borderScheme = ["#bw#":bw, "#bc#":bc, "#bs#":bs, "#br#":br, "#bp#":bp, "#bo#":bo ]
-    footerScheme = ["#ft#":ft, "#fs#":fs, "#fc#":fc, "#fa#":fa ] 
-    highlightScheme = ["#hc1#":compress(hc1), "#hts1#":hts1, "#hc2#":compress(hc2), "#hts2#":hts2,"#hc3#":compress(hc3), "#hts3#":hts3, "#hc4#":compress(hc4), "#hts4#":hts4, "#hc5#":compress(hc5), "#hts5#":hts5]
+    footerScheme = ["#ft#":ft, "#fs#":fs, "#fc#":fc, "#fa#":fa ]
+    highlightScheme = ["#hc1#":compress(hc1), "#hts1#":hts1, "#hc2#":compress(hc2), "#hts2#":hts2,"#hc3#":compress(hc3), "#hts3#":hts3, "#hc4#":compress(hc4), "#hts4#":hts4, "#hc5#":compress(hc5), "#hts5#":hts5, "#hc6#":compress(hc6), "#hts6#":hts6, "#hc7#":compress(hc7), "#hts7#":hts7,"#hc8#":compress(hc8), "#hts8#":hts8, "#hc9#":compress(hc9), "#hts9#":hts9, "#hc10#":compress(hc10), "#hts10#":hts10]
     keywordScheme = ["#k1#":k1, "#ktr1#":ktr1, "#k2#":k2, "#ktr2#":ktr2, "#k3#":k3, "#ktr3#":ktr3, "#k4#":k4, "#ktr4#":ktr4, "#k5#":k5, "#ktr5#":ktr5]
-    thresholdScheme = ["#top1#":top1, "#tcv1#":tcv1, "#ttr1#":ttr1, "#top2#":top2, "#tcv2#":tcv2, "#ttr2#":ttr2, "#top3#":top3, "#tcv3#":tcv3, "#ttr3#":ttr3, "#top4#":top4, "#tcv4#":tcv4, "#ttr4#":ttr4, "#top5#":top5, "#tcv5#":tcv5, "#ttr5#":ttr5]
+    thresholdScheme = ["#top6#":top6, "#tcv6#":tcv6, "#ttr6#":ttr6, "#top7#":top7, "#tcv7#":tcv7, "#ttr7#":ttr7, "#top8#":top8, "#tcv8#":tcv8, "#ttr8#":ttr8, "#top8#":top8, "#tcv9#":tcv9, "#ttr9#":ttr9, "#top10#":top10, "#tcv10#":tcv10, "#ttr10#":ttr10]
     otherScheme = ["#comment#":comment, "#bm#":bm,"#tff#":tff, "#bfs#":bfs, "#fbc#":fbc, "#customWidth#":customWidth, "#customHeight#":customHeight, "#iFrameColor#":iFrameColor, "#myKeywordCount#" : myKeywordCount, "#myThresholdCount#" : myThresholdCount] 
         
     //The booleanScheme uses the same configuration but these are not tags that are stored within the HTML. However they are stored in settings as they guide the logic flow of the application.
     booleanScheme1 = ["#isCustomSize#":isCustomSize, "#isFrame#":isFrame, "#isComment#":isComment,"#isTitle#":isTitle,"#isTitleShadow#":isTitleShadow,"#isHeaders#":isHeaders,"#isBorder#":isBorder,"#isAlternateRows#":isAlternateRows,"#isFooter#":isFooter]  
-    booleanScheme2 = ["#isOverrides#":isOverrides,"#isScrubHTML#":isScrubHTML]
+    booleanScheme2 = ["#isOverrides#":isOverrides]
 
     //'myBaseSettingsMap' are those configured through the UI. 'myOverridesMap' are those extracted from the overrides text field and converted to a map. 
     //'myEffectiveSettings' are the result of merging the 'myBaseSettingsMap' settings with the 'myOverrideMap'. 
@@ -1971,30 +1900,34 @@ def fillStyle(){
     //Calculate the base settings map and save it to state. These have HEX colors and can be applied directly to settings.
     myBaseSettingsMap = titleScheme.clone() + headerScheme.clone() + rowScheme.clone() + tableScheme.clone() + borderScheme.clone() + footerScheme.clone() + highlightScheme.clone() + keywordScheme.clone() + thresholdScheme.clone() + otherScheme.clone() + booleanScheme1.clone() + booleanScheme2.clone()
     
-    //For this one we start with the same base and add the RGBA color value which overwrite the HEX values. This result is for use in the display.
+	//For this one we start with the same base and add the HEX8 color values. This result is for use in the display in a compressed form.
     state.myBaseSettingsMap = myBaseSettingsMap.clone()
-    myBaseSettingsMapRGBA = myBaseSettingsMap.clone() + rgbaColorScheme.clone()
+    myBaseSettingsMapHEX8 = myBaseSettingsMap.clone() + Hex8ColorScheme.clone()
     
     //Add the overrides to the front of the map. By listing myOverridesMap second those values take precedence and 'Win' the collision. Save them to state.
     def myBaseSettingsPlusOverrides = myBaseSettingsMap.clone() + myOverridesMap.clone()
     state.myBaseSettingsPlusOverrides = myBaseSettingsPlusOverrides.clone()
     
-    //Color values that support opacity must be converted to rgba.These must be done AFTER overrides have been applied in case they include a color or opacity.
-    //Combine color and opacity. For example hbc = Header Background Color. It is created by combining Header Background Color (hbc) and Header Background Opacity (hbo) to make a composite rgba value called myhbc.
-    mytbc = getRGBA(myBaseSettingsPlusOverrides.get("#tbc#"), myBaseSettingsPlusOverrides.get("#tbo#").toString())    
-    mytc = getRGBA(myBaseSettingsPlusOverrides.get("#tc#"), myBaseSettingsPlusOverrides.get("#to#").toString())    
-    mybc = getRGBA(myBaseSettingsPlusOverrides.get("#bc#"), myBaseSettingsPlusOverrides.get("#bo#").toString())
+    //Color values that support opacity must be converted to HEX8.These must be done AFTER overrides have been applied in case they include a color or opacity.
+    //Combine color and opacity. For example hbc = Header Background Color. It is created by combining Header Background Color (hbc) and Header Background Opacity (hbo) to make a HEX8 value called myhbc.
+    
+    mytbc = convertToHex8(myBaseSettingsPlusOverrides.get("#tbc#"), myBaseSettingsPlusOverrides.get("#tbo#").toFloat())    
+    mytc = convertToHex8(myBaseSettingsPlusOverrides.get("#tc#"), myBaseSettingsPlusOverrides.get("#to#").toFloat())    
+    mybc = convertToHex8(myBaseSettingsPlusOverrides.get("#bc#"), myBaseSettingsPlusOverrides.get("#bo#").toFloat())
+	
     //Table Header
-    myhbc = getRGBA(myBaseSettingsPlusOverrides.get("#hbc#"), myBaseSettingsPlusOverrides.get("#hbo#").toString())
-    myhtc = getRGBA(myBaseSettingsPlusOverrides.get("#htc#"), myBaseSettingsPlusOverrides.get("#hto#").toString())
+    myhbc = convertToHex8(myBaseSettingsPlusOverrides.get("#hbc#"), myBaseSettingsPlusOverrides.get("#hbo#").toFloat())
+    myhtc = convertToHex8(myBaseSettingsPlusOverrides.get("#htc#"), myBaseSettingsPlusOverrides.get("#hto#").toFloat())
+	
     //Table Rows
-    myrbc = getRGBA(myBaseSettingsPlusOverrides.get("#rbc#"), myBaseSettingsPlusOverrides.get("#rbo#").toString())
-    myrtc = getRGBA(myBaseSettingsPlusOverrides.get("#rtc#"), myBaseSettingsPlusOverrides.get("#rto#").toString())
-    rgbaColorScheme = ["#tbc#":compress(mytbc),"#tc#":compress(mytc),"#bc#":compress(mybc), "#hbc#":compress(myhbc), "#htc#":compress(myhtc),"#rbc#":compress(myrbc), "#rtc#":compress(myrtc)]
+    myrbc = convertToHex8(myBaseSettingsPlusOverrides.get("#rbc#"), myBaseSettingsPlusOverrides.get("#rbo#").toFloat())    
+    myrtc = convertToHex8(myBaseSettingsPlusOverrides.get("#rtc#"), myBaseSettingsPlusOverrides.get("#rto#").toFloat())    
+    
+    Hex8ColorScheme = ["#tbc#":compress(mytbc),"#tc#":compress(mytc), "#hbc#":compress(myhbc), "#htc#":compress(myhtc),  "#rbc#":compress(myrbc), "#rtc#":compress(myrtc),  "#bc#":compress(mybc)]
     
     if (isLogDebug) log.debug("myBaseSettingsMap is: ${myBaseSettingsMap}")
-    if (isLogDebug) log.debug("myBaseSettingsMapwithRGBA is: ${myBaseSettingsMapRGBA}")
-    def myEffectiveSettingsMap = myBaseSettingsPlusOverrides.clone() + rgbaColorScheme.clone()
+    if (isLogDebug) log.debug("myBaseSettingsMapwithHex8 is: ${myBaseSettingsMapHex8}")
+    def myEffectiveSettingsMap = myBaseSettingsPlusOverrides.clone() + Hex8ColorScheme.clone()
     state.myEffectiveSettingsMap = myEffectiveSettingsMap.clone() //.sort()
     
     //Now Calculate the Style by eliminating those fields that contain 'content' and then adding the overrides back in string form.
@@ -2009,7 +1942,7 @@ def fillStyle(){
     myStyleMap.remove("#titleShadow#")
     myStyleMap.overrides = settings.overrides
     
-    //Now change the colors back from the current RGBA form to #FFFFFF format for saving.
+    //Now change the colors back from the current HEX8 format to HEX6 format for saving.
     myStyleMap."#tbc#" = tbc  //"#FFFFFF"
     myStyleMap."#tc#" = tc  //"#FFFFFF"
     myStyleMap."#bc#" = bc  //"#FFFFFF"
@@ -2064,6 +1997,9 @@ def initialize(){
     app.updateSetting("myUnits", [value:"None", type:"String"])
     app.updateSetting("isAbbreviations", false)
     app.updateSetting("isShowDeviceNameModification", false)
+    
+    //Device Naming
+    app.updateSetting("myDeviceNaming", "Use Device Label")
     
     //Filtering
     app.updateSetting("myFilterType", 0)
@@ -2165,6 +2101,17 @@ def initialize(){
     app.updateSetting("hts4", "100")
     app.updateSetting("hc5", [value:"#FF0000", type:"color"])
     app.updateSetting("hts5", "100")
+	app.updateSetting("hc6", [value:"#008000", type:"color"])
+    app.updateSetting("hts6", "100")
+    app.updateSetting("hc7", [value:"#CA6F1E", type:"color"])
+    app.updateSetting("hts7", "100")
+    app.updateSetting("hc8", [value:"#00FF00", type:"color"])
+    app.updateSetting("hts8", "100")
+    app.updateSetting("hc9", [value:"#0000FF", type:"color"])
+    app.updateSetting("hts9", "100")
+    app.updateSetting("hc10", [value:"#FF0000", type:"color"])
+    app.updateSetting("hts10", "100")
+    app.updateSetting("isHighlightDeviceNames", false)
     
     //Keywords
     app.updateSetting("myKeywordCount", 0)
@@ -2181,26 +2128,27 @@ def initialize(){
     
     //Thresholds
     app.updateSetting("myThresholdCount", 0)
-    app.updateSetting("top1", [value:"0", type:"enum"])
-    app.updateSetting("tcv1", [value:70, type:"number"])
-    app.updateSetting("ttr1", [value:"?", type:"text"])
-    app.updateSetting("top2", [value:"0", type:"enum"])
-    app.updateSetting("tcv2", [value:70, type:"number"])
-    app.updateSetting("ttr2", [value:"?", type:"text"])
-    app.updateSetting("top3", [value:"0", type:"enum"])
-    app.updateSetting("tcv3", [value:70, type:"number"])
-    app.updateSetting("ttr3", [value:"?", type:"text"])
-    app.updateSetting("top4", [value:"0", type:"enum"])
-    app.updateSetting("tcv4", [value:70, type:"number"])
-    app.updateSetting("ttr4", [value:"?", type:"text"])
-    app.updateSetting("top5", [value:"0", type:"enum"])
-    app.updateSetting("tcv5", [value:70, type:"number"])
-    app.updateSetting("ttr5", [value:"?", type:"text"])
+    app.updateSetting("top6", [value:"0", type:"enum"])
+    app.updateSetting("tcv6", [value:70, type:"number"])
+    app.updateSetting("ttr6", [value:"?", type:"text"])
+    app.updateSetting("top7", [value:"0", type:"enum"])
+    app.updateSetting("tcv7", [value:70, type:"number"])
+    app.updateSetting("ttr7", [value:"?", type:"text"])
+    app.updateSetting("top8", [value:"0", type:"enum"])
+    app.updateSetting("tcv8", [value:70, type:"number"])
+    app.updateSetting("ttr8", [value:"?", type:"text"])
+    app.updateSetting("top9", [value:"0", type:"enum"])
+    app.updateSetting("tcv9", [value:70, type:"number"])
+    app.updateSetting("ttr9", [value:"?", type:"text"])
+    app.updateSetting("top10", [value:"0", type:"enum"])
+    app.updateSetting("tcv10", [value:70, type:"number"])
+    app.updateSetting("ttr10", [value:"?", type:"text"])
 
     //Advanced
     app.updateSetting("bfs", "18")
     app.updateSetting("tff", "Roboto")
-    app.updateSetting("isScrubHTML", true)
+    app.updateSetting("scrubHTMLlevel", 1)
+    app.updateSetting("eventTimeout", "2000")
     app.updateSetting("isShowImportExport", false)
     app.updateSetting("isShowHTML", false)
     app.updateSetting("importStyleText", "?")
@@ -2282,11 +2230,52 @@ def updateVariables( ) {
         state.variablesVersion = 130
     }
     
-    //Next release will use this branch.
-    if (state.variablesVersion == 131 ) {
-        //Place logic to update variables here.
+    //Update variables from version 1.3.0 to 1.4.0
+    if (state.variablesVersion == 130 ) {
+        //Add the newly created variables.
+        app.updateSetting("scrubHTMLlevel", [value:"1", type:"enum"])
+        app.updateSetting("myDeviceNaming", "Use Device Label")
+        if (myKeywordCount > 0) state.show.Keywords = true
+        if (myThresholdCount > 0) state.show.Thresholds = true
+        
+        //Create the new threshold variables from 6 - 10. 
+        if (top6 == null ) app.updateSetting("top6", [value:"0", type:"enum"])
+        if (tcv6 == null ) app.updateSetting("tcv6", [value:70, type:"number"])
+        if (ttr6 == null ) app.updateSetting("ttr6", [value:"?", type:"text"])
+        if (top7 == null ) app.updateSetting("top7", [value:"0", type:"enum"])
+        if (tcv7 == null ) app.updateSetting("tcv7", [value:70, type:"number"])
+        if (ttr7 == null ) app.updateSetting("ttr7", [value:"?", type:"text"])
+        if (top8 == null ) app.updateSetting("top8", [value:"0", type:"enum"])
+        if (tcv8 == null ) app.updateSetting("tcv8", [value:70, type:"number"])
+        if (ttr8 == null ) app.updateSetting("ttr8", [value:"?", type:"text"])
+        if (top9 == null ) app.updateSetting("top9", [value:"0", type:"enum"])
+        if (tcv9 == null ) app.updateSetting("tcv9", [value:70, type:"number"])
+        if (ttr9 == null ) app.updateSetting("ttr9", [value:"?", type:"text"])
+        if (top10 == null ) app.updateSetting("top10", [value:"0", type:"enum"])
+        if (tcv10 == null ) app.updateSetting("tcv10", [value:70, type:"number"])
+        if (ttr10 == null ) app.updateSetting("ttr10", [value:"?", type:"text"])
+        
+        //Copy tyhe old threshold values to the new values.
+        if (top1 != null) app.updateSetting("top6", [value:top1, type:"enum"])
+        if (top2 != null) app.updateSetting("top7", [value:top2, type:"enum"])
+        if (top3 != null) app.updateSetting("top8", [value:top3, type:"enum"])
+        if (top4 != null) app.updateSetting("top9", [value:top4, type:"enum"])
+        if (top5 != null) app.updateSetting("top10", [value:top5, type:"enum"])
+        
+        if (tcv1 != null) app.updateSetting("tcv6", [value:tcv1, type:"number"])
+        if (tcv2 != null) app.updateSetting("tcv7", [value:tcv2, type:"number"])
+        if (tcv3 != null) app.updateSetting("tcv8", [value:tcv3, type:"number"])
+        if (tcv4 != null) app.updateSetting("tcv9", [value:tcv4, type:"number"])
+        if (tcv5 != null) app.updateSetting("tcv10", [value:tcv5, type:"number"])
+        
+        if (ttr1 != null) app.updateSetting("ttr6", [value:ttr1, type:"text"])
+        if (ttr2 != null) app.updateSetting("ttr7", [value:ttr2, type:"text"])
+        if (ttr3 != null) app.updateSetting("ttr8", [value:ttr3, type:"text"])
+        if (ttr4 != null) app.updateSetting("ttr9", [value:ttr4, type:"text"])
+        if (ttr5 != null) app.updateSetting("ttr10", [value:ttr5, type:"text"])
+        
+        state.variablesVersion = 140
     }
-
 }
 
 
@@ -2358,7 +2347,7 @@ String green(s) { return '<g style="color:green">' + s + '</g>' }
 
 //Set the titles to a consistent style.
 def titleise(title){
-    //title = "<span style='color:#1962d7;text-align:left; margin-top:0em; font-size:20px; box-shadow: 0px 0px 5px 5px #E8DD95; padding:2px; background-color:#E8DD95;'><b>${title}</b></span>"
+    //title = "<span style='color:#1962d7;text-align:left; margin-top:0em; font-size:20px; box-shadow: 0px 0px 5px 5px #E8DD95; padding:2px; background:#E8DD95;'><b>${title}</b></span>"
     title = "<span style='color:#1962d7;text-align:left; margin-top:0em; font-size:20px; padding:2px'><b>${title}</b></span>"
 }
 
@@ -2374,7 +2363,7 @@ String body(myBody) {
 
 //Produce a horizontal line of the speficied width
 String line(myHeight){
-    return "<div style='background-color:#005A9C; height: " + myHeight.toString() + "px; margin-top:0em; margin-bottom:0em ; border: 0;'></div>"
+    return "<div style='background:#005A9C; height: " + myHeight.toString() + "px; margin-top:0em; margin-bottom:0em ; border: 0;'></div>"
 }
 
 //Gets the class of a control\setting.
@@ -2426,12 +2415,42 @@ def chooseButtonText(buttonNumber, buttonText){
 //************************************************************************************************************************************************************************************************************************
 //************************************************************************************************************************************************************************************************************************
 //**************
-//**************  These are the former child functions that get called as part of the HTML table generation. They have been moved to local functions.
-//**************  Functions related to the Table Designer interface are not called during normal table generation and remain in the parent app.
+//**************  Support Functions.																																	   
 //**************
 //************************************************************************************************************************************************************************************************************************
 //************************************************************************************************************************************************************************************************************************
 //************************************************************************************************************************************************************************************************************************
+
+//Receives a string and determines if a highlighting class has been applied. Returns the name of the class or null.
+//It is important that hqq10 preceeds hqq1 in the list because a search for hqq1 would get a false positive because it's also a match for the leading part of hqq10.																																									
+def getHighlightClass(attributeValue) {
+    def highlightClasses = ['hqq10', 'hqq1', 'hqq2', 'hqq3', 'hqq4', 'hqq5', 'hqq6', 'hqq7', 'hqq8', 'hqq9']
+    for (myClass in highlightClasses) {
+        if (attributeValue.contains(myClass)) {
+            return myClass
+        }
+    }
+    return null
+}
+
+//Tests a string to see if it contains any special characters that would need to be escaped for a variety of actions.
+boolean containsSpecialCharacters(String input) {
+    myString = unHTML(input)
+    try {
+        // List of special characters to check
+        def specialCharacters = ['\\', '(', ')', '{', '}', '*', '+', '?', '|', '^', '$']
+        // Iterate over each special character and check if it exists in the input string
+        for (char specialChar : specialCharacters) {
+            if (input.contains(specialChar.toString())) return true
+        }
+        return false
+    }
+    catch (Exception e) {
+    // Handling the exception
+    log.info ("An exception occurred: ${e.message}")
+        return true
+    }
+}
 
 //Tests a string to see if it starts with startString
 def beginsWith(data, startString){
@@ -2445,7 +2464,7 @@ def beginsWith(data, startString){
     }
 }
 
-//Converts a seperated text string into a map.
+//Converts a separated text string into a map.
 def overridesToMap(myString , recordSeperator, fieldSeperator ){
     myoverrides = [:]
     //if (isLogDebug) log.debug ("myString is: ${myString}")
@@ -2471,72 +2490,125 @@ def overridesToMap(myString , recordSeperator, fieldSeperator ){
 
 //Removes any unneccessary content from the payload. Is controlled by the isScrubHTML setting on the Advanced tab.
 def scrubHTML(HTML, iFrame){
+    
     if (isLogTrace) log.trace ("scrubHTML: Entering scrubHTML")
-    myHTML = HTML.replace("</style><style>", "")
-    myHTML = myHTML.replace("</style> <style>", "")
-    myHTML = myHTML.replace("<style> ", "<style>")
-    myHTML = myHTML.replace("color:#FFFFFF", "")
-    myHTML = myHTML.replace("background-color:#FFFFFF", "")
-    myHTML = myHTML.replace("font-family:Roboto", "")
-    myHTML = myHTML.replace("opacity:1", "")
-    myHTML = myHTML.replace("font-size:100%", "")
-    //myHTML = myHTML.replace("text-align:Left", "")
+    //These are all of the tags that will be stripped in all cases if unused.
+    //This is the basic level of scrubbing.
+    if ( scrubHTMLlevel != null && scrubHTMLlevel.toInteger() >= 0  ) {
+        //Strip the unused placeholders
+        myHTML = HTML.replace("#head#", "")
+        myHTML = myHTML.replace("#title#", "")
+        myHTML = myHTML.replace("#table#", "")
+        myHTML = myHTML.replace("#header#", "")
+        myHTML = myHTML.replace("#row#", "")
+        myHTML = myHTML.replace("#alternaterow#", "")
+        myHTML = myHTML.replace("#data#", "")
+        myHTML = myHTML.replace("#footer#", "")
+        myHTML = myHTML.replace("#titleShadow#", "")
+        //#class# remains in for legacy compatibility but is not referenced in documentation.
+        myHTML = myHTML.replace("#class#", "")
+        myHTML = myHTML.replace("#class1#", "")
+        myHTML = myHTML.replace("#class2#", "")
+        myHTML = myHTML.replace("#class3#", "")
+        myHTML = myHTML.replace("#class4#", "")
+        myHTML = myHTML.replace("#class5#", "")
+        myHTML = myHTML.replace("#border#", "")
+        myHTML = myHTML.replace("#frame#", "")
+        myHTML = myHTML.replace("#high1#", "")
+        myHTML = myHTML.replace("#high2#", "")
+        myHTML = myHTML.replace("#high3#", "")
+        myHTML = myHTML.replace("#high4#", "")
+        myHTML = myHTML.replace("#high5#", "")
+        myHTML = myHTML.replace("#high6#", "")
+        myHTML = myHTML.replace("#high7#", "")
+        myHTML = myHTML.replace("#high8#", "")
+        myHTML = myHTML.replace("#high9#", "")
+        myHTML = myHTML.replace("#high10#", "")
+    }
     
-    //Remove any objects that had been detected as opacity=0
-    myHTML = myHTML.replace("background-color:rgba(0,0,0,0)", "")
-    myHTML = myHTML.replace("color:rgba(0,0,0,0)", "")
+    //This is the normal level of scrubbing.
+    if ( scrubHTMLlevel != null && scrubHTMLlevel.toInteger() >= 1  ) {
+        //Replace any repeating tags
+        myHTML = myHTML.replace("</style><style>", "")
+        myHTML = myHTML.replace("</style> <style>", "")
+        myHTML = myHTML.replace("<style> ", "<style>")
+       
+        //Remove any values that are actually defaults and do not need to be specified.
+        myHTML = myHTML.replace("font-family:Roboto", "")
+        myHTML = myHTML.replace("font-size:100%", "")
+        myHTML = myHTML.replace("auto%", "auto")
+        myHTML = myHTML.replace("Auto%", "auto")
+        myHTML = myHTML.replace("width:auto", "")
+        myHTML = myHTML.replace("height:auto", "")
+        myHTML = myHTML.replace("border-radius:0px", "")
+        myHTML = myHTML.replace("padding:0px", "")
+        myHTML = myHTML.replace("border-collapse:Seperate", "")
+        
+        //Remove any objects that had been detected as opacity=0
+        myHTML = myHTML.replaceAll("(?i)background:#00000000", "")
+        myHTML = myHTML.replaceAll("(?i)color:#00000000", "")
+        
+        if (iFrame == true ) myHTML = myHTML.replace("#iFrame1#", "")
+    }
     
-    myHTML = myHTML.replace("auto%", "auto")
-    myHTML = myHTML.replace("Auto%", "auto")
-    myHTML = myHTML.replace("width:auto", "")
-    myHTML = myHTML.replace("height:auto", "")
-    myHTML = myHTML.replace("border-radius:0px", "")
-    myHTML = myHTML.replace("padding:0px", "")
-    myHTML = myHTML.replace("border-collapse:Seperate", "")
+    //This is the Aggressive level of scrubbing
+    //This removes a variety of closing tags whose presence may not be required.
+    //Note: </tiqq> </th> are required when the opening tag is present or the formatting will bleed to the next object.
+    if ( scrubHTMLlevel != null && scrubHTMLlevel.toInteger() >= 2 ) {
+        myHTML = myHTML.replace("</td>", "")
+        myHTML = myHTML.replace("</tr>", "")
+        myHTML = myHTML.replace("</hqq1>", "")
+        myHTML = myHTML.replace("</hqq2>", "")
+        myHTML = myHTML.replace("</hqq3>", "")
+        myHTML = myHTML.replace("</hqq4>", "")
+        myHTML = myHTML.replace("</hqq5>", "")
+        myHTML = myHTML.replace("</hqq6>", "")
+        myHTML = myHTML.replace("</hqq7>", "")
+        myHTML = myHTML.replace("</hqq8>", "")
+        myHTML = myHTML.replace("</hqq9>", "")
+        myHTML = myHTML.replace("</hqq10>", "")
+        myHTML = myHTML.replace("</ftqq>", "")
+        myHTML = myHTML.replace("</tbody>", "")
+    }
+        
+    //Replace any excess spaces, parentheses or punctuation. These often occur as the result of other values being stripped so these are processed last.
+    if ( scrubHTMLlevel != null && scrubHTMLlevel.toInteger() >= 1  ) {        
+        myHTML = myHTML.replace(" :", ":")
+        myHTML = myHTML.replace(": ", ":")
+        myHTML = myHTML.replace(" {", "{")
+        myHTML = myHTML.replace("} ", "}")
+        myHTML = myHTML.replace("{;", "{")
+        myHTML = myHTML.replace(";;;", ";")
+        myHTML = myHTML.replace(";;", ";")
+        myHTML = myHTML.replace(";}", "}")
+        myHTML = myHTML.replace(",,", ",")
+        myHTML = myHTML.replace("    ", "  ")
+        myHTML = myHTML.replace("   ", "  ")
+        myHTML = myHTML.replace("> ", ">")
+    }
     
-    //Strip the unused placeholders
-    myHTML = myHTML.replace("#title#", "")
-    myHTML = myHTML.replace("#table#", "")
-    myHTML = myHTML.replace("#header#", "")
-    myHTML = myHTML.replace("#row#", "")
-    myHTML = myHTML.replace("#alternaterow#", "")
-    myHTML = myHTML.replace("#data#", "")
-    myHTML = myHTML.replace("#footer#", "")
-    myHTML = myHTML.replace("#titleShadow#", "")
-    //#class# remains in for legacy compatibility but is not referenced in documentation.
-    myHTML = myHTML.replace("#class#", "")
-    myHTML = myHTML.replace("#class1#", "")
-    myHTML = myHTML.replace("#class1#", "")
-    myHTML = myHTML.replace("#class2#", "")
-    myHTML = myHTML.replace("#class3#", "")
-    myHTML = myHTML.replace("#class4#", "")
-    myHTML = myHTML.replace("#class5#", "")
-    myHTML = myHTML.replace("#border#", "")
-    myHTML = myHTML.replace("#frame#", "")
-    myHTML = myHTML.replace("#high1#", "")
-    myHTML = myHTML.replace("#high2#", "")
-    myHTML = myHTML.replace("#high3#", "")
-    myHTML = myHTML.replace("#high4#", "")
-    myHTML = myHTML.replace("#high5#", "")
-    
-    
-    if (iFrame == true ) myHTML = myHTML.replace("#iFrame1#", "")
-    
-    //Replace any excess spaces, parentheses or punctuation.
-    myHTML = myHTML.replace(" :", ":")
-    myHTML = myHTML.replace(": ", ":")
-    //myHTML = myHTML.replace(", ", ",")
-    myHTML = myHTML.replace(" {", "{")
-    myHTML = myHTML.replace("{;", "{")
-    myHTML = myHTML.replace(";;;", ";")
-    myHTML = myHTML.replace(";;", ";")
-    myHTML = myHTML.replace(";}", "}")
-    myHTML = myHTML.replace(",,", ",")
-    myHTML = myHTML.replace("   ", " ")
-    myHTML = myHTML.replace("  ", " ")
-    myHTML = myHTML.replace("%%", "%")
+    //This is the Extreme level of scrubbing
+    if ( scrubHTMLlevel != null && scrubHTMLlevel.toInteger() >= 3 ) {
+        if (isFooter == false ) myHTML = myHTML.replace("</table>", "")
+        //Removal of the </body> tag prevents the calculation of stats.
+        myHTML = myHTML.replace("</body>", "")
 
-    return myHTML
+        //White Objects
+        myHTML = myHTML.replaceAll("(?i)background:#FFFFFFFF", "")
+        myHTML = myHTML.replaceAll("(?i)background:#FFFFFF", "")
+        myHTML = myHTML.replaceAll("(?i)background:#FFF", "")
+        
+        //Black Objects     
+        myHTML = myHTML.replaceAll("(?i)background:#00000000", "")
+        myHTML = myHTML.replaceAll("(?i)background:#000000", "")
+        
+		//Replace any remaining excess spaces.
+        myHTML = myHTML.replace("  ", " ")
+        myHTML = myHTML.replace("%%", "%")
+        myHTML = myHTML.replace(", ", ",")
+        
+    }
+	return myHTML
 }
 
 //Counts the number of characters between two strings including the start and end characters.
@@ -2582,138 +2654,8 @@ def findSpace(String myDevice, int myOccurrence){
     }
     cutOff = spaceList.get(myOccurrence - 1)
     myShortDevice = myDevice.substring(0, cutOff)
-    //if (isLogDebug) log.debug("myShortDevice ${myShortDevice}")
+    if (isLogDebug) log.debug("myShortDevice ${myShortDevice}")
     return myShortDevice
-}
-
-//Converts an RGB color and opacity to an RGBA
-def getRGBA(color, opacity){
-    if (isLogDebug) log.debug ("color is: ${color}, opacity is: ${opacity}" )
-    if (opacity == 0 ) {
-        //This object is invisible at opacity=0. So we will set the color to 0,0,0,0 and strip it out of the final file.
-        return rgba(0,0,0,0)
-    }
-    else {
-        myRGB = hubitat.helper.ColorUtils.hexToRGB(color)
-        myRGBA = "rgba(" + myRGB[0] + "," + myRGB[1] + "," + myRGB[2] + "," + opacity.toString() + ")"
-        return myRGBA
-    }
-}
-
-
-
-//Converts a RGBA color and opacity into an RGB value. Expecting imput like. rgba(217,236,177,1)
-def getRGB(rgba){
-    
-    //if (isLogDebug) log.debug ("received: ${rgba}")
-    rgba = rgba.replace("rgba(", "")
-    rgba = rgba.replace(")", "")
-    rgba = rgba.replace("#", "")
-    
-    details = rgba.tokenize(',')
-    //if (isLogDebug) log.debug ("details: ${details}")
-    d0 = details[0] ; d1 = details[1] ; d2 = details[2] ; d3 = details[3]
-    
-    myColor = [:]
-    myColor.rgb = hubitat.helper.ColorUtils.rgbToHEX([d0.toInteger(),d1.toInteger(),d2.toInteger()])
-    myColor.opacity = d3
-    return myColor
-    }
-
-
-//Compress any opaque colors to the smallest string value.
-def compress(String myColor){
-    return myColor
-    
-    if ( myColor == null ) return null
-    mySize = myColor.size()
-    log.info ("myColor is: ${myColor} of size: ${mySize}" )
-    isRGBA = false
-    isRGB = false
-    def compColor = ""
-    def myRGB
-    
-    //Can't get any legitimate result smaller than this.
-    if ( myColor.size() == 4 ) return myColor
-    
-    if ( myColor[0] == "#" ) {
-        //It's already in #ffffff format but still eligible for compression
-        isRGB = true
-        myRGB = myColor
-        log.info ("isRGB:true  -  myColor is: $myColor   -   myRGB is: ${myRGB}")
-    }
-    
-    //Test for RGBA
-    if (myColor.contains("rgba") == true) { 
-        isRGBA = true
-        myRGB = getRGB(myColor)
-        log.info ("myRGB is: ${myRGB} " )
-        if ( myRGB.opacity == "1" ) {
-            //This is a fully opaque color so it's eligible for shrinking 
-            //tempColor = [:]
-            //tempColor.rgb = hubitat.helper.ColorUtils.rgbToHEX([d0.toInteger(),d1.toInteger(),d2.toInteger()])
-            myRGB = myRGB.rgb
-            log.info ("isRGBA:true  -  myColor is: $myColor   -   myRGB is: ${myRGB}")
-        }
-        if ( myRGB.opacity == "0" ) {
-            //This is fully transparent color so it is invisible. We will set it to (0,0,0,0) and strip it out later in scrubHTML if enabled.
-            log.info ("Color is RGBA but is fully transparent. Set to (0,0,0,0) and will be stripped by scrubHTML()")
-            return "rgba(0,0,0,0)"
-        }
-    }
-    
-    //Test for RGB
-    if ( isRGB == true || isRGBA == true ) {
-        //Now process the results
-        log.info ("XXXXXX: myColor is: $myColor   -   myRGB is: ${myRGB}")
-        if (myRGB[1] == myRGB[2] && myRGB[3] == myRGB[4] && myRGB[5] == myRGB[6] ) {
-            compColor = "#" + myRGB[1] + myRGB[3] + myRGB[5]
-            if ( isRGB == true ) log.info ("Color is RGB and compressed from ${myColor} to: ${compColor}")
-            if ( isRGBA == true ) log.info ("Color is RGBA and compressed from ${myColor} to: ${compColor}")
-            return compColor
-            }
-        else {
-            if ( isRGB == true ) log.info ("Color is RGB but NOT compressed. Using original: ${myColor}")
-            if ( isRGBA == true ) log.info ("Color is RGBA but NOT compressed. Using original: ${myColor}")
-            return myColor
-            }
-    }
-    
-        log.info ("Color not RGB or RGBA and NOT compressed. Using original: ${myColor}")
-        return myColor
-}
-
-
-//Converts an RGB color and opacity to an RGBA
-def getRGBANew(color, opacity){
-    //if (isLogDebug) 
-    log.debug ("color is: ${color}, opacity is: ${opacity}" )
-    if (opacity == "0" ) {
-        //This object is invisible at opacity=0. So we will set the color to 0,0,0,0 and strip it out of the final file.
-        return "rgba(0,0,0,0)"
-    }
-    
-    else {
-        myRGB = hubitat.helper.ColorUtils.hexToRGB(color)
-        if (opacity == "1") {
-            log.info ("Testing Color")
-            //This object is fully opaque and this color may qualify to be in the form #fff to save space.
-            String pos0 = Integer.toString(myRGB[0], 16) ; pos0 = pos0.padLeft(2, '0')
-            String pos1 = Integer.toString(myRGB[1], 16) ; pos1 = pos1.padLeft(2, '0')
-            String pos2 = Integer.toString(myRGB[2], 16) ; pos2 = pos2.padLeft(2, '0')
-            
-            log.info ("pos0 == ${pos0}")
-            log.info ("pos1 == ${pos1}")
-            log.info ("pos2 == ${pos2}")
-            
-            //See if his color can be represented with 100% fidelity in #fff format to reduce space consumption.
-            if (pos0[0] == pos0[1] && pos1[0] == pos1[1] && pos2[0] == pos2[1] ) return "#" + pos0[0] + pos1[0] + pos2[0]
-        }
-        else {
-            myRGBA = "rgba(" + myRGB[0] + "," + myRGB[1] + "," + myRGB[2] + "," + opacity.toString() + ")"
-            return myRGBA
-        }
-    }
 }
 
 //Receives a string and determines whether it is a float, integer or string value.
@@ -2742,4 +2684,92 @@ def getDataType(String myVal){
     if ( isInteger == true ) return "Integer"
     if ( isFloat == true ) return "Float"
     return "String"
+}
+
+
+//************************************************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************************************************
+//**************
+//**************  Color Related functions.
+//**************
+//************************************************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************************************************
+ 
+//Receives a 6 digit hex color and an opacity and converts them to HEX8
+def convertToHex8(String hexColor, float opacity) {
+    if (isLogDebug) log.info ("convertToHex8: Received color: $hexColor with opacity: $opacity")
+    
+    if (hexColor != null ) hexColor = hexColor.replace("#", "")
+    // Ensure opacity is within the range 0 to 1
+    opacity = Math.max(0, Math.min(1, opacity))
+    // Convert the Hex color to HEX8 format
+    def red = Integer.parseInt(hexColor.substring(0, 2), 16)
+    def green = Integer.parseInt(hexColor.substring(2, 4), 16)
+    def blue = Integer.parseInt(hexColor.substring(4, 6), 16)
+    def alpha = Math.round(opacity * 255).toInteger()
+    
+    // Format the values as a hex string
+    def Hex8 = String.format("#%02X%02X%02X%02X", red, green, blue, alpha)
+    
+    if (isLogDebug) log.info ("convertToHex8: Reecived color: $hexColor with opacity: $opacity  - Returned color $Hex8")
+        
+    return Hex8
+}
+
+//Receives a #3, #6 or #8 digit hex RGB value and returns the shortest possible version of it.
+def compress(String hexValue) {
+    //if (isLogDebug)  log.info ("compress: Received Color: ${hexValue}")
+    def isCompressible = false
+    if (hexValue == null || hexValue == "null") return null
+    String opacity = ""
+    
+    hexValue = hexValue.replace("#", "")
+    // Check if the hexValue is already in the short hex RGB format. If so return it.
+    if (hexValue.length() == 3) {
+        if (isLogDebug) log.info ("compress:Received 3 Digit Color. Using original: #${hexValue}")
+        return "#" + hexValue
+    }
+    
+    // Check if the color values are compressible
+    def red = hexValue.substring(0, 2)
+    def green = hexValue.substring(2, 4)
+    def blue = hexValue.substring(4, 6)
+    if (red[0] == red[1] && green[0] == green[1] && blue[0] == blue[1]) isCompressible = true
+
+    //If the color is only six digits then object is fully opaque and this color may qualify to be in the form #fff to save space.
+    if (hexValue.length() == 6) {
+        if (isCompressible == true) { 
+            if (isLogDebug) log.info ("compress:Received 6 Digit Color #${hexValue}. Converted to 3 digit color: ${"#" + red[0] + green[0] + blue[0]}")
+            return "#" + red[0] + green[0] + blue[0]
+        }
+        else {
+            if (isLogDebug) log.info ("compress:Received 6 Digit Color #${hexValue}. Returning 6 digit color: ${"#" + hexValue}")
+        }
+    }
+    
+    //Check 8 digit colors.
+    if (hexValue.length() == 8) {    
+        opacity = hexValue.substring(6, 8)
+        // Check if opacity value is fully opaque
+        if ( opacity == "FF" && isCompressible == true ) {
+            newColor = "#" + red[0] + green[0] + blue[0]
+            if (isLogDebug) log.info ("compress:Received 8 Digit Color #${hexValue} with opacity == FF. Converted to 3 digit color: $newColor")
+            return newColor
+            }
+        }
+    
+        //8 digits with no transparency can be represented in 6 digits.
+        if (opacity == "FF" && isCompressible == false ) {
+            newColor = "#" + red + green + blue
+            if (isLogDebug) log.info ("compress:Received 8 Digit Color #${hexValue} with opacity == FF. Converted to 6 digit color: ${newColor}")
+            return newColor
+        }
+    
+        //8 digits with some alpha. Nothing to be done.
+        if (opacity != "FF" ) {
+            if (isLogDebug) log.info ("compress:Received 8 Digit Color #${hexValue} with opacity != FF. Returning 8 digit color: #${hexValue}")
+            return "#" + hexValue
+        }        
 }
