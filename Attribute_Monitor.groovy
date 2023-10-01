@@ -31,9 +31,10 @@
 *  Version 1.3.0 - Multiple updates and fixes. Implements %value% macro, use search and replace strings vs just strip strings. Added button type to Activity Monitor list, added valve, healthStatus and variable types, added padding to floats, \
 *                  reduced floating point options to 0 or 1. Added opacity option to table background. Converted Thresholds to use numbered comparators. Changed storage of #top variables. Implemented supportFunction for child recovery.
 *  Version 1.3.1 - Added null checking to multiple lines to correct app errors, especially when picking "No Selection" which returns null. Fixed bug with substituting values for fields #22 and #27. Fixed bug when subscribing to camelCase attributes.
-*  Version 1.4.0 - Added improvements first introduced in Multi-Attribute Monitor such as improved compression. Added %time1% and %time2% for proper 24hr and 12hr times. Added selector for Device Naming. Added attribute "level". Updated Threshold operators and variables from using numbers 1-5 to 6-10.
-* 
-*  Gary Milne - Sept 29th, 2023
+*  Version 1.4.0 - Added improvements first introduced in Multi-Attribute Monitor such as Attribute and Color compression. Added %time1% and %time2% for proper 24hr and 12hr times. Added selector for Device Naming. Added attribute "level". Updated Threshold operators and variables from using numbers 1-5 to 6-10.
+*  Version 1.4.1 - Bugfix: Make sure that the eventTimeout variable has a value if detected as null.
+*
+*  Gary Milne - October 1st, 2023
 *
 *  This code is Activity Monitor and Attribute Monitor combined.
 *  The personality is dictated by @Field static moduleName a few lines ahead of this.
@@ -51,7 +52,7 @@ import groovy.transform.Field
 //These are unknown as to whether they report integer or float values.
 //capabilitiesUnknown = [" "carbonDioxideMeasurement":"carbonDioxide","pressureMeasurement":"pressure","relativeHumidityMeasurement":"humidity", "ultravioletIndex":"ultravioletIndex"]
 
-@Field static final Version = "<b>Tile Builder Attribute Monitor v1.4.0 (9/29/23)</b>"
+@Field static final Version = "<b>Tile Builder Attribute Monitor v1.4.1 (10/01/23)</b>"
 //@Field static final moduleName = "Activity Monitor"
 @Field static final moduleName = "Attribute Monitor"
 
@@ -81,6 +82,9 @@ preferences {
 def mainPage() {
     //Basic initialization for the initial release
     if (state.initialized == null ) initialize()
+    
+    //Configure a default value for eventTimeout for tiles that preceed this setting.
+    if (eventTimeout == null) app.updateSetting("eventTimeout", "2000")
     
     //Handles the initialization of new variables added after the original release.
     updateVariables( )
