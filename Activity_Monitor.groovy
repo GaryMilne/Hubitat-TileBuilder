@@ -33,8 +33,9 @@
 *  Version 1.3.1 - Added null checking to multiple lines to correct app errors, especially when picking "No Selection" which returns null. Fixed bug with substituting values for fields #22 and #27. Fixed bug when subscribing to camelCase attributes.
 *  Version 1.4.0 - Added improvements first introduced in Multi-Attribute Monitor such as Attribute and Color compression. Added %time1% and %time2% for proper 24hr and 12hr times. Added selector for Device Naming. Added attribute "level". Updated Threshold operators and variables from using numbers 1-5 to 6-10.
 *  Version 1.4.1 - Bugfix: Make sure that the eventTimeout variable has a value if detected as null.
+*  Version 1.4.2 - Bugfix: Units were not displaying when selected.
 *
-*  Gary Milne - October 1st, 2023
+*  Gary Milne - October 10th, 2023
 *
 *  This code is Activity Monitor and Attribute Monitor combined.
 *  The personality is dictated by @Field static moduleName a few lines ahead of this.
@@ -52,7 +53,7 @@ import groovy.transform.Field
 //These are unknown as to whether they report integer or float values.
 //capabilitiesUnknown = [" "carbonDioxideMeasurement":"carbonDioxide","pressureMeasurement":"pressure","relativeHumidityMeasurement":"humidity", "ultravioletIndex":"ultravioletIndex"]
 
-@Field static final Version = "<b>Tile Builder Activity Monitor v1.4.1 (10/01/23)</b>"
+@Field static final Version = "<b>Tile Builder Activity Monitor v1.4.2 (10/10/23)</b>"
 @Field static final moduleName = "Activity Monitor"
 //@Field static final moduleName = "Attribute Monitor"
 
@@ -1477,6 +1478,11 @@ def highlightValue(attributeValue){
     //Save a copy of the original value.
     def originalValue = attributeValue.toString()
     dataType = getDataType(attributeValue.toString())
+    
+    //Get the units we are using.
+    if (myUnits == null || myUnits == "None" || isAppendUnits == false) myUnit = ""
+    else myUnit = myUnits.replace("_"," ")
+    
     //If the data is a string then we must process it for Keywords.
     if ( dataType == "String" ){  
         for (i = 1; i <= myKeywordCount.toInteger(); i++) {
@@ -1486,18 +1492,18 @@ def highlightValue(attributeValue){
                     if (isLogDebug) log.debug("highlightValue: Keyword ${attributeValue} was found and is a match for Keyword1.")
                     if (settings["ktr$i"] != null && settings["ktr$i"].size() > 0) {
                         returnValue = settings["ktr$i"].replace ("%value%", attributeValue)
-                        return "[td][hqq$i]" + returnValue + "[/hqq$i][/td]"
+                        return "[td][hqq$i]" + returnValue + myUnit + "[/hqq$i][/td]"
                     }
                 }
             }
         }
         //It's a string but does not match a keyword.
-        return "[td]" + attributeValue + "[/td]"
+        return "[td]" + attributeValue + myUnit + "[/td]"
     }
     
 	//If it get's this far it must be a number.
 	returnValue = attributeValue.toString()
-    //Use a flag to rememeber the highest threshold with a match
+    //Use a flag to remember the highest threshold with a match
     def lastThreshold = 0
     //i is the loopcounter. It starts at 6 because the threshold controls are numbered 6 thru 10.
     i = 6
@@ -1514,19 +1520,19 @@ def highlightValue(attributeValue){
 			if ( ( settings["top$i"] == "1" || settings["top$i"] == "<=" ) && attributeValue.toInteger() <= settings["tcv$i"].toInteger() ) {
 								   
                 if (isLogDebug)  log.debug("highlightThreshold: A <= than condition was met.")
-                if ( ( settings["ttr$i"] != null && settings["ttr$i"] != " " ) && settings["ttr$i"] != "?") { returnValue = settings["ttr$i"] } 
+                if ( ( settings["ttr$i"] != null && settings["ttr$i"] != " " ) && settings["ttr$i"] != "?") { returnValue = settings["ttr$i"]  + myUnit } 
                 lastThreshold = i
 				}
             if ( ( settings["top$i"] == "2" || settings["top$i"] == "==" ) && attributeValue.toInteger() == settings["tcv$i"].toInteger() ) {
 								  
                 if (isLogDebug) log.debug("highlightThreshold: An == condition was met.")
-                if (settings["ttr$i"] != null && settings["ttr$i"] != " " && settings["ttr$i"] != "?") { returnValue = settings["ttr$i"] } 
+                if (settings["ttr$i"] != null && settings["ttr$i"] != " " && settings["ttr$i"] != "?") { returnValue = settings["ttr$i"] + myUnit } 
 				lastThreshold = i
 				}
             if ( ( settings["top$i"] == "3" || settings["top$i"] == ">=" ) && attributeValue.toInteger() >= settings["tcv$i"].toInteger() ) {
 								  
                 if (isLogDebug) log.debug("highlightThreshold: A >= than condition was met.")
-                if (settings["ttr$i"] != null && settings["ttr$i"] != " " && settings["ttr$i"] != "?") { returnValue = settings["ttr$i"] } 
+                if (settings["ttr$i"] != null && settings["ttr$i"] != " " && settings["ttr$i"] != "?") { returnValue = settings["ttr$i"]  + myUnit } 
                 lastThreshold = i
 				}
         }
@@ -1536,11 +1542,11 @@ def highlightValue(attributeValue){
     //log.info ("Exited For Loop and lastThreshold is: $lastThreshold ")
     if (lastThreshold == 0) {
         //Does not match any threshold
-        return "[td]" + returnValue + "[/td]"    
+        return "[td]" + returnValue + myUnit + "[/td]"    
         }                
     else { 
         returnValue = returnValue.replace("%value%", attributeValue.toString()) 
-        return "[td][hqq$lastThreshold]" + returnValue + "[/hqq$lastThreshold][/td]"
+        return "[td][hqq$lastThreshold]" + returnValue + myUnit + "[/hqq$lastThreshold][/td]"
 	}
 } //End of function
 		

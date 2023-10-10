@@ -23,7 +23,8 @@
       "required": false,
       "oauth": false,
       "primary": false,
-      "version": "1.4.1"
+      "version": "1.4.2",
+	  "releaseNotes": "Fixes bug that prevents units from being appended to data in the tables when selected."
     },
     {
       "id": "b47eb226-2696-4b78-9c62-3a87545cdefc",
@@ -33,7 +34,8 @@
       "required": false,
       "oauth": false,
       "primary": false,
-      "version": "1.4.1"
+      "version": "1.4.2",
+	  "releaseNotes": "Fixes bug that prevents units from being appended to data in the tables when selected."
     },
     {
       "id": "f6f3310d-5376-4165-96f5-fc4e4a673b48",
