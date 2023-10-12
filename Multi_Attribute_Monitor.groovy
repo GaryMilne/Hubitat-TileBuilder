@@ -15,15 +15,17 @@
 *  Version 1.0.1 - Only displays Rules fields if running Advanced Mode.
 *  Version 1.1.0 - Multiple bug fixes. Fixed errors with subscription handling. Added eventTimeout and runInMillis logic to reduce publishing load.
 *  Version 1.1.1 - Fixed bug where Threshold5 was in effect and "Also Highlight Device Names" was selected but the device name would fail to format correctly.																																							  
+*  Version 1.1.2 - Converted Threshold checking to use type Float instead of Int
+*  Version 1.1.3 - Added %time1% and %time2% macros to be consistent with Attribute\Activity Monitor
 *
-*  Gary Milne - July 26th, 2023 7:58 PM
+*  Gary Milne - October 12th, 20023 3:52 PM
 *
 *  This code is Multi-Attribute Monitor which is largely derived from Attribute Monitor but is still substantially different.
 *
 **/
 
 import groovy.transform.Field
-@Field static final Version = "<b>Tile Builder Multi Attribute Monitor v1.1.1 (7/26/23)</b>"
+@Field static final Version = "<b>Tile Builder Multi Attribute Monitor v1.1.3 (10/12/23)</b>"
 
 definition(
     name: "Tile Builder - Multi Attribute Monitor",
@@ -49,6 +51,8 @@ def mainPage() {
     if (state.initialized == null ) initialize()
     //Handles the initialization of new variables added after the original release.
     //updateVariables( )
+	
+																				 
         
     //Checks to see if there are any messages for this child app. This is used to recover broken child apps from certain error conditions
     myMessage = parent.messageForTile( app.label )
@@ -406,7 +410,7 @@ def mainPage() {
                             input (name: "tcv8", type: "number", title: bold("Comparison Value #8"), required: false, displayDuringSetup: true, defaultValue: 1, submitOnChange: true, width: 2)
                             input (name: "ttr8", type: "text", title: bold("Replacement Text #8"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2)
                             input (name: "hc8", type: "color", title: bold2("Highlight 8 Color", hc8), required: false, defaultValue: "#00FF00", submitOnChange: true, width: 2)    //Default as red shade
-                            input (name: "hts8", type: "enum", title: bold("Highlight 3 Text Scale"), options: parent.textScale(), required: false, submitOnChange: true, defaultValue: "125", width: 2, newLineAfter:true)
+                            input (name: "hts8", type: "enum", title: bold("Highlight 8 Text Scale"), options: parent.textScale(), required: false, submitOnChange: true, defaultValue: "125", width: 2, newLineAfter:true)
                         }
                         if (myThresholdCount.toInteger() >= 4 ){
                             input (name: "top9", type: "enum", title: bold("Operator #9"), required: false, options: parent.comparators(), displayDuringSetup: true, defaultValue: 0, submitOnChange: true, width: 1, newLine: true)
@@ -968,7 +972,7 @@ def getDeviceMapMultiAttrMon(){
                 
                 if ( settings["actionA$i"] == "Commas" ) {
                     myFloat = settings["myDevice$i"].currentValue(settings["myAttribute$i"]).toFloat() 
-                    log.info ("myFloat is: $myFloat")
+                    //log.info ("myFloat is: $myFloat")
                     if (myFloat >= 1000) {
                         def formattedNumber = String.format("%,d", myFloat)
                         newMap [ settings["name$i"] ] = formattedNumber.toString()
@@ -1183,11 +1187,16 @@ void makeHTML(data, int myRows){
     
     //Set an appropriate format for day and time.
     def myTime = new Date().format('HH:mm a')
+    def myTime1 = new Date().format('HH:MM')
+    def myTime2 = new Date().format('h:mm a')
     def myDay = new Date().format('E')
     
     //Replace macro values regardless of case.
     interimHTML = interimHTML.replaceAll("(?i)%day%", myDay)
     interimHTML = interimHTML.replaceAll("(?i)%time%", myTime)
+    interimHTML = interimHTML.replaceAll("(?i)%time1%", myTime1)
+    interimHTML = interimHTML.replaceAll("(?i)%time2%", myTime2)
+    //interimHTML = interimHTML.replaceAll("(?i)%units%", myUnit)
     interimHTML = interimHTML.replaceAll("(?i)%count%", state.recordCount.toString())
     
     //Replace any embedded tags using [] with <>
@@ -1277,26 +1286,26 @@ def highlightValue(attributeValue, myIndex){
         myVal1 = settings["tcv$i"]
         myVal2 = settings["top$i"]
         myThresholdText = "Threshold " + ( i - 5).toString()
-						  
-        if (isLogDebug) log.info ("i is: $i.  tcv$i is: $myVal1  top$i is: $myVal2  dataType is $dataType  Threshold is: $myThresholdText")
-        if (settings["tcv$i"] != null && settings["tcv$i"] != "" && settings["tcv$i"] != "None" && ( ( settings["actionB$myIndex"] == "All Thresholds" )  || settings["actionB$myIndex"] == myThresholdText ) )  {
-            
+        				  
+        //if (isLogDebug) log.info ("i is: $i.  tcv$i is: $myVal1  top$i is: $myVal2  dataType is $dataType  Threshold is: $myThresholdText originalValue is: $originalValue")
+        if (settings["tcv$i"] != null && settings["tcv$i"] != "" && settings["tcv$i"] != "None" && ( ( settings["actionB$myIndex"] == "All Thresholds" )  || settings["actionB$myIndex"] == myThresholdText ) && ( dataType == "Integer" || dataType == "Float") ) {
+				
             //This is the ideal place for a switch statement but using a break within switch causes it to exit the while loop also.
-            if ( ( settings["top$i"] == "1" || settings["top$i"] == "<=" ) && attributeValue.toInteger() <= settings["tcv$i"].toInteger() ) {
+            if ( ( settings["top$i"] == "1" || settings["top$i"] == "<=" ) && originalValue.toFloat() <= settings["tcv$i"].toFloat() ) {
 								   
                 if (isLogDebug)  log.debug("highlightThreshold: A <= than condition was met.")
                 if ( ( settings["ttr$i"] != null && settings["ttr$i"] != " " ) && settings["ttr$i"] != "?") { returnValue = settings["ttr$i"] } 
                 lastThreshold = i
                 }
             
-            if ( ( settings["top$i"] == "2" || settings["top$i"] == "==" ) && attributeValue.toInteger() == settings["tcv$i"].toInteger() ) {
+            if ( ( settings["top$i"] == "2" || settings["top$i"] == "==" ) && originalValue.toFloat() == settings["tcv$i"].toFloat() ) {
 								  
                 if (isLogDebug) log.debug("highlightThreshold: An == condition was met.")
                 if (settings["ttr$i"] != null && settings["ttr$i"] != " " && settings["ttr$i"] != "?") { returnValue = settings["ttr$i"] } 
                 lastThreshold = i
                 }
             
-            if ( ( settings["top$i"] == "3" || settings["top$i"] == ">=" ) && attributeValue.toInteger() >= settings["tcv$i"].toInteger() ) {
+            if ( ( settings["top$i"] == "3" || settings["top$i"] == ">=" ) && originalValue.toFloat() >= settings["tcv$i"].toFloat() ) {
 								  
                 if (isLogDebug) log.debug("highlightThreshold: A >= than condition was met.")
                 if (settings["ttr$i"] != null && settings["ttr$i"] != " " && settings["ttr$i"] != "?") { returnValue = settings["ttr$i"] } 
@@ -1866,7 +1875,7 @@ def initialize(){
     app.updateSetting("bfs", "18")
     app.updateSetting("tff", "Roboto")
     app.updateSetting("scrubHTMLlevel", 1)
-    app.updateSetting("eventTimeout", "2000")
+    app.updateSetting("eventTimeout", "500")
     app.updateSetting("isShowImportExport", false)
     app.updateSetting("isShowHTML", false)
     app.updateSetting("importStyleText", "?")
