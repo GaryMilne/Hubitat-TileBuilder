@@ -4,7 +4,7 @@
   "version": "10",
   "minimumHEVersion": "2.3.4.132",
   "dateReleased": "2023-09-21",
-  "releaseNotes": "Package-V10:Increments MAM to 1.1.3 to add %time1% and %time2% macros."
+  "releaseNotes": "Package-V10:Increments MAM to 1.1.3 to add %time1% and %time2% macros.",
   "apps": [
     {
       "id": "82c4cdaf-cadc-48b0-afc9-624d53543498",
@@ -34,8 +34,7 @@
       "required": false,
       "oauth": false,
       "primary": false,
-      "version": "1.4.2",
-	  "releaseNotes": "Fixes bug that prevents units from being appended to data in the tables when selected."
+      "version": "1.4.2"
     },
     {
       "id": "f6f3310d-5376-4165-96f5-fc4e4a673b48",
