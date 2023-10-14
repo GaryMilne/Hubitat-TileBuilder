@@ -14,18 +14,19 @@
 *  Version 1.0.0 - Public Release
 *  Version 1.0.1 - Only displays Rules fields if running Advanced Mode.
 *  Version 1.1.0 - Multiple bug fixes. Fixed errors with subscription handling. Added eventTimeout and runInMillis logic to reduce publishing load.
-*  Version 1.1.1 - Fixed bug where Threshold5 was in effect and "Also Highlight Device Names" was selected but the device name would fail to format correctly.																																							  
+*  Version 1.1.1 - Fixed bug where Threshold5 was in effect and "Also Highlight Device Names" was selected but the device name would fail to format correctly.
 *  Version 1.1.2 - Converted Threshold checking to use type Float instead of Int
 *  Version 1.1.3 - Added %time1% and %time2% macros to be consistent with Attribute\Activity Monitor
+*  Version 1.2.0 - Increased the number of possible rows from 10-15. Added a method to limit the display to a subset of the enabled rows.
 *
-*  Gary Milne - October 12th, 20023 3:52 PM
+*  Gary Milne - October 14th, 2023 2:26 PM
 *
 *  This code is Multi-Attribute Monitor which is largely derived from Attribute Monitor but is still substantially different.
 *
 **/
 
 import groovy.transform.Field
-@Field static final Version = "<b>Tile Builder Multi Attribute Monitor v1.1.3 (10/12/23)</b>"
+@Field static final Version = "<b>Tile Builder Multi Attribute Monitor v1.2.0 (10/14/23)</b>"
 
 definition(
     name: "Tile Builder - Multi Attribute Monitor",
@@ -51,13 +52,12 @@ def mainPage() {
     if (state.initialized == null ) initialize()
     //Handles the initialization of new variables added after the original release.
     //updateVariables( )
-	
-																				 
-        
+	    
     //Checks to see if there are any messages for this child app. This is used to recover broken child apps from certain error conditions
     myMessage = parent.messageForTile( app.label )
     if ( myMessage != "" ) supportFunction ( myMessage ) 
     
+    //This causes refresh to run every time the page is refreshed. It may run twice if the called action also initiates a refresh.
     refreshTable()
     refreshUIbefore()
     dynamicPage(name: "mainPage", title: titleise("<center><h2> Multi Attribute Monitor </h2></center>"), uninstall: true, install: true, singleThreaded:true) {
@@ -65,9 +65,11 @@ def mainPage() {
     section{
         if (state.show.Devices == true) {
         //paragraph buttonLink ("test", "test", 0)
-                input(name: 'btnShowDevices', type: 'button', title: 'Select Devices and Attributes ▼', backgroundColor: 'navy', textColor: 'white', submitOnChange: true, width: 3, newLineAfter: true)  //▼ ◀ ▶ ▲
-                
-                input (name: "myDeviceCount", title: "<b>How Many Devices\\Attributes?</b>", type: "enum", options: [1,2,3,4,5,6,7,8,9,10], submitOnChange:true, width:2, defaultValue: 0)
+            input(name: 'btnShowDevices', type: 'button', title: 'Select Devices and Attributes ▼', backgroundColor: 'navy', textColor: 'white', submitOnChange: true, width: 3, newLineAfter: true)  //▼ ◀ ▶ ▲
+            input (name: "myDeviceCount", title: "<b>How Many Devices\\Attributes?</b>", type: "enum", options: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15], submitOnChange:true, width:2, defaultValue: 0)
+            input (name: "showDeviceRange", title: "<b>Show Device Range?</b>", type: "enum", options: [0:'All Devices', 1:'Devices 1 - 5', 2:'Devices 6 - 10', 3:'Devices 11 - 15'], submitOnChange:true, width:2, defaultValue: 0)
+            
+            if (showDeviceRange == "0" || showDeviceRange == "1") {
                 if (myDeviceCount != null && myDeviceCount.toInteger() >= 1 ){
                     input "myDevice1", "capability.*", title: "<b>Device 1</b>" , multiple: false, required: false, submitOnChange: true, width: 2, newLine: true
                     input "name1", "string", title: "<b>Item Name</b>", submitOnChange:true, width:2, defaultValue: "?", newLine:false
@@ -76,8 +78,7 @@ def mainPage() {
                     input "append1", "string", title: "<b>Append</b>", submitOnChange:true, width:1, defaultValue: "", newLine:false
                     input "actionA1", "enum", title: "<b>Cleanup</b>",  options: parent.cleanups(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
                     if (parent.checkLicense() == true) input "actionB1", "enum", title: "<b>Rules</b>",  options: parent.rules(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
-                    }
-                
+                    } 
                 if (myDeviceCount != null && myDeviceCount.toInteger() >= 2 ){
                     input "myDevice2", "capability.*", title: "<b>Device 2</b>" , multiple: false, required: false, submitOnChange: true, width: 2, newLine: true
                     input "name2", "string", title: "<b>Item Name</b>", submitOnChange:true, width:2, defaultValue: "?", newLine:false
@@ -87,7 +88,6 @@ def mainPage() {
                     input "actionA2", "enum", title: "<b>Cleanup</b>",  options: parent.cleanups(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
                     if (parent.checkLicense() == true) input "actionB2", "enum", title: "<b>Rules</b>",  options: parent.rules(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
                     }
-                
                 if (myDeviceCount != null && myDeviceCount.toInteger() >= 3 ){
                     input "myDevice3", "capability.*", title: "<b>Device 3</b>" , multiple: false, required: false, submitOnChange: true, width: 2, newLine: true
                     input "name3", "string", title: "<b>Item Name</b>", submitOnChange:true, width:2, defaultValue: "?", newLine:false
@@ -97,7 +97,6 @@ def mainPage() {
                     input "actionA3", "enum", title: "<b>Cleanup</b>",  options: parent.cleanups(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
                     if (parent.checkLicense() == true) input "actionB3", "enum", title: "<b>Rules</b>",  options: parent.rules(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
                     }
-                
                 if (myDeviceCount != null && myDeviceCount.toInteger() >= 4 ){
                     input "myDevice4", "capability.*", title: "<b>Device 4</b>" , multiple: false, required: false, submitOnChange: true, width: 2, newLine: true
                     input "name4", "string", title: "<b>Item Name</b>", submitOnChange:true, width:2, defaultValue: "?", newLine:false
@@ -107,7 +106,6 @@ def mainPage() {
                     input "actionA4", "enum", title: "<b>Cleanup</b>",  options: parent.cleanups(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
                     if (parent.checkLicense() == true) input "actionB4", "enum", title: "<b>Rules</b>",  options: parent.rules(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
                     }
-                
                 if (myDeviceCount != null && myDeviceCount.toInteger() >= 5 ){
                     input "myDevice5", "capability.*", title: "<b>Device 5</b>" , multiple: false, required: false, submitOnChange: true, width: 2, newLine: true
                     input "name5", "string", title: "<b>Item Name</b>", submitOnChange:true, width:2, defaultValue: "?", newLine:false
@@ -117,7 +115,9 @@ def mainPage() {
                     input "actionA5", "enum", title: "<b>Cleanup</b>",  options: parent.cleanups(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
                     if (parent.checkLicense() == true) input "actionB5", "enum", title: "<b>Rules</b>",  options: parent.rules(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
                     }
-                
+            }
+            
+            if (showDeviceRange == "0" || showDeviceRange == "2") {
                 if (myDeviceCount != null && myDeviceCount.toInteger() >= 6 ){
                     input "myDevice6", "capability.*", title: "<b>Device 6</b>" , multiple: false, required: false, submitOnChange: true, width: 2, newLine: true
                     input "name6", "string", title: "<b>Item Name</b>", submitOnChange:true, width:2, defaultValue: "?", newLine:false
@@ -126,8 +126,7 @@ def mainPage() {
                     input "append6", "string", title: "<b>Append</b>", submitOnChange:true, width:1, defaultValue: "", newLine:false
                     input "actionA6", "enum", title: "<b>Cleanup</b>",  options: parent.cleanups(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
                     if (parent.checkLicense() == true) input "actionB6", "enum", title: "<b>Rules</b>",  options: parent.rules(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
-                    }
-                
+                    } 
                 if (myDeviceCount != null && myDeviceCount.toInteger() >= 7 ){
                     input "myDevice7", "capability.*", title: "<b>Device 7</b>" , multiple: false, required: false, submitOnChange: true, width: 2, newLine: true
                     input "name7", "string", title: "<b>Item Name</b>", submitOnChange:true, width:2, defaultValue: "?", newLine:false
@@ -137,7 +136,6 @@ def mainPage() {
                     input "actionA7", "enum", title: "<b>Cleanup</b>",  options: parent.cleanups(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
                     if (parent.checkLicense() == true) input "actionB7", "enum", title: "<b>Rules</b>",  options: parent.rules(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
                     }
-                
                 if (myDeviceCount != null && myDeviceCount.toInteger() >= 8 ){
                     input "myDevice8", "capability.*", title: "<b>Device 8</b>" , multiple: false, required: false, submitOnChange: true, width: 2, newLine: true
                     input "name8", "string", title: "<b>Item Name</b>", submitOnChange:true, width:2, defaultValue: "?", newLine:false
@@ -147,7 +145,6 @@ def mainPage() {
                     input "actionA8", "enum", title: "<b>Cleanup</b>",  options: parent.cleanups(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
                     if (parent.checkLicense() == true) input "actionB8", "enum", title: "<b>Rules</b>",  options: parent.rules(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
                     }
-                
                 if (myDeviceCount != null && myDeviceCount.toInteger() >= 9 ){
                     input "myDevice9", "capability.*", title: "<b>Device 9</b>" , multiple: false, required: false, submitOnChange: true, width: 2, newLine: true
                     input "name9", "string", title: "<b>Item Name</b>", submitOnChange:true, width:2, defaultValue: "?", newLine:false
@@ -157,7 +154,6 @@ def mainPage() {
                     input "actionA9", "enum", title: "<b>Cleanup</b>",  options: parent.cleanups(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
                     if (parent.checkLicense() == true) input "actionB9", "enum", title: "<b>Rules</b>",  options: parent.rules(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
                     }
-                
                 if (myDeviceCount != null && myDeviceCount.toInteger() >= 10 ){
                     input "myDevice10", "capability.*", title: "<b>Device 10</b>" , multiple: false, required: false, submitOnChange: true, width: 2, newLine: true
                     input "name10", "string", title: "<b>Item Name</b>", submitOnChange:true, width:2, defaultValue: "?", newLine:false
@@ -167,6 +163,55 @@ def mainPage() {
                     input "actionA10", "enum", title: "<b>Cleanup</b>",  options: parent.cleanups(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
                     if (parent.checkLicense() == true) input "actionB10", "enum", title: "<b>Rules</b>",  options: parent.rules(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
                     }
+            }
+            
+            if (showDeviceRange == "0" || showDeviceRange == "3") {
+                if (myDeviceCount != null && myDeviceCount.toInteger() >= 11 ){
+                    input "myDevice11", "capability.*", title: "<b>Device 11</b>" , multiple: false, required: false, submitOnChange: true, width: 2, newLine: true
+                    input "name11", "string", title: "<b>Item Name</b>", submitOnChange:true, width:2, defaultValue: "?", newLine:false
+                    input "prepend11", "string", title: "<b>Prepend</b>", submitOnChange:true, width:1, defaultValue: "", newLine:false
+                    input "myAttribute11", "enum", title: "&nbsp<b>Attribute</b>", options: getAttributeList(myDevice11), multiple:false, submitOnChange:true, width: 2, required: true, newLine: false
+                    input "append11", "string", title: "<b>Append</b>", submitOnChange:true, width:1, defaultValue: "", newLine:false
+                    input "actionA11", "enum", title: "<b>Cleanup</b>",  options: parent.cleanups(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
+                    if (parent.checkLicense() == true) input "actionB11", "enum", title: "<b>Rules</b>",  options: parent.rules(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
+                    }
+                if (myDeviceCount != null && myDeviceCount.toInteger() >= 12 ){
+                    input "myDevice12", "capability.*", title: "<b>Device 12</b>" , multiple: false, required: false, submitOnChange: true, width: 2, newLine: true
+                    input "name12", "string", title: "<b>Item Name</b>", submitOnChange:true, width:2, defaultValue: "?", newLine:false
+                    input "prepend12", "string", title: "<b>Prepend</b>", submitOnChange:true, width:1, defaultValue: "", newLine:false
+                    input "myAttribute12", "enum", title: "&nbsp<b>Attribute</b>", options: getAttributeList(myDevice12), multiple:false, submitOnChange:true, width: 2, required: true, newLine: false
+                    input "append12", "string", title: "<b>Append</b>", submitOnChange:true, width:1, defaultValue: "", newLine:false
+                    input "actionA12", "enum", title: "<b>Cleanup</b>",  options: parent.cleanups(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
+                    if (parent.checkLicense() == true) input "actionB12", "enum", title: "<b>Rules</b>",  options: parent.rules(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
+                    }
+                if (myDeviceCount != null && myDeviceCount.toInteger() >= 13 ){
+                    input "myDevice13", "capability.*", title: "<b>Device 13</b>" , multiple: false, required: false, submitOnChange: true, width: 2, newLine: true
+                    input "name13", "string", title: "<b>Item Name</b>", submitOnChange:true, width:2, defaultValue: "?", newLine:false
+                    input "prepend13", "string", title: "<b>Prepend</b>", submitOnChange:true, width:1, defaultValue: "", newLine:false
+                    input "myAttribute13", "enum", title: "&nbsp<b>Attribute</b>", options: getAttributeList(myDevice12), multiple:false, submitOnChange:true, width: 2, required: true, newLine: false
+                    input "append13", "string", title: "<b>Append</b>", submitOnChange:true, width:1, defaultValue: "", newLine:false
+                    input "actionA13", "enum", title: "<b>Cleanup</b>",  options: parent.cleanups(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
+                    if (parent.checkLicense() == true) input "actionB13", "enum", title: "<b>Rules</b>",  options: parent.rules(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
+                    }
+                if (myDeviceCount != null && myDeviceCount.toInteger() >= 14 ){
+                    input "myDevice14", "capability.*", title: "<b>Device 14</b>" , multiple: false, required: false, submitOnChange: true, width: 2, newLine: true
+                    input "name14", "string", title: "<b>Item Name</b>", submitOnChange:true, width:2, defaultValue: "?", newLine:false
+                    input "prepend14", "string", title: "<b>Prepend</b>", submitOnChange:true, width:1, defaultValue: "", newLine:false
+                    input "myAttribute14", "enum", title: "&nbsp<b>Attribute</b>", options: getAttributeList(myDevice12), multiple:false, submitOnChange:true, width: 2, required: true, newLine: false
+                    input "append14", "string", title: "<b>Append</b>", submitOnChange:true, width:1, defaultValue: "", newLine:false
+                    input "actionA14", "enum", title: "<b>Cleanup</b>",  options: parent.cleanups(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
+                    if (parent.checkLicense() == true) input "actionB14", "enum", title: "<b>Rules</b>",  options: parent.rules(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
+                    }
+                if (myDeviceCount != null && myDeviceCount.toInteger() >= 15 ){
+                    input "myDevice15", "capability.*", title: "<b>Device 15</b>" , multiple: false, required: false, submitOnChange: true, width: 2, newLine: true
+                    input "name15", "string", title: "<b>Item Name</b>", submitOnChange:true, width:2, defaultValue: "?", newLine:false
+                    input "prepend15", "string", title: "<b>Prepend</b>", submitOnChange:true, width:1, defaultValue: "", newLine:false
+                    input "myAttribute15", "enum", title: "&nbsp<b>Attribute</b>", options: getAttributeList(myDevice12), multiple:false, submitOnChange:true, width: 2, required: true, newLine: false
+                    input "append15", "string", title: "<b>Append</b>", submitOnChange:true, width:1, defaultValue: "", newLine:false
+                    input "actionA15", "enum", title: "<b>Cleanup</b>",  options: parent.cleanups(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
+                    if (parent.checkLicense() == true) input "actionB15", "enum", title: "<b>Rules</b>",  options: parent.rules(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
+                    }
+            }
         }
         else input(name: 'btnShowDevices', type: 'button', title: 'Select Devices and Attributes ▶', backgroundColor: 'dodgerBlue', textColor: 'white', submitOnChange: true, width: 3)  //▼ ◀ ▶ ▲
         paragraph line(2)
@@ -556,6 +601,7 @@ def mainPage() {
                 if (tilePreview == "6" ) paragraph '<iframe srcdoc=' + '"' + myHTML + '"' + ' width="380" height="380" style="border:solid" scrolling="no"></iframe>'
                 if (tilePreview == "7" ) paragraph '<iframe srcdoc=' + '"' + myHTML + '"' + ' width="380" height="570" style="border:solid" scrolling="no"></iframe>'
                 if (tilePreview == "8" ) paragraph '<iframe srcdoc=' + '"' + myHTML + '"' + ' width="380" height="760" style="border:solid" scrolling="no"></iframe>'
+                if (tilePreview == "9" ) paragraph '<iframe srcdoc=' + '"' + myHTML + '"' + ' width="380" height="950" style="border:solid" scrolling="no"></iframe>'
             }
             else {
                 //Use a custom size for the preview window.
@@ -759,8 +805,8 @@ def appButtonHandler(btn) {
             else state.show.Publish = true
             break
         case "Refresh":
-            //We don't need to do anything. The refreshTable will be called by the submitOnChange.
             if (isLogTrace==true) log.trace("appButtonHandler: Clicked on Refresh")
+            refreshTable()
             break
         case "publish":
             //We will publish it right away and then shcedule the refresh as requested.
@@ -925,25 +971,24 @@ def getDeviceMapMultiAttrMon(){
     
     //Loop through all of the potential devices and their attributes.  Clean them up if required and then put them into the map.
     for (int i = 1; i <= myDeviceCount.toInteger(); i++) {
-        
-        if (settings["myDevice$i"] != null) { 
-        
+        if (settings["myDevice$i"] != null) {
+            def useDefault = true
+            deviceName = settings["myDevice$i"]
             dataType = getDataType( settings["myDevice$i"].currentValue(settings["myAttribute$i"]).toString() )
-            //log.info ("dataType is: ${dataType} for device $i" )
+            if (isLogDebug) log.info ("dataType is: ${dataType} for device $i" )
             def myAction = settings["actionA$i"]
             //log.info ("action is: actionA$i  value is: $myAction" )
             
             //If the attribute has a null value alert the user.
             if ( dataType == "Null" ){ 
-                log.info ("This is a null value")
-                newMap [ settings["name$i"] ] = "<b>Null Attribute</b>"
+                if (isLogWarn) log.info ("The attribute for device $deviceName is a null value")
+                newMap [ settings["name$i"] ] = "Null"
+                continue
             }
             
             if ( dataType == "String" ){ 
-                def useDefault = true
                 if ( settings["actionA$i"] == "Capitalize" ) {
-                    myString = settings["myDevice$i"].currentValue(settings["myAttribute$i"]) 
-                    myString = myString[0].toUpperCase() + myString[1..-1]
+                    myString = settings["myDevice$i"].currentValue(settings["myAttribute$i"]).capitalize()
                     newMap [ settings["name$i"] ] = myString
                     useDefault = false
                 }
@@ -957,7 +1002,6 @@ def getDeviceMapMultiAttrMon(){
             }
                 
             if ( dataType == "Float" ){ 
-                def useDefault = true
                 if ( settings["actionA$i"] == "0 Decimal Places" ) {
                     myFloat = settings["myDevice$i"].currentValue(settings["myAttribute$i"]).toFloat() 
                     newMap [ settings["name$i"] ] = myFloat.round(0).toInteger()
@@ -978,7 +1022,8 @@ def getDeviceMapMultiAttrMon(){
                         newMap [ settings["name$i"] ] = formattedNumber.toString()
                         useDefault = false
                     }
-                    //else newMap [ settings["name$i"] ] = myFloat
+                    //If it is less than 1,000 just use it as is.
+                    else newMap [ settings["name$i"] ] = myFloat
                     useDefault = false
                 }
                 
@@ -987,7 +1032,6 @@ def getDeviceMapMultiAttrMon(){
             }
             
             if ( dataType == "Integer" ){ 
-                def useDefault = true
                 if ( settings["actionA$i"] == "1 Decimal Place" ) {
                     myFloat = settings["myDevice$i"].currentValue(settings["myAttribute$i"]).toFloat()
                     newMap [ settings["name$i"] ] = myFloat.round(1)
@@ -1004,7 +1048,7 @@ def getDeviceMapMultiAttrMon(){
             }
         }
     }
-    if (isLogDebug) log.debug ("newMap is: $newMap")
+    //if (isLogDebug) log.debug ("newMap is: $newMap")
     return newMap
 }
 
@@ -1023,12 +1067,14 @@ def getDeviceMapMultiAttrMon(){
 void refreshTable(){
     if (isLogTrace) log.trace("refreshTable: Entering refreshTable")
     //Create the template for the data
-    def data = ["#A01#":"A01","#B01#":"B01","#A02#":"A02","#B02#":"B02","#A03#":"A03","#B03#":"B03","#A04#":"A04","#B04#":"B04","#A05#":"A05","#B05#":"B05", "#A06#":"A06","#B06#":"B06","#A07#":"A07","#B07#":"B07","#A08#":"A08","#B08#":"B08","#A09#":"A09","#B09#":"B09","#A10#":"A10","#B10#":"B10"]
+    def data = ["#A01#":"A01","#B01#":"B01","#A02#":"A02","#B02#":"B02","#A03#":"A03","#B03#":"B03","#A04#":"A04","#B04#":"B04","#A05#":"A05","#B05#":"B05", 
+                "#A06#":"A06","#B06#":"B06","#A07#":"A07","#B07#":"B07","#A08#":"A08","#B08#":"B08","#A09#":"A09","#B09#":"B09","#A10#":"A10","#B10#":"B10",
+                "#A11#":"A11","#B11#":"B11","#A12#":"A12","#B12#":"B12","#A13#":"A13","#B13#":"B13","#A14#":"A14","#B14#":"B14","#A15#":"A15","#B15#":"B15"]
 
     //For getDeviceMapMultiAttrMon() the map is not actually sorted. It always remains in the same order but this keeps the code the same.
     sortedMap = getDeviceMapMultiAttrMon()
-    if (isLogDebug) 
-    log.debug("refreshTable: sortedMap is: ${sortedMap}")
+    //if (isLogDebug) 
+    if (isLogDebug) log.info("refreshTable: sortedMap is: ${sortedMap}")
     
     //Iterate through the sortedMap and take the number of entries corresponding to the number set by the deviceLimit
     recordCount = sortedMap.size()
@@ -1093,6 +1139,7 @@ void makeHTML(data, int myRows){
     String HTMLTBODY = "<tbody>"                                                                                                                    //Sets the start of table body section
     String HTMLR1 = "<tr><td>#A01#</td><td>#B01#</td></tr>"; String HTMLR2 = "<tr><td>#A02#</td><td>#B02#</td></tr>"; String HTMLR3 = "<tr><td>#A03#</td><td>#B03#</td></tr>"; String HTMLR4 = "<tr><td>#A04#</td><td>#B04#</td></tr>"; String HTMLR5 = "<tr><td>#A05#</td><td>#B05#</td></tr>"
     String HTMLR6 = "<tr><td>#A06#</td><td>#B06#</td></tr>"; String HTMLR7 = "<tr><td>#A07#</td><td>#B07#</td></tr>"; String HTMLR8 = "<tr><td>#A08#</td><td>#B08#</td></tr>"; String HTMLR9 = "<tr><td>#A09#</td><td>#B09#</td></tr>"; String HTMLR10 = "<tr><td>#A10#</td><td>#B10#</td></tr>"
+    String HTMLR11 = "<tr><td>#A11#</td><td>#B11#</td></tr>"; String HTMLR12 = "<tr><td>#A12#</td><td>#B12#</td></tr>"; String HTMLR13 = "<tr><td>#A13#</td><td>#B13#</td></tr>"; String HTMLR14 = "<tr><td>#A14#</td><td>#B14#</td></tr>"; String HTMLR15 = "<tr><td>#A15#</td><td>#B15#</td></tr>"
     String HTMLTABLEEND = "</tbody></table>"
     String HTMLFOOTER = "<ft#id#>#ft#</ft#id#>"        //Footer - May be omitted
     String HTMLDIVEND = "</div>"    
@@ -1120,12 +1167,14 @@ void makeHTML(data, int myRows){
     if (isHeaders == false) { HTMLHEADERSTYLE = "" ; HTMLR0 = "" }
         
     //Nullify the non-populated. We allow it to go to zero rows so that by turning off headers we can have just a Title field for a decorative tile.
-    if (myRows <= 10) HTMLR11 = ""; if (myRows <= 9) HTMLR10 = ""; if (myRows <= 8) HTMLR9 = ""; if (myRows <= 7) HTMLR8 = ""; if (myRows <= 6) HTMLR7 = ""; if (myRows <= 5) HTMLR6 = ""; if (myRows <= 4) HTMLR5 = ""; if (myRows <= 3) HTMLR4 = ""; if (myRows <= 2) HTMLR3 = ""; if (myRows <= 1) HTMLR2 = ""; if (myRows <= 0) HTMLR1 = ""
+    if (myRows <= 15) HTMLR16 = ""; if (myRows <= 14) HTMLR15 = ""; if (myRows <= 13) HTMLR14 = ""; if (myRows <= 12) HTMLR13 = ""; if (myRows <= 11) HTMLR12 = ""
+    if (myRows <= 10) HTMLR11 = ""; if (myRows <= 9) HTMLR10 = ""; if (myRows <= 8) HTMLR9 = ""; if (myRows <= 7) HTMLR8 = ""; if (myRows <= 6) HTMLR7 = ""; if (myRows <= 5) HTMLR6 = ""; 
+    if (myRows <= 4) HTMLR5 = ""; if (myRows <= 3) HTMLR4 = ""; if (myRows <= 2) HTMLR3 = ""; if (myRows <= 1) HTMLR2 = ""; if (myRows <= 0) HTMLR1 = ""
     
     //Now build the final HTML TEMPLATE string
     def interimHTML = HTMLCOMMENT + HTMLSTYLE1 + HTMLSTYLE2 + HTMLDIVSTYLE + HTMLBORDERSTYLE + HTMLTITLESTYLE + HTMLHEADERSTYLE + HTMLARSTYLE  + HTMLFOOTERSTYLE + HTMLHIGHLIGHT1STYLE + HTMLHIGHLIGHT2STYLE + HTMLHIGHLIGHT3STYLE + HTMLHIGHLIGHT4STYLE + HTMLHIGHLIGHT5STYLE 
     interimHTML += HTMLHIGHLIGHT6STYLE + HTMLHIGHLIGHT7STYLE + HTMLHIGHLIGHT8STYLE + HTMLHIGHLIGHT9STYLE + HTMLHIGHLIGHT10STYLE + HTMLDIVSTART + HTMLTITLE + HTMLTABLESTART + HTMLR0 + HTMLTBODY 
-    interimHTML += HTMLR1 + HTMLR2 + HTMLR3 + HTMLR4 + HTMLR5 + HTMLR6 + HTMLR7 + HTMLR8 + HTMLR9 + HTMLR10 + HTMLR11
+    interimHTML += HTMLR1 + HTMLR2 + HTMLR3 + HTMLR4 + HTMLR5 + HTMLR6 + HTMLR7 + HTMLR8 + HTMLR9 + HTMLR10 + HTMLR11 + HTMLR12 + HTMLR13 + HTMLR14 + HTMLR15 + HTMLR16
     interimHTML += HTMLTABLEEND + HTMLFOOTER + HTMLDIVEND + HTMLEND
     if (isLogDebug) log.debug ("HTML Template is: ${interimHTML}")
             
@@ -1139,7 +1188,7 @@ void makeHTML(data, int myRows){
     //We use this index to track the row number which allows us to reference the array of variables i.e. device1, attribute1 etc.
     myIndex = 0
 
-    //Now replace the placeholders with the actual data values for cells B1 - B10.
+    //Now replace the placeholders with the actual data values for cells B1 - B15.
     myTemplate.each{ it, value -> 
         //log.info ("1)  Iterating myTemplate: it is: $it and value is: $value")
         //If it's the data colum it will begin #B1# thru #B30#. Anything else we can just process normally.
@@ -1360,6 +1409,11 @@ void publishSubscribe(){
     if (myDevice8 != null && myAttribute8 != null )  { subscribe (myDevice8, myAttribute8, handler) }
     if (myDevice9 != null && myAttribute9 != null )  { subscribe (myDevice9, myAttribute9, handler) }
     if (myDevice10 != null && myAttribute10 != null ){ subscribe (myDevice10, myAttribute10, handler) }
+    if (myDevice11 != null && myAttribute11 != null ){ subscribe (myDevice11, myAttribute11, handler) }
+    if (myDevice12 != null && myAttribute12 != null ){ subscribe (myDevice12, myAttribute12, handler) }
+    if (myDevice13 != null && myAttribute13 != null ){ subscribe (myDevice13, myAttribute13, handler) }
+    if (myDevice14 != null && myAttribute14 != null ){ subscribe (myDevice14, myAttribute14, handler) }
+    if (myDevice15 != null && myAttribute15 != null ){ subscribe (myDevice15, myAttribute15, handler) }
     
     //Populate the Initial Table based on the present state.
     publishTable()
@@ -1501,7 +1555,7 @@ def applyStyle(style){
 
     style.each{ mySetting, myValue ->
         mySetting = mySetting.replaceAll("#","")
-        log.debug ("setting is: ${mySetting} and value is: ${myValue} and myclass is: ${myClass}")
+        if (isLogDebug) log.debug ("setting is: ${mySetting} and value is: ${myValue} and myclass is: ${myClass}")
         //If the setting is not in the exclusion list then we will process it.
         if ( !combinedExclusionList.contains(mySetting) ) {
             myClass = getSettingClass(mySetting)

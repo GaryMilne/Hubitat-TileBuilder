@@ -1,10 +1,10 @@
 {
   "packageName": "Tile Builder",
   "author": "Gary J. Milne",
-  "version": "143",
+  "version": "144",
   "minimumHEVersion": "2.3.4.132",
   "dateReleased": "2023-09-21",
-  "releaseNotes": "Package-V143:Increments MAM to 1.1.3 to add %time1% and %time2% macros.",
+  "releaseNotes": "Package-144: Increments MAM to 1.2.0 to add additional rows.<br>Package-V143: Increments MAM to 1.1.3 to add %time1% and %time2% macros.",
   "apps": [
     {
       "id": "82c4cdaf-cadc-48b0-afc9-624d53543498",
@@ -14,7 +14,7 @@
       "required": true,
       "oauth": false,
       "primary": false,
-      "version": "1.4.2"
+      "version": "1.4.3"
     },
     {
       "id": "ad995bcd-c6a8-4c48-b683-4f280aeff4f6",
@@ -44,7 +44,7 @@
       "required": false,
       "oauth": false,
       "primary": false,
-      "version": "1.1.3"
+      "version": "1.2.0"
     },
     {
       "id": "8c7a37d4-7e2a-405a-86e9-79c42fbbfaf8",
