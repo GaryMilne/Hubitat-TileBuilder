@@ -8,13 +8,14 @@
 *  Version 1.0.9 - Fixed bug with Multi Value Text Match not being processed. Added a few Icons. Added a second Publish button for ease of access.
 *  Version 1.1.0 - Added z-index control for whole tile. Added additional icons. Added standard CSS for handling background image tiles.
 *  Version 1.1.1 - Fixes bug in the refreshing of IconBar data.
+*  Version 1.1.2 - Fixes handling for several fields when "No Selection" (null equivalent) is accidentally selected.
 *  
 *
 **/
 
 import groovy.transform.Field
 import java.text.DecimalFormat
-@Field static final Version = "<b>Tile Builder Rooms v1.1.1 (9/27/23 @ 11:19 AM)</b>"
+@Field static final Version = "<b>Tile Builder Rooms v1.1.2 (10/23/23 @ 10:06 AM)</b>"
 
 //Device Profiles
 def deviceProfiles() { return ["Alarm 🚨 (A1)", "Battery 🔋 (B1)", "Switch - Bulb 💡 (S1)","Switch - Plug 🔌 (S2)","Switch - Plug w/Power ⚡ (S3)","Switch - Fan ❌ (S4)", "Switch - User Defined #1 (S5)","Switch - User Defined #2 (S6)", "Contact - Door 🚪 (C1)" \
@@ -1351,7 +1352,8 @@ def appButtonHandler(btn) {
 //Get the values of the selected device attributes and put them into a map after a little cleanup.
 def getDeviceMapRooms(){
     def newMap = [:]
-    if (myDeviceCount.toInteger() == null ) app.updateSetting("myDeviceCount", [value:"0", type:"enum"])
+    
+    if (myDeviceCount == null ) app.updateSetting("myDeviceCount", [value:"0", type:"enum"])
     //Loop through all of the potential devices and their attributes.  Clean them up if required and then put them into the map.
     for (int i = 1; i <= myDeviceCount.toInteger(); i++) { 
         //We have to check if they have null contents
@@ -1432,8 +1434,10 @@ void refreshRoom(){
             } 
         } //End of sortedMap.eachWithIndex
     
-    //Refresh the IconBar Text - We don't care about doing anything with the return values. We will use the values stored in state instead.
+    //Refresh the IconBar Text - We don't care about doing anything with the return values. We will use the values stored in state.
+    if (IconBarADeviceCount == null) app.updateSetting("IconBarADeviceCount", [value:"0", type:"enum"])
     getIconBarText(IconBarADeviceCount.toInteger(), "A")
+    if (IconBarBDeviceCount == null) app.updateSetting("IconBarBDeviceCount", [value:"0", type:"enum"])
     getIconBarText(IconBarBDeviceCount.toInteger(), "B")
     
     int myRows = Math.min(recordCount, myDeviceCount.toInteger())
@@ -1596,6 +1600,7 @@ void makeHTML(data, int myRows){
     def classes
     
     //Combine the background color and opacity into a 4 digit hex.
+    if (roomOpacity == null) app.updateSetting("roomOpacity", [value:"1", type:"enum"])
     myRoomColor = convert2Hex(roomColor.toString()) + opacityToHex(roomOpacity.toFloat())
     
     //Configure all of the HTML template lines.
@@ -2168,7 +2173,7 @@ def initialize(){
     
     //Room
     app.updateSetting("roomColor", [value:"#daeaba", type:"color"])
-    app.updateSetting("roomOpacity", "1")
+    app.updateSetting("roomOpacity", [value:"1", type:"enum"])
     app.updateSetting("isDisplayWalls", true)
     app.updateSetting("wallColor1", [value:"#d9a1a1", type:"color"])
     app.updateSetting("wallColor2", [value:"#cc8f8f", type:"color"])
@@ -2237,7 +2242,6 @@ def initialize(){
         
     //IconBarA Properties
     app.updateSetting("IconBarADeviceCount", [value:"0", type:"enum"])
-    app.updateSetting("IconBarBDeviceCount", [value:"0", type:"enum"])
     app.updateSetting("XIconBarA", [value:"10", type:"text"])
     app.updateSetting("YIconBarA", [value:"95", type:"text"])
     app.updateSetting("IconBarASize", [value:"None", type:"enum"])
