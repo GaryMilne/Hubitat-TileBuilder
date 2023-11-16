@@ -53,12 +53,13 @@
 *                  Donation minimum increased by $1 to $7 for additional module - Rooms.
 *  Version 1.4.2 - Added recovery options to messageList() for Rooms.
 *  Version 1.4.3 - Added a 2x5 option to the tilePreview list to accomodate the addition of rows to Multi-Attribute Monitor.
+*  Version 1.4.4 - Added Style - Zigbee Monitor. Removed Rules Map, moved locally to MAM.
 *
-*  Gary Milne - October 14th, 2023 @ 9:17 AM
+*  Gary Milne - November 16th, 2023 @ 10:50 AM
 *
 **/
 import groovy.transform.Field
-@Field static final Version = "<b>Tile Builder Parent v1.4.3 (10/14/23)</b>"
+@Field static final Version = "<b>Tile Builder Parent v1.4.4 (11/16/23)</b>"
 
 //These are the data for the pickers used on the child forms.
 def elementSize() { return ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '30', '40', '50', '75', '100'] }
@@ -86,7 +87,6 @@ def unitsMap() { return ['None', '°F', '_°F', '°C', '_°C', '%', '_%', 'A', '
 def comparators() { return [0:'None', 1:'<=', 2:'==', 3:'>='] }
 def htmlScrubLevel(){ return [0:'Basic', 1:'Normal', 2:'Aggressive', 3:'Extreme'] }
 def cleanups() { return ["None", "Capitalize","Commas", "0 Decimal Places","1 Decimal Place", "Upper Case"] }
-def rules() { return ["None", "All Keywords","All Thresholds", "Threshold 1","Threshold 2", "Threshold 3", "Threshold 4", "Threshold 5", "Format Rule 1", "Format Rule 2", "Format Rule 3"] }
 
 definition(
     name: 'Tile Builder',
@@ -775,6 +775,11 @@ def makeDefaultStyles() {
     style = styleA + styleB
     state.'*Style-AM Wood' = style
 
+    styleA = convertStyleStringToMap('#tbo#=1, #hp#=0, #top4#=0, #fc#=#000000, #to#=1, #rabc#=#f2dcdb, #myKeywordCount#=1, #hbc#=#c0504d, #isCustomSize#=false, #bm#=Collapse, #iFrameColor#=#bbbbbb, #shver#=0, #top5#=0, #tff#=Comic Sans MS, #isTitleShadow#=false, #tp#=3, #customHeight#=190, #th#=Auto, #isAlternateRows#=true, #ta#=Center, #isComment#=false, #rbo#=0.3, #isFrame#=false, #shhor#=0, #top2#=0, #rts#=75, #isBorder#=true, #hto#=1, #bo#=1, #fbc#=#bbbbbb, #rta#=Left, #isFooter#=false, #top3#=0, #bw#=2, #tc#=#000000, #bp#=0, #isHeaders#=true, #hta#=Center, #ts#=125, #shcolor#=#000000, #tbc#=#c89393, #shblur#=5, #myThresholdCount#=1, #rtc#=#000000, #customWidth#=200, #hbo#=1, #rp#=3, #top1#=0, #isTitle#=false, #br#=0, #htc#=#000000, #rbc#=#f2dcdb, #fa#=Center, #rto#=1, #isOverrides#=true, #fs#=60, #tw#=100, #bfs#=18, #bc#=#000000, #ratc#=#000000, #bs#=Solid')
+    styleB = ['overrides':'#class1#=td:nth-child(1) {text-align:center} | #class2#=td:nth-child(2) {padding-left:10px !important;padding-right:10px !important} | #class3#=hr{border-color:#c0504d;border-style:dashed}']
+    style = styleA + styleB
+    state.'*Style-AM Zigbee Monitor' = style
+    
     log.info("Default Styles have been rebuilt.")
 	return
 }

@@ -3,6 +3,21 @@
 *  Original posting on Hubitat Community forum: https://community.hubitat.com/t/release-tile-builder-build-beautiful-dashboards/118822
 *  Tile Builder Documentation: https://github.com/GaryMilne/Hubitat-TileBuilder/blob/main/Tile%20Builder%20Help.pdf
 *
+*  Copyright 2022 Gary J. Milne  
+*  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed
+*  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
+*  for the specific language governing permissions and limitations under the License.
+
+*  License:
+*  You are free to use this software in an un-modified form. Software cannot be modified or redistributed.
+*  You may use the code for educational purposes or for use within other applications as long as they are unrelated to the 
+*  production of tabular data in HTML form, unless you have the prior consent of the author.
+*  You are granted a license to use Tile Builder in its standard configuration without limits.
+*  Use of Tile Builder in it's Advanced requires a license key that must be issued to you by the original developer. TileBuilderApp@gmail.com
+*
+*  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the
+*  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+*
 *  CHANGELOG
 *  Version 1.0.0 - Internal
 *  Version 1.0.1 - Cleaned up some UI pieces. Removed tile1 as the default when publishing so that it is a conscious choice to avoid overrides.
@@ -34,8 +49,9 @@
 *  Version 1.4.0 - Added improvements first introduced in Multi-Attribute Monitor such as Attribute and Color compression. Added %time1% and %time2% for proper 24hr and 12hr times. Added selector for Device Naming. Added attribute "level". Updated Threshold operators and variables from using numbers 1-5 to 6-10.
 *  Version 1.4.1 - Bugfix: Make sure that the eventTimeout variable has a value if detected as null.
 *  Version 1.4.2 - Bugfix: Units were not displaying when selected.
+*  Version 1.4.3 - Cosmetic Changes to the Menu Bar and Title. Adds a counter to a comment field for results > 1024 which ensures that every update is unique and causes the file to be reloaded in the Dashboard on any change. Added Character Replacement capability.
 *
-*  Gary Milne - October 10th, 2023
+*  Gary Milne - November 16th, 2023
 *
 *  This code is Activity Monitor and Attribute Monitor combined.
 *  The personality is dictated by @Field static moduleName a few lines ahead of this.
@@ -48,12 +64,15 @@
 import groovy.transform.Field
 //These are supported capabilities. Layout is "device.selector":"attribute".  Keeping them in 3 separate maps makes it more readable and easier to identify the sort criteria.
 @Field static final capabilitiesInteger = ["airQuality":"airQualityIndex", "battery":"battery", "colorTemperature":"colorTemperature","illuminanceMeasurement":"illuminance", "signalStrength":"rssi", "switchLevel":"level"]
-@Field static final capabilitiesString = ["*":"variable", "carbonDioxideDetector":"carbonMonoxide", "contactSensor":"contact", "healthCheck":"healthStatus", "lock":"lock", "motionSensor":"motion", "presenceSensor":"presence", "smokeDetector":"smoke", "switch":"switch", "valve":"valve", "waterSensor":"water", "windowBlind":"windowBlind"]
+@Field static final capabilitiesString = ["*":"variable","carbonDioxideDetector":"carbonMonoxide", "contactSensor":"contact", "healthCheck":"healthStatus", "lock":"lock", "motionSensor":"motion", "presenceSensor":"presence", "smokeDetector":"smoke", "switch":"switch", "valve":"valve", "waterSensor":"water", "windowBlind":"windowBlind"]
+//The first field has to be unique so we append the capability with a number so that all of the entries appear in the list even when the capability is really the same. Without this we can only use "*" once.
+//These three are used by Zigbee Monitor Driver.
+@Field static final capabilitiesCustom = ["signalStrength1":"deviceNeighbors", "signalStrength2":"deviceRepeaters", "signalStrength3":"deviceRoutes", "signalStrength4":"deviceChildren", "signalStrength5":"deviceChildCount", "signalStrength6":"deviceRouteCount", "signalStrength7":"deviceRepeaterCount"]
 @Field static final capabilitiesFloat = ["currentMeter": "amperage", "energyMeter":"energy", "powerMeter":"power", "relativeHumidityMeasurement":"humidity", "temperatureMeasurement":"temperature","voltageMeasurement":"voltage"]
 //These are unknown as to whether they report integer or float values.
 //capabilitiesUnknown = [" "carbonDioxideMeasurement":"carbonDioxide","pressureMeasurement":"pressure","relativeHumidityMeasurement":"humidity", "ultravioletIndex":"ultravioletIndex"]
 
-@Field static final Version = "<b>Tile Builder Activity Monitor v1.4.2 (10/10/23)</b>"
+@Field static final Version = "<b>Tile Builder Activity Monitor v1.4.3 (11/16/23)</b>"
 @Field static final moduleName = "Activity Monitor"
 //@Field static final moduleName = "Attribute Monitor"
 
@@ -101,15 +120,17 @@ def mainPage() {
         }
     refreshTable()
     refreshUIbefore()
-    dynamicPage(name: "mainPage", title: titleise("<center><h2>" + moduleName + "</h2></center>"), uninstall: true, install: true, singleThreaded:true) {
+    def pageTitle = (parent.checkLicense() == true) ? "Multi Attribute Monitor - Advanced" : "Multi Attribute Monitor - Standard";
+    dynamicPage(name: "mainPage", title: titleise("<center><h2>$pageTitle</h2></center>"), uninstall: true, install: true, singleThreaded:true) {
+    //paragraph buttonLink ("test", "test", 0)
         
     section{
         if (state.show.Devices == true) {
         //paragraph buttonLink ("test", "test", 0) //Used for temporary testing.
             if (moduleName == "Attribute Monitor"){
                 input(name: 'btnShowDevices', type: 'button', title: 'Select Device and Attributes ▼', backgroundColor: 'navy', textColor: 'white', submitOnChange: true, width: 3, newLineAfter: true)  //▼ ◀ ▶ ▲
-                capabilities = capabilitiesInteger.clone() + capabilitiesString.clone() + capabilitiesFloat.clone()
-        
+                capabilities = capabilitiesInteger.clone() + capabilitiesString.clone() + capabilitiesFloat.clone() + capabilitiesCustom.clone()
+                newCapabilityString = ""
                 //This input device list the items by attribute name but actually returns the capability.
                 input (name: "myCapability", title: "<b>Select the Attribute to Monitor</b>", type: "enum", options: capabilities.sort{it.value} , submitOnChange:true, width:3, defaultValue: 1)
                 //Retreive the attribute type and save it to state.
@@ -119,7 +140,10 @@ def mainPage() {
                 if (capabilitiesInteger.get(myCapability) != null) state.attributeType = "Integer"
                 if (capabilitiesFloat.get(myCapability) != null) state.attributeType = "Float"
                 if (capabilitiesString.get(myCapability) != null) state.attributeType = "String"
-                input "myDeviceList", "capability.$myCapability", title: "<b>Select Devices to Monitor</b>" , multiple: true, required: false, submitOnChange: true, width: 4
+                 // Check if the last character is a digit. If it is then remove it.
+                if (myCapability && myCapability[-1] =~ /\d/) { newCapabilityString = myCapability[0..-2] }
+                else newCapabilityString = myCapability
+                input "myDeviceList", "capability.$newCapabilityString", title: "<b>Select Devices to Monitor</b>" , multiple: true, required: false, submitOnChange: true, width: 4
             }
         
             if (moduleName == "Activity Monitor"){
@@ -201,14 +225,19 @@ def mainPage() {
             if (isCustomize == true){
                 //Allows the user to remove informational lines.
                 input (name: "isCompactDisplay", type: "bool", title: "Compact Display", required: false, multiple: false, defaultValue: false, submitOnChange: true, width: 2 )
-                //paragraph titleise("Select a Section to Customize")
-                paragraph "<style>#buttons {font-family: Arial, Helvetica, sans-serif;width: 90%;text-align:'Center'} #buttons td,tr {background:#00a2ed;color:#FFFFFF;text-align:Center;opacity:0.75;padding: 8px} #buttons td:hover {background-color: #27ae61;opacity:1}</style>"
+                
+                //Set the default advancedStyle to be disabled (non-activated) and overwrite it if the app is activated.
+                advancedStyle = "<td style='background-color:#CCCCCC;pointer-events:none !important' .td:hover{box-shadow: 0 5px 0 0 gray !important;padding:0px}>"
+                if (parent.checkLicense() == true ) advancedStyle = "<td>"
+                //Setup the Table Style
+                paragraph "<style>#buttons {font-family: Arial, Helvetica, sans-serif;width:100%;text-align:'Center'} #buttons td,tr {background:#00a2ed;color:#FFFFFF;text-align:Center;opacity:0.75;padding: 8px} #buttons td:hover {background: #27ae61;opacity:1}</style>"
                 part1 = "<table id='buttons'><td>"  + buttonLink ('General', 'General', 1) + "</td><td>" + buttonLink ('Title', 'Title', 2) + "</td><td>" + buttonLink ('Headers', 'Headers', 3) + "</td>"
                 part2 = "<td>" + buttonLink ('Borders', 'Borders', 4) + "</td><td>" + buttonLink ('Rows', 'Rows', 5) + "</td><td>"  + buttonLink ('Footer', 'Footer', 6) + "</td>"
-                if (moduleName == "Attribute Monitor") part3 = "<td>" + buttonLink ('Highlights', 'Highlights', 7) + "</td><td>" + buttonLink ('Styles', 'Styles', 8) + "</td>" + "</td><td>" + buttonLink ('Advanced', 'Advanced', 9) + "</td>"
-                if (moduleName == "Activity Monitor") part3 = "<td>" + buttonLink ('Styles', 'Styles', 8) + "</td>" + "</td><td>" + buttonLink ('Advanced', 'Advanced', 9) + "</td>"
-                if (parent.checkLicense() == true) table = part1 + part2 + part3 + "</table>"
-                else table = part1 + part2 + "</table>"
+                //These Tabs may be Enabled or Disabled depending on the Activation Status.
+                if (moduleName == "Attribute Monitor") part3 = advancedStyle + buttonLink ('Highlights', 'Highlights', 7) + "</td>" + advancedStyle + buttonLink ('Styles', 'Styles', 8) + "</td>" + advancedStyle + buttonLink ('Advanced', 'Advanced', 9) + "</td>"
+                if (moduleName == "Activity Monitor")  part3 = advancedStyle + buttonLink ('Styles', 'Styles', 8) + "</td>" + advancedStyle + buttonLink ('Advanced', 'Advanced', 9) + "</td>"
+                table = part1 + part2 + part3 + "</table>"
+                if (isCompactDisplay == false) paragraph titleise("Select a Section to Customize")
                 paragraph table
                 
                 //General Properties
@@ -446,15 +475,26 @@ def mainPage() {
                         
                     }
                     else input(name: 'btnShowThresholds', type: 'button', title: 'Show Thresholds ▶', backgroundColor: 'dodgerBlue', textColor: 'white', submitOnChange: true, width: 3, newLine: true, newLineAfter:true)  //▼ ◀ ▶ ▲
-                      
+                         
+                    //Replace Chars
+                    if (state.show.ReplaceCharacters == true) {
+                        input(name: 'btnShowReplaceCharacters', type: 'button', title: 'Show Replace Chars ▼', backgroundColor: 'navy', textColor: 'white', submitOnChange: true, width: 2, newLine: true, newLineAfter: true)  //▼ ◀ ▶ ▲
+                        input (name: "isReplaceCharacters", type: "bool", title: "<b>Replace Characters?</b>", required: false, multiple: false, defaultValue: true, submitOnChange: true, width: 2, newLine:false)
+                        if (isReplaceCharacters == true) {
+                            input (name: "oc1", type: "text", title: bold("Original Character(s)"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2, newLine:false)
+                            input (name: "nc1", type: "text", title: bold("New Character(s)"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2, newLine: false)
+                        }
+                    }
+                    else input(name: 'btnShowReplaceCharacters', type: 'button', title: 'Show Replace Chars ▶', backgroundColor: 'dodgerBlue', textColor: 'white', submitOnChange: true, width: 3, newLine: true)  //▼ ◀ ▶ ▲
+                        
                     input (name: "isHighlightDeviceNames", type: "bool", title: bold("Also Highlight Device Names"), required: false, multiple: false, defaultValue: false, submitOnChange: true, width: 2, newLine: true)
                         
                     if (isCompactDisplay == false) {
                         paragraph line(1)
                         paragraph summary("Highlight Notes", parent.highlightNotes() )    
                     }
-                    }
                 }
+            }
                 
                 //Styles
                 if (activeButton == 8){
@@ -564,6 +604,7 @@ def mainPage() {
                 if (tilePreview == "6" ) paragraph '<iframe srcdoc=' + '"' + myHTML + '"' + ' width="380" height="380" style="border:solid" scrolling="no"></iframe>'
                 if (tilePreview == "7" ) paragraph '<iframe srcdoc=' + '"' + myHTML + '"' + ' width="380" height="570" style="border:solid" scrolling="no"></iframe>'
                 if (tilePreview == "8" ) paragraph '<iframe srcdoc=' + '"' + myHTML + '"' + ' width="380" height="760" style="border:solid" scrolling="no"></iframe>'
+                if (tilePreview == "9" ) paragraph '<iframe srcdoc=' + '"' + myHTML + '"' + ' width="380" height="950" style="border:solid" scrolling="no"></iframe>'
             }
             else {
                 //Use a custom size for the preview window.
@@ -595,9 +636,9 @@ def mainPage() {
                 }
               }
             }    //End of showDesign
-            else input(name: 'btnShowDesign', type: 'button', title: 'Design Table ▶', backgroundColor: 'dodgerBlue', textColor: 'white', submitOnChange: true, width: 3, newLine: true)  //▼ ◀ ▶ ▲
-            paragraph line(2)
-            //End of Display Table
+        else input(name: 'btnShowDesign', type: 'button', title: 'Design Table ▶', backgroundColor: 'dodgerBlue', textColor: 'white', submitOnChange: true, width: 3, newLine: true)  //▼ ◀ ▶ ▲
+        paragraph line(2)
+        //End of Display Table
         
             //Configure Data Refresh
             if (state.show.Publish == true) {
@@ -781,36 +822,31 @@ void test(){
 def appButtonHandler(btn) {    
     switch(btn) {
 		case 'btnShowReport':
-            if (state.show.Report == true) state.show.Report = false
-            else state.show.Report = true
+            state.show.Report = state.show.Report ? false : true;
             break
 		case 'btnShowFilter':
-            if (state.show.Filter == true) state.show.Filter = false
-            else state.show.Filter = true
+            state.show.Filter = state.show.Filter ? false : true;
             break
         case 'btnShowDevices':
-            if (state.show.Devices == true) state.show.Devices = false
-            else state.show.Devices = true
+            state.show.Devices = state.show.Devices ? false : true;
             break
         case 'btnShowKeywords':
-            if (state.show.Keywords == true) state.show.Keywords = false
-            else state.show.Keywords = true
+            state.show.Keywords = state.show.Keywords ? false : true;
             break
         case 'btnShowThresholds':
-            if (state.show.Thresholds == true) state.show.Thresholds = false
-            else state.show.Thresholds = true
+            state.show.Thresholds = state.show.Thresholds ? false : true;
             break
 		case 'btnShowFormatRules':
-            if (state.show.FormatRules == true) state.show.FormatRules = false
-            else state.show.FormatRules = true
+            state.show.FormatRules = state.show.FormatRules ? false : true;
             break	
+        case 'btnShowReplaceCharacters':
+            state.show.ReplaceCharacters = state.show.ReplaceCharacters ? false : true;
+            break
         case 'btnShowDesign':
-            if (state.show.Design == true) state.show.Design = false
-            else state.show.Design = true
+            state.show.Design = state.show.Design ? false : true;
             break
         case 'btnShowPublish':
-            if (state.show.Publish == true) state.show.Publish = false
-            else state.show.Publish = true
+            state.show.Publish = state.show.Publish ? false : true;
             break
         case "Refresh":
             //We don't need to do anything. The refreshTable will be called by the submitOnChange.
@@ -1478,12 +1514,20 @@ def highlightValue(attributeValue){
     //Save a copy of the original value.
     def originalValue = attributeValue.toString()
     dataType = getDataType(attributeValue.toString())
+            
+    //Take care of any character replacements first.
+    if (dataType == "String" && isReplaceCharacters == true && settings["oc1"] != "?" && settings["nc1"] != "?" ) {
+        def oldCharacters = settings["oc1"] ?: ""
+        def newCharacters = settings["nc1"] ?: ""
+        //Replace the old character(s) with the new character(s) if found.
+        attributeValue = attributeValue.replace(oldCharacters, newCharacters)
+    }
     
     //Get the units we are using.
     if (myUnits == null || myUnits == "None" || isAppendUnits == false) myUnit = ""
     else myUnit = myUnits.replace("_"," ")
     
-    //If the data is a string then we must process it for Keywords.
+    //If the data is a string then we must process it for Keywords. This does full string comparisons and only works for an exact full keyword match.
     if ( dataType == "String" ){  
         for (i = 1; i <= myKeywordCount.toInteger(); i++) {
             if (isLogDebug) log.info ("Processing keyword i is: $i.")
@@ -1517,19 +1561,19 @@ def highlightValue(attributeValue){
         if (settings["tcv$i"] != null && settings["tcv$i"] != "" && settings["tcv$i"] != "None" )  {
             
             //This is the ideal place for a switch statement but using a break within switch causes it to exit the while loop also.
-			if ( ( settings["top$i"] == "1" || settings["top$i"] == "<=" ) && attributeValue.toInteger() <= settings["tcv$i"].toInteger() ) {
+			if ( ( settings["top$i"] == "1" || settings["top$i"] == "<=" ) && originalValue.toFloat() <= settings["tcv$i"].toFloat() ) {
 								   
                 if (isLogDebug)  log.debug("highlightThreshold: A <= than condition was met.")
                 if ( ( settings["ttr$i"] != null && settings["ttr$i"] != " " ) && settings["ttr$i"] != "?") { returnValue = settings["ttr$i"]  + myUnit } 
                 lastThreshold = i
 				}
-            if ( ( settings["top$i"] == "2" || settings["top$i"] == "==" ) && attributeValue.toInteger() == settings["tcv$i"].toInteger() ) {
+            if ( ( settings["top$i"] == "2" || settings["top$i"] == "==" ) && originalValue.toFloat() == settings["tcv$i"].toFloat() ) {
 								  
                 if (isLogDebug) log.debug("highlightThreshold: An == condition was met.")
                 if (settings["ttr$i"] != null && settings["ttr$i"] != " " && settings["ttr$i"] != "?") { returnValue = settings["ttr$i"] + myUnit } 
 				lastThreshold = i
 				}
-            if ( ( settings["top$i"] == "3" || settings["top$i"] == ">=" ) && attributeValue.toInteger() >= settings["tcv$i"].toInteger() ) {
+            if ( ( settings["top$i"] == "3" || settings["top$i"] == ">=" ) && originalValue.toFloat() >= settings["tcv$i"].toFloat() ) {
 								  
                 if (isLogDebug) log.debug("highlightThreshold: A >= than condition was met.")
                 if (settings["ttr$i"] != null && settings["ttr$i"] != " " && settings["ttr$i"] != "?") { returnValue = settings["ttr$i"]  + myUnit } 
@@ -1653,9 +1697,10 @@ void publishTable(){
             def myIP = location.hub.localIP
             uploadHubFile("${fileName}", myBytes)
             //Put in a slight delay to allow the file upload to complete.
-            pauseExecution (100)
+            pauseExecution (250)
             def src = "http://" + myIP + "/local/" + fileName
-            def stubHTML = """<div style='height:100%; width:100%; scrolling:no; overflow:hidden;'><iframe src=""" + src + """ style='height: 100%; width:100%; border: none; scrolling:no; overflow: hidden;'></iframe><div>"""
+            //Add the current time in milliseconds to a comment field. This ensures that every update is unique and causes the file to be reloaded.
+            def stubHTML = "<!--Generated:" + now() + "-->" + """<div style='height:100%; width:100%; scrolling:no; overflow:hidden;'><iframe src=""" + src + """ style='height: 100%; width:100%; border: none; scrolling:no; overflow: hidden;'></iframe><div>"""
             if (isLogEvents) log.debug ("stub is : ${unHTML(stubHTML)}")
         
             //Then we will update the Storage Device attribute which will cause the file to be reloaded into the dashboard.
@@ -2153,6 +2198,11 @@ def initialize(){
     app.updateSetting("top10", [value:"0", type:"enum"])
     app.updateSetting("tcv10", [value:70, type:"number"])
     app.updateSetting("ttr10", [value:"?", type:"text"])
+    
+    //Replace Chars
+    app.updateSetting("isReplaceCharacters", false)
+    app.updateSetting("oc1", [value:"?", type:"text"])
+    app.updateSetting("nc1", [value:"?", type:"text"])
 
     //Advanced
     app.updateSetting("bfs", "18")
@@ -2191,9 +2241,8 @@ def initialize(){
     state.flags = [isClearImport: false , isCopyOverridesHelperCommand: false, isAppendOverridesHelperCommand: false, isClearOverridesHelperCommand: false, styleSaved: false, myCapabilityChanged: false]
     state.myCapabilityHistory = [new: "seed1", old: "seed"]
     
-    //Have all the section collapsed to begin with except devices
-    state.show = [Devices: true, Report: true, Filter: false, Design: true, Publish: false, More: false]
-    
+    //Have all the section collapsed to begin with except devices and Report
+    state.show = [Devices: true, Report: true, Filter: false, Design: true, Publish: false, More: false, ReplaceCharacters: false]   
 }
 
 
@@ -2403,7 +2452,12 @@ String buttonLink(String btnName, String linkText, int buttonNumber) {
     font = chooseButtonFont(buttonNumber)
     color = chooseButtonColor(buttonNumber)
     text = chooseButtonText(buttonNumber, linkText)
-    "<div class='form-group'><input type='hidden' name='${btnName}.type' value='button'></div><div><div class='submitOnChange' onclick='buttonClick(this)' style='color:${color};cursor:pointer;font-size:${font}px'>${text}</div></div><input type='hidden' name='settings[$btnName]' value=''>"
+    
+    //Change the text color if the tab is disabled.
+    if (parent.checkLicense() == false && buttonNumber > 6) {
+        color = "#A0A0A0"
+    }
+    return "<div class='form-group'><input type='hidden' name='${btnName}.type' value='button'></div><div><div class='submitOnChange' onclick='buttonClick(this)' style='color:${color};cursor:pointer;font-size:${font}px'>${text}</div></div><input type='hidden' name='settings[$btnName]' value=''>"  
 }
 
 def chooseButtonColor(buttonNumber){
@@ -2412,15 +2466,14 @@ def chooseButtonColor(buttonNumber){
 }
 
 def chooseButtonFont(buttonNumber){
-    if (buttonNumber == settings.activeButton) return 20
-    else return 15
+    if (buttonNumber == settings.activeButton) return 16
+    else return 16
 }
 
 def chooseButtonText(buttonNumber, buttonText){
-    if (buttonNumber == settings.activeButton) return "<b>${buttonText}</b>"
+    if (buttonNumber == settings.activeButton) return "<b><u>${buttonText}</u></b>"
     else return "<b>${buttonText}</b>"
 }
-
 //************************************************************************************************************************************************************************************************************************
 //************************************************************************************************************************************************************************************************************************
 //************************************************************************************************************************************************************************************************************************
