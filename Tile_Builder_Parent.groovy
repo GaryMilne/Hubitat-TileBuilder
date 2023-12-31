@@ -54,12 +54,15 @@
 *  Version 1.4.2 - Added recovery options to messageList() for Rooms.
 *  Version 1.4.3 - Added a 2x5 option to the tilePreview list to accomodate the addition of rows to Multi-Attribute Monitor.
 *  Version 1.4.4 - Added Style - Zigbee Monitor. Removed Rules Map, moved locally to MAM.
+*  Version 1.4.5 - Added some new examples for use with Format Rules and MAM 2.0 to the Highlight Notes Section. Removed redundant settings in the Styles section.
+*  Version 1.4.6 - Minor text additions in preparation for the release of TB Grid. Added textFieldNotes() function. Added ability to Show\Hide modules. (Unreleased version)
+*  Version 1.4.7 - Donation minimum increased by $1 to $8 for additional module - Grid.
 *
-*  Gary Milne - November 16th, 2023 @ 10:50 AM
+*  Gary Milne - December 30th, 2023 @ 12:06 PM
 *
 **/
 import groovy.transform.Field
-@Field static final Version = "<b>Tile Builder Parent v1.4.4 (11/16/23)</b>"
+@Field static final Version = "<b>Tile Builder Parent v1.4.7 (12/30/23)</b>"
 
 //These are the data for the pickers used on the child forms.
 def elementSize() { return ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '30', '40', '50', '75', '100'] }
@@ -77,7 +80,7 @@ def refreshInterval() { return [0:'Never', 1:'1 minute', 2:'2 minutes', 5:'5 min
 def pixels() { return ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '-1', '-2', '-3', '-4', '-5', '-6', '-7', '-8', '-9', '-10', '-11', '-12', '-13', '-14', '-15', '-16', '-17', '-18', '-19', '-20'] }
 def borderRadius() { return ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26', '27', '28', '29', '30'] }
 def baseFontSize() { return ['10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '22', '24', '26', '28', '30', '32', '34', '36', '38', '40'] }
-def tilePreviewList() { return [1:'1 x 1', 2:'1 x 2', 3:'1 x 3', 4:'1 x 4', 5:'2 x 1', 6:'2 x 2', 7:'2 x 3', 8:'2 x 4', 9:'2 x 5'] }
+def tilePreviewList() { return [1:'1 x 1', 2:'1 x 2', 3:'1 x 3', 4:'1 x 4', 5:'2 x 1', 6:'2 x 2', 7:'2 x 3', 8:'2 x 4', 9:'2 x 5', 10:'3 x 1', 11:'3 x 2', 12:'3 x 3', 13:'3 x 4', 14:'3 x 5'] }
 def storageDevices() { return ['Tile Builder Storage Device 1', 'Tile Builder Storage Device 2', 'Tile Builder Storage Device 3', 'Tile Builder Storage Device 4', 'Tile Builder Storage Device 5'] }
 def allTileList() { return [1:'tile1', 2:'tile2', 3:'tile3', 4:'tile4', 5:'tile5', 6:'tile6', 7:'tile7', 8:'tile8', 9:'tile9', 10:'tile10', 11:'tile11', 12:'tile12', 13:'tile13', 14:'tile14', 15:'tile15', 16:'tile16', 17:'tile17', 18:'tile18', 19:'tile19', 20:'tile20', 21:'tile21', 22:'tile22', 23:'tile23', 24:'tile24', 25:'tile25'] }
 def filterList() { return [0:'No Filter', 1:'String ==', 2:'String !=', 3:'Numeric ==', 4:'Numeric <=', 5:'Numeric >='] }
@@ -92,7 +95,7 @@ definition(
     name: 'Tile Builder',
     namespace: 'garyjmilne',
     author: 'Gary Milne',
-    description: 'This is the Tile Builder Parent App',
+    description: 'Tile Builder Parent App',
     category: 'Dashboards',
 	importUrl: "https://raw.githubusercontent.com/GaryMilne/Hubitat-TileBuilder/main/Tile_Builder_Parent.groovy",
     iconUrl: '',
@@ -164,8 +167,9 @@ def mainPage() {
                     myString += "<b>Tile Builder Advanced</b> supports up to 10 devices plus 2 Icon Bars in Rooms. This is reduced to 3 devices and no Icon Bars for the Standard version. " + link2 + " <br><br>"
             
                     myString = myString + "To purchase the license for <b>Tile Builder Advanced</b> you must do the following:<br>"
-                    myString += '<b>1)</b> Donate at least <b>\$7</b> to ongoing development via PayPal using this <a href="https://www.paypal.com/donate/?business=YEAFRPFHJCTFA&no_recurring=0&item_name=A+donation+of+%247+or+more+grants+you+a+license+to+Tile+Builder+Advanced.+Please+leave+your+Hubitat+Community+ID.&currency_code=USD" target="_blank">link.</a></br>'			
-                    //New $7 page. https://www.paypal.com/donate/?business=YEAFRPFHJCTFA&no_recurring=0&item_name=A+donation+of+%247+or+more+grants+you+a+license+to+Tile+Builder+Advanced.+Please+leave+your+Hubitat+Community+ID.&currency_code=USD
+                    //New link: $7 page. https://www.paypal.com/donate/?business=YEAFRPFHJCTFA&no_recurring=0&item_name=A+donation+of+%247+or+more+grants+you+a+license+to+Tile+Builder+Advanced.+Please+leave+your+Hubitat+Community+ID.&currency_code=USD
+                    //New link: $8 page.  https://www.paypal.com/donate/?business=YEAFRPFHJCTFA&no_recurring=1&item_name=A+donation+of+%248+or+more+grants+you+a+license+to+Tile+Builder+Advanced.+Please+leave+your+Hubitat+Community+ID.&currency_code=USD
+                    myString += '<b>1)</b> Donate at least <b>\$8</b> to ongoing development via PayPal using this <a href="https://www.paypal.com/donate/?business=YEAFRPFHJCTFA&no_recurring=1&item_name=A+donation+of+%248+or+more+grants+you+a+license+to+Tile+Builder+Advanced.+Please+leave+your+Hubitat+Community+ID.&currency_code=USD" target="_blank">link.</a></br>'			
                     myString += "<b>2)</b> Forward the paypal eMail receipt along with your ID (<b>" + getID() + "</b>) to <b>TileBuilderApp@gmail.com</b>. Please include your Hubitat community ID for future notifications.<br>"
                     myString += "<b>3)</b> Wait for license key eMail notification (usually within 24 hours).<br>"
                     myString += "<b>4)</b> Apply license key using the input box below.<br>"
@@ -245,16 +249,19 @@ def mainPage() {
                 if (state.showCreateEdit == true) {
                     //if (true ){
                     input(name: 'btnShowCreateEdit', type: 'button', title: 'Create\\Edit Tiles ▼', backgroundColor: 'navy', textColor: 'white', submitOnChange: true, width: 2, newLineBefore: true, newLineAfter: false)  //▼ ◀ ▶ ▲
-                    myString = '<b>Tile Builder</b> has four types of tile:<br>'
+                    myString = '<b>Tile Builder</b> has five types of tile:<br>'
                     myString += '<b>1) Activity Monitor:</b> Generates a table containing data for activity\\inactivity using the <b>lastActivityAt</b> attribute. These tiles are refreshed at routine intervals.<br>'
                     myString += '<b>2) Attribute Monitor:</b> Generates a table containing data for multiple devices\\single attribute into a single tile. For example, all room temps on a single tile.<br>'
                     myString += '<b>3) Multi Attribute Monitor:</b> Generates a table containing data for multiple devices\\multiple attributes into a single tile. For example, indoor temperature, humidity, AC\\Heat status and weather in a single tile.<br>'
                     myString += '<b>4) Rooms:</b> Generates a graphical layout of Icons representing devices within a room. Icons change appearance depending on the state of the device.<br>'
+                    myString += '<b>5) Grid:</b> Generates a Grid of Data up to 5 columns wide with freedom of placement for Data. Tile Builder Grid is only accesible to TB Advanced Users.<br>'
                     paragraph note('', myString)
-                    app(name: 'TBPA', appName: 'Tile Builder - Activity Monitor', namespace: 'garyjmilne', title: 'Add New Activity Monitor', multiple: true)
-                    app(name: 'TBPA', appName: 'Tile Builder - Attribute Monitor', namespace: 'garyjmilne', title: 'Add New Attribute Monitor', multiple: true)
-                    app(name: 'TBPA', appName: 'Tile Builder - Multi Attribute Monitor', namespace: 'garyjmilne', title: 'Add New Multi Attribute Monitor', multiple: true)
-                    app(name: 'TBPA', appName: 'Tile Builder - Rooms', namespace: 'garyjmilne', title: 'Add New Room', multiple: true)
+                    
+                    if (!hideActivityMonitor) app (name: 'TBPA', appName: 'Tile Builder - Activity Monitor', namespace: 'garyjmilne', title: 'Add New Activity Monitor')
+                    if (!hideAttributeMonitor) app(name: 'TBPA', appName: 'Tile Builder - Attribute Monitor', namespace: 'garyjmilne', title: 'Add New Attribute Monitor')
+                    if (!hideMultiAM) app(name: 'TBPA', appName: 'Tile Builder - Multi AM', namespace: 'garyjmilne', title: 'Add New Multi-Attribute Monitor')
+                    if (!hideRooms) app(name: 'TBPA', appName: 'Tile Builder - Rooms', namespace: 'garyjmilne', title: 'Add New Room')
+                    if (checkLicense() && !hideGrid ) app(name: 'TBPA', appName: 'Tile Builder - Grid', namespace: 'garyjmilne', title: 'Add New Grid')
                     }
                 else {
                     input(name: 'btnShowCreateEdit', type: 'button', title: 'Create\\Edit Tiles ▶', backgroundColor: 'DodgerBlue', textColor: 'white', submitOnChange: true, width: 2, newLineBefore: true, newLineAfter: false)  //▼ ◀ ▶ ▲
@@ -290,13 +297,21 @@ def mainPage() {
                     label title: bold('Enter a name for this Tile Builder parent instance (optional)'), required: false, width: 4, newLineAfter: true
                     
                     paragraph body('<b>Logging Functions</b>')
-                    input (name: "isLogInfo",  type: "bool", title: "<b>Enable info logging?</b>", defaultValue: false, submitOnChange: false, width: 2)
-                    input (name: "isLogTrace", type: "bool", title: "<b>Enable trace logging?</b>", defaultValue: false, submitOnChange: false, width: 2)
-                    input (name: "isLogDebug", type: "bool", title: "<b>Enable debug logging?</b>", defaultValue: false, submitOnChange: false, width: 2)
-                    input (name: "isLogWarn",  type: "bool", title: "<b>Enable warn logging?</b>", defaultValue: true, submitOnChange: false, width: 2)
-                    input (name: "isLogError",  type: "bool", title: "<b>Enable error logging?</b>", defaultValue: true, submitOnChange: false, width: 2, newLineAfter: true)
+                    input (name: "isLogInfo",  type: "bool", title: "<b>Enable info logging?</b>", defaultValue: false, submitOnChange: true, width: 2)
+                    input (name: "isLogTrace", type: "bool", title: "<b>Enable trace logging?</b>", defaultValue: false, submitOnChange: true, width: 2)
+                    input (name: "isLogDebug", type: "bool", title: "<b>Enable debug logging?</b>", defaultValue: false, submitOnChange: true, width: 2)
+                    input (name: "isLogWarn",  type: "bool", title: "<b>Enable warn logging?</b>", defaultValue: true, submitOnChange: true, width: 2)
+                    input (name: "isLogError",  type: "bool", title: "<b>Enable error logging?</b>", defaultValue: true, submitOnChange: true, width: 2, newLineAfter: true)
                     paragraph line(1)
                     
+                    paragraph body('<b>Show/Hide Modules</b>')
+                    input (name: "hideActivityMonitor", type: "bool", title: "<b>Hide Activity Monitor?</b>", defaultValue: false, submitOnChange: true, width: 2)
+                    input (name: "hideAttributeMonitor",  type: "bool", title: "<b>Hide Attribute Monitor?</b>", defaultValue: false, submitOnChange: true, width: 2)
+                    input (name: "hideMultiAM", type: "bool", title: "<b>Hide Multi AM?</b>", defaultValue: false, submitOnChange: true, width: 2)
+                    input (name: "hideRooms",  type: "bool", title: "<b>Hide Rooms?</b>", defaultValue: false, submitOnChange: true, width: 2)
+                    input (name: "hideGrid",  type: "bool", title: "<b>Hide Grid?</b>", defaultValue: false, submitOnChange: true, width: 2, newLineAfter: true)
+                    paragraph line(1)
+                                        
                     paragraph body('<b>Support Functions</b>')
                     input(name: 'defaultStyles'  , type: 'button', title: 'Rebuild Default Styles', backgroundColor: '#27ae61', textColor: 'white', submitOnChange: true, width: 2)
                     input(name: 'removeLicense'  , type: 'button', title: 'De-Activate Software License', backgroundColor: '#27ae61', textColor: 'white', submitOnChange: true, width: 3, newLineAfter: true)
@@ -329,10 +344,7 @@ def mainPage() {
     }
 
 def test(){
-    initialize()
-    showSection("Intro", true)
-    state.setupState = 1
-    state.hasMessage= ""
+
 }
 
 //A function for sending a message to a child app whenever it runs if the "sendMessageToTile control matches the child tile.
@@ -674,111 +686,121 @@ def checkLicense() {
 def makeDefaultStyles() {
     if (isLogTrace) log.trace ('makeDefaultStyles: Entering makeDefaultStyles')
 
-    styleA = convertStyleStringToMap('#isCustomSize#=false, #tbc#=#ffffff, #isFrame#=true, #fbc#=#000000, #tc#=#f6cd00, #bp#=3, #isHeaders#=true, #hp#=0, #hta#=Center, #ts#=140, #shcolor#=#f6cd00, #fc#=#000000, #to#=1, #rabc#=#dff8aa, #hbc#=#f6cd00, #shblur#=2, #hts#=100, #bm#=Collapse, #rtc#=#000000, #hbo#=1, #iFrameColor#=#fffada, #shver#=2, #tff#=Comic Sans MS, #isTitleShadow#=false, #rp#=0, #comment#=?, #tp#=3, #th#=Auto, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.8, #shhor#=2, #htc#=#000000, #rbc#=#fbed94, #fa#=Center, #rts#=80, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=1, #fs#=60, #rta#=Center, #isFooter#=false, #tw#=90, #bfs#=18, #bc#=#000000, #ratc#=#000000, #bw#=2, #bs#=Solid')
+    styleA = convertStyleStringToMap('#isCustomSize#=false, #tbc#=#ffffff, #isFrame#=true, #fbc#=#000000, #tc#=#f6cd00, #bp#=3, #isHeaders#=true, #hp#=0, #hta#=Center, #ts#=140, #shcolor#=#f6cd00, #fc#=#000000, #to#=1, #rabc#=#dff8aa, #hbc#=#f6cd00, #shblur#=2, #hts#=100, #bm#=Collapse, #rtc#=#000000, #hbo#=1, #iFrameColor#=#fffada, #shver#=2, #tff#=Comic Sans MS, #isTitleShadow#=false, #rp#=0, #comment#=?, #tp#=3, #th#=Auto, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.8, #shhor#=2, #htc#=#000000, #rbc#=#fbed94, #fa#=Center, #rts#=80, #isBorder#=true, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=1, #fs#=60, #rta#=Center, #isFooter#=false, #tw#=90, #bfs#=18, #bc#=#000000, #ratc#=#000000, #bw#=2, #bs#=Solid')
     styleB = ['overrides':'#Class1#=@keyframes A{0%{transform:rotate(-360deg)}100% {transform:rotate(0)}}|#Row#=animation:A 2s ease 0s 1 normal forwards| #title#=font-weight:900']
     style = styleA + styleB
     state.'*Style-AM Banana' = style
     
     //IMPORTANT: This line uses ═ (Alt 205) instead of = within #ttr values to simplify parsing.  They are converted to regular = in the convertStyleStringToMap function.
-    styleA = convertStyleStringToMap('#tc#=#000000, #bp#=5, #tbo#=0, #isHeaders#=true, #hp#=0, #hta#=Left, #ts#=150, #shcolor#=#000000, #tbc#=#000000, #fc#=#000000, #rabc#=#dff8aa, #hbc#=#282828, #shblur#=5, #hts#=100, #isCustomSize#=false, #bm#=Seperate, #rtc#=#ffffff, #customWidth#=200, #hbo#=1, #iFrameColor#=#705c5c, #shver#=0, #tff#=Roboto, #isTitleShadow#=false, #rp#=0, #comment#=?, #tp#=5, #customHeight#=190, #tcv5#=70, #hts2#=100, #th#=Auto, #isAlternateRows#=false, #isTitle#=false, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0, #isFrame#=false, #shhor#=0, #htc#=#ffffff, #rbc#=#ff0000, #fa#=Center, #rts#=90, #isBorder#=false, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=false, #bo#=1, #fs#=80, #fbc#=#000000, #rta#=Left, #isFooter#=false, #tw#=100, #bfs#=18, #bc#=#050505, #ratc#=#000000, #hc5#=#FF0000, #bw#=2, #bs#=Solid')
+    styleA = convertStyleStringToMap('#tc#=#000000, #bp#=5, #tbo#=0, #isHeaders#=true, #hp#=0, #hta#=Left, #ts#=150, #shcolor#=#000000, #tbc#=#000000, #fc#=#000000, #rabc#=#dff8aa, #hbc#=#282828, #shblur#=5, #hts#=100, #isCustomSize#=false, #bm#=Seperate, #rtc#=#ffffff, #customWidth#=200, #hbo#=1, #iFrameColor#=#705c5c, #shver#=0, #tff#=Roboto, #isTitleShadow#=false, #rp#=0, #comment#=?, #tp#=5, #customHeight#=190, #tcv5#=70, #hts2#=100, #th#=Auto, #isAlternateRows#=false, #isTitle#=false, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0, #isFrame#=false, #shhor#=0, #htc#=#ffffff, #rbc#=#ff0000, #fa#=Center, #rts#=90, #isBorder#=false, #rto#=1, #hto#=1, #isOverrides#=false, #bo#=1, #fs#=80, #fbc#=#000000, #rta#=Left, #isFooter#=false, #tw#=100, #bfs#=18, #bc#=#050505, #ratc#=#000000, #hc5#=#FF0000, #bw#=2, #bs#=Solid')
     styleB = ['overrides':'?']
     style = styleA + styleB
     state.'*Style-AM Battery Meter' = style
     
-	styleA = convertStyleStringToMap('#isCustomSize#=false, #tbc#=#ffffff, #tc#=#000000, #bp#=10, #isHeaders#=false, #hp#=0, #hta#=Center, #ts#=150, #shcolor#=#7a7a7a, #fc#=#000000, #to#=1, #rabc#=#dff8aa, #hbc#=#000000, #shblur#=10, #hts#=100, #bm#=Collapse, #rtc#=#ffffff, #hbo#=1, #iFrameColor#=#fcfcfc, #shver#=2, #tff#=Comic Sans MS, #isTitleShadow#=true, #rp#=0, #comment#=?, #tp#=3, #th#=Auto, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.3, #isFrame#=false, #shhor#=2, #htc#=#000000, #rbc#=#292929, #fa#=Center, #rts#=110, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=1, #fs#=90, #fbc#=#000000, #rta#=Center, #isFooter#=true, #tw#=90, #bfs#=18, #bc#=#ffffff, #ratc#=#000000, #bs#=Solid')
+	styleA = convertStyleStringToMap('#isCustomSize#=false, #tbc#=#ffffff, #tc#=#000000, #bp#=10, #isHeaders#=false, #hp#=0, #hta#=Center, #ts#=150, #shcolor#=#7a7a7a, #fc#=#000000, #to#=1, #rabc#=#dff8aa, #hbc#=#000000, #shblur#=10, #hts#=100, #bm#=Collapse, #rtc#=#ffffff, #hbo#=1, #iFrameColor#=#fcfcfc, #shver#=2, #tff#=Comic Sans MS, #isTitleShadow#=true, #rp#=0, #comment#=?, #tp#=3, #th#=Auto, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.3, #isFrame#=false, #shhor#=2, #htc#=#000000, #rbc#=#292929, #fa#=Center, #rts#=110, #isBorder#=true, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=1, #fs#=90, #fbc#=#000000, #rta#=Center, #isFooter#=true, #tw#=90, #bfs#=18, #bc#=#ffffff, #ratc#=#000000, #bs#=Solid')
     styleB = ['overrides':'#Data#=transform: rotateX(10deg) rotateY(15deg);background: linear-gradient(45deg, #fff 0%, #000 50%,#fff 100%);']
     style = styleA + styleB
     state.'*Style-AM Black and White' = style
 
-    styleA = convertStyleStringToMap('#tc#=#050505, #bp#=5, #isHeaders#=true, #hp#=0, #hta#=Center, #ts#=140, #shcolor#=#d7dce0, #tbc#=#908989, #fc#=#000000, #to#=1, #rabc#=#b71a3b, #hbc#=#0063b1, #shblur#=2, #hts#=100, #isCustomSize#=false, #bm#=Seperate, #rtc#=#050505, #customWidth#=200, #hbo#=1, #iFrameColor#=#908989, #shver#=2, #tff#=Arial Black, #isTitleShadow#=false, #rp#=0, #comment#=?, #tp#=5, #customHeight#=190, #hts2#=125, #th#=85, #isAlternateRows#=false, #isTitle#=true, #br#=25, #ta#=Center, #isComment#=false, #rbo#=0.6, #isFrame#=false, #shhor#=2, #htc#=#cbcbc8, #rbc#=#7fb2e7, #fa#=Left, #rts#=80, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=1, #fs#=80, #fbc#=#000000, #rta#=Center, #isFooter#=false, #tw#=90, #bfs#=18, #bc#=#1e1e20, #ratc#=#ffffff, #bw#=3, #bs#=Solid')
+    styleA = convertStyleStringToMap('#tc#=#050505, #bp#=5, #isHeaders#=true, #hp#=0, #hta#=Center, #ts#=140, #shcolor#=#d7dce0, #tbc#=#908989, #fc#=#000000, #to#=1, #rabc#=#b71a3b, #hbc#=#0063b1, #shblur#=2, #hts#=100, #isCustomSize#=false, #bm#=Seperate, #rtc#=#050505, #customWidth#=200, #hbo#=1, #iFrameColor#=#908989, #shver#=2, #tff#=Arial Black, #isTitleShadow#=false, #rp#=0, #comment#=?, #tp#=5, #customHeight#=190, #hts2#=125, #th#=85, #isAlternateRows#=false, #isTitle#=true, #br#=25, #ta#=Center, #isComment#=false, #rbo#=0.6, #isFrame#=false, #shhor#=2, #htc#=#cbcbc8, #rbc#=#7fb2e7, #fa#=Left, #rts#=80, #isBorder#=true, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=1, #fs#=80, #fbc#=#000000, #rta#=Center, #isFooter#=false, #tw#=90, #bfs#=18, #bc#=#1e1e20, #ratc#=#ffffff, #bw#=3, #bs#=Solid')
     styleB = ['overrides':'#Title#=text-shadow: 1px 1px 2px LightSkyBlue, 0 0 25px DodgerBlue, 0 0 5px darkblue']
     style = styleA + styleB
     state.'*Style-AM Blue Buttons' = style
 	
-	styleA = convertStyleStringToMap('#tc#=#222f3c, #bp#=5, #isHeaders#=true, #hp#=0, #hta#=Center, #ts#=120, #shcolor#=#ffffff, #tbc#=#aaa9ad, #fc#=#66cbe0, #to#=1, #rabc#=#dff8aa, #hbc#=#23303e, #shblur#=4, #hts#=100, #isCustomSize#=false, #bm#=Seperate, #rtc#=#d5d5d7, #customWidth#=200, #hbo#=1, #iFrameColor#=#696969, #shver#=0, #tff#=Arial Black, #isTitleShadow#=true, #rp#=0, #comment#=?, #tp#=3, #customHeight#=290, #hts2#=125, #th#=Auto, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0, #isFrame#=false, #shhor#=0, #htc#=#c0c0c0, #rbc#=#5b6db2, #fa#=Center, #rts#=80, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=1, #fs#=100, #fbc#=#000000, #rta#=Center, #isFooter#=false, #tw#=90, #bfs#=18, #bc#=#ada9a9, #ratc#=#000000, #bw#=2, #bs#=Solid')
+	styleA = convertStyleStringToMap('#tc#=#222f3c, #bp#=5, #isHeaders#=true, #hp#=0, #hta#=Center, #ts#=120, #shcolor#=#ffffff, #tbc#=#aaa9ad, #fc#=#66cbe0, #to#=1, #rabc#=#dff8aa, #hbc#=#23303e, #shblur#=4, #hts#=100, #isCustomSize#=false, #bm#=Seperate, #rtc#=#d5d5d7, #customWidth#=200, #hbo#=1, #iFrameColor#=#696969, #shver#=0, #tff#=Arial Black, #isTitleShadow#=true, #rp#=0, #comment#=?, #tp#=3, #customHeight#=290, #hts2#=125, #th#=Auto, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0, #isFrame#=false, #shhor#=0, #htc#=#c0c0c0, #rbc#=#5b6db2, #fa#=Center, #rts#=80, #isBorder#=true, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=1, #fs#=100, #fbc#=#000000, #rta#=Center, #isFooter#=false, #tw#=90, #bfs#=18, #bc#=#ada9a9, #ratc#=#000000, #bw#=2, #bs#=Solid')
     styleB = ['overrides':'#Table#=background: linear-gradient(0deg, #bdc3c7 0%, #2c3e50 40%)']
     style = styleA + styleB
     state.'*Style-AM Blue Grey' = style
 	
-	styleA = convertStyleStringToMap('#tc#=#fffafa, #bp#=3, #isHeaders#=false, #hp#=0, #hta#=Center, #ts#=100, #shcolor#=#7a7a7a, #tbc#=#282828, #fc#=#ffffff, #to#=1, #rabc#=#dff8aa, #hbc#=#000000, #shblur#=10, #hts#=100, #bm#=Collapse, #rtc#=#ffffff, #hbo#=1, #iFrameColor#=#282828, #shver#=2, #tff#=Comic Sans MS, #isTitleShadow#=false, #rp#=0, #comment#=?, #tp#=3, #hts2#=125, #th#=Auto, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.3, #isFrame#=false, #shhor#=2, #htc#=#000000, #rbc#=#292929, #fa#=Center, #rts#=75, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=1, #fs#=75, #fbc#=#000000, #rta#=Center, #isFooter#=true, #tw#=90, #bfs#=18, #bc#=#ffffff, #ratc#=#000000, #bw#=2, #bs#=Solid')
+	styleA = convertStyleStringToMap('#tc#=#fffafa, #bp#=3, #isHeaders#=false, #hp#=0, #hta#=Center, #ts#=100, #shcolor#=#7a7a7a, #tbc#=#282828, #fc#=#ffffff, #to#=1, #rabc#=#dff8aa, #hbc#=#000000, #shblur#=10, #hts#=100, #bm#=Collapse, #rtc#=#ffffff, #hbo#=1, #iFrameColor#=#282828, #shver#=2, #tff#=Comic Sans MS, #isTitleShadow#=false, #rp#=0, #comment#=?, #tp#=3, #hts2#=125, #th#=Auto, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.3, #isFrame#=false, #shhor#=2, #htc#=#000000, #rbc#=#292929, #fa#=Center, #rts#=75, #isBorder#=true, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=1, #fs#=75, #fbc#=#000000, #rta#=Center, #isFooter#=true, #tw#=90, #bfs#=18, #bc#=#ffffff, #ratc#=#000000, #bw#=2, #bs#=Solid')
     styleB = ['overrides':'#Row#=transform: rotate(1deg) | #Title#=transform: rotate(-1deg); | #ts#=160 | #footer#=padding:3px | #Data#=text-shadow: 1px 1px 3px #FFFFFF | #Title#=text-shadow: 1px 1px 3px #FFFFFF']
     style = styleA + styleB
     state.'*Style-AM Chalkboard' = style
 	
-    styleA = convertStyleStringToMap('#isCustomSize#=false, #tbc#=#ffffff, #tc#=#000000, #bp#=5, #isHeaders#=false, #hp#=0, #hta#=Center, #ts#=150, #shcolor#=#000000, #fc#=#000000, #to#=1, #rabc#=#dff8aa, #hbc#=#ffffff, #shblur#=5, #hts#=100, #bm#=Seperate, #rtc#=#000000, #hbo#=1, #iFrameColor#=#bbbbbb, #shver#=0, #tff#=Roboto, #isTitleShadow#=false, #rp#=0, #comment#=?, #tp#=5, #th#=Auto, #isAlternateRows#=false, #isTitle#=false, #br#=0, #ta#=Center, #isComment#=false, #rbo#=1, #isFrame#=false, #shhor#=0, #htc#=#000000, #rbc#=#e7e4e4, #fa#=Center, #rts#=100, #isBorder#=false, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=false, #bo#=1, #fs#=80, #fbc#=#000000, #rta#=Left, #isFooter#=false, #tw#=100, #bfs#=18, #bc#=#050505, #ratc#=#000000, #bw#=2, #bs#=Solid')
+    styleA = convertStyleStringToMap('#isCustomSize#=false, #tbc#=#ffffff, #tc#=#000000, #bp#=5, #isHeaders#=false, #hp#=0, #hta#=Center, #ts#=150, #shcolor#=#000000, #fc#=#000000, #to#=1, #rabc#=#dff8aa, #hbc#=#ffffff, #shblur#=5, #hts#=100, #bm#=Seperate, #rtc#=#000000, #hbo#=1, #iFrameColor#=#bbbbbb, #shver#=0, #tff#=Roboto, #isTitleShadow#=false, #rp#=0, #comment#=?, #tp#=5, #th#=Auto, #isAlternateRows#=false, #isTitle#=false, #br#=0, #ta#=Center, #isComment#=false, #rbo#=1, #isFrame#=false, #shhor#=0, #htc#=#000000, #rbc#=#e7e4e4, #fa#=Center, #rts#=100, #isBorder#=false, #rto#=1, #hto#=1, #isOverrides#=false, #bo#=1, #fs#=80, #fbc#=#000000, #rta#=Left, #isFooter#=false, #tw#=100, #bfs#=18, #bc#=#050505, #ratc#=#000000, #bw#=2, #bs#=Solid')
     styleB = ['overrides':'?']
     style = styleA + styleB
     state.'*Style-AM Everything Off' = style
 
-    styleA = convertStyleStringToMap('#isCustomSize#=false, #tbc#=#ffffff, #isFrame#=false, #fbc#=#000000, #bs#=Solid, #bm#=Collapse, #ft#=%time%, #isHeaders#=true, #hp#=0, #fc#=#000000, #hta#=Center, #ts#=140, #shcolor#=#bfe373, #bc#=#000000, #fs#=80, #rabc#=#E9F5CF, #hbc#=#90c226, #shblur#=4, #hts#=100, #br#=0, #ta#=Center, #rtc#=#000000, #tp#=0, #hbo#=1, #iFrameColor#=#908989, #shver#=0, #tff#=Verdana, #isTitleShadow#=true, #rp#=0, #comment#=?, #th#=Auto, #isAlternateRows#=true, #bw#=2, #isTitle#=true, #isComment#=false, #fa#=Center, #shhor#=0, #htc#=#000000, #rbc#=#BFE373, #rts#=90, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=false, #tc#=#000000, #rta#=Center, #bp#=10, #isFooter#=true, #tw#=100, #bfs#=18, #ratc#=#000000')
+    styleA = convertStyleStringToMap('#isCustomSize#=false, #tbc#=#ffffff, #isFrame#=false, #fbc#=#000000, #bs#=Solid, #bm#=Collapse, #ft#=%time%, #isHeaders#=true, #hp#=0, #fc#=#000000, #hta#=Center, #ts#=140, #shcolor#=#bfe373, #bc#=#000000, #fs#=80, #rabc#=#E9F5CF, #hbc#=#90c226, #shblur#=4, #hts#=100, #br#=0, #ta#=Center, #rtc#=#000000, #tp#=0, #hbo#=1, #iFrameColor#=#908989, #shver#=0, #tff#=Verdana, #isTitleShadow#=true, #rp#=0, #comment#=?, #th#=Auto, #isAlternateRows#=true, #bw#=2, #isTitle#=true, #isComment#=false, #fa#=Center, #shhor#=0, #htc#=#000000, #rbc#=#BFE373, #rts#=90, #isBorder#=true, #rto#=1, #hto#=1, #isOverrides#=false, #tc#=#000000, #rta#=Center, #bp#=10, #isFooter#=true, #tw#=100, #bfs#=18, #ratc#=#000000')
     styleB = ['overrides':'?']
     style = styleA + styleB
     state.'*Style-AM Greens' = style
 
-	styleA = convertStyleStringToMap('#isCustomSize#=false, #tbc#=#ffffff, #tc#=#de5b00, #bp#=10, #isHeaders#=true, #hp#=10, #hta#=Center, #ts#=200, #shcolor#=#ff1d00, #fc#=#000000, #to#=1, #rabc#=#f69612, #hbc#=#c64a10, #shblur#=2, #hts#=100, #bm#=Seperate, #rtc#=#ffff00, #hbo#=1, #iFrameColor#=#8d8686, #shver#=2, #tff#=Comic Sans MS, #isTitleShadow#=false, #rp#=6, #comment#=?, #tp#=5, #th#=Auto, #isAlternateRows#=true, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.7, #isFrame#=true, #shhor#=2, #htc#=#000000, #rbc#=#f69612, #fa#=Center, #rts#=100, #isBorder#=false, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=0.7, #fs#=80, #fbc#=#000000, #rta#=Center, #isFooter#=false, #tw#=Auto, #bfs#=18, #bc#=#050505, #ratc#=#000000, #bw#=2, #bs#=Solid')
+	styleA = convertStyleStringToMap('#isCustomSize#=false, #tbc#=#ffffff, #tc#=#de5b00, #bp#=10, #isHeaders#=true, #hp#=10, #hta#=Center, #ts#=200, #shcolor#=#ff1d00, #fc#=#000000, #to#=1, #rabc#=#f69612, #hbc#=#c64a10, #shblur#=2, #hts#=100, #bm#=Seperate, #rtc#=#ffff00, #hbo#=1, #iFrameColor#=#8d8686, #shver#=2, #tff#=Comic Sans MS, #isTitleShadow#=false, #rp#=6, #comment#=?, #tp#=5, #th#=Auto, #isAlternateRows#=true, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.7, #isFrame#=true, #shhor#=2, #htc#=#000000, #rbc#=#f69612, #fa#=Center, #rts#=100, #isBorder#=false, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=0.7, #fs#=80, #fbc#=#000000, #rta#=Center, #isFooter#=false, #tw#=Auto, #bfs#=18, #bc#=#050505, #ratc#=#000000, #bw#=2, #bs#=Solid')
     styleB = ['overrides':'#Table#=box-shadow: #FFF 0 -1px 4px, #ff0 0 -2px 10px, #ff8000 0 -10px 20px, red 0 -18px 40px, 5px 5px 15px 5px rgba(0,0,0,0)']
     style = styleA + styleB
     state.'*Style-AM Halloween' = style
 	
-	styleA = convertStyleStringToMap('#isCustomSize#=false, #tc#=#e5e826, #bp#=0, #isHeaders#=false, #hp#=6, #hta#=Center, #ts#=150, #shcolor#=#7a7a7a, #tbc#=#696969, #fc#=#3be800, #to#=1, #rabc#=#dff8aa, #hbc#=#000000, #shblur#=10, #hts#=60, #bm#=Collapse, #rtc#=#41ff00, #hbo#=1, #iFrameColor#=#696969, #shver#=2, #tff#=Lucida, #isTitleShadow#=false, #rp#=0, #comment#=?, #tp#=3, #hts2#=300, #th#=Auto, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=1, #isFrame#=false, #shhor#=2, #htc#=#41ff00, #rbc#=#696969, #fa#=Center, #rts#=150, #isBorder#=false, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=1, #fs#=50, #fbc#=#000000, #rta#=Left, #isFooter#=false, #tw#=100, #bfs#=18, #bc#=#c52b2b, #ratc#=#000000, #bw#=5, #bs#=Solid')
+	styleA = convertStyleStringToMap('#isCustomSize#=false, #tc#=#e5e826, #bp#=0, #isHeaders#=false, #hp#=6, #hta#=Center, #ts#=150, #shcolor#=#7a7a7a, #tbc#=#696969, #fc#=#3be800, #to#=1, #rabc#=#dff8aa, #hbc#=#000000, #shblur#=10, #hts#=60, #bm#=Collapse, #rtc#=#41ff00, #hbo#=1, #iFrameColor#=#696969, #shver#=2, #tff#=Lucida, #isTitleShadow#=false, #rp#=0, #comment#=?, #tp#=3, #hts2#=300, #th#=Auto, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=1, #isFrame#=false, #shhor#=2, #htc#=#41ff00, #rbc#=#696969, #fa#=Center, #rts#=150, #isBorder#=false, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=1, #fs#=50, #fbc#=#000000, #rta#=Left, #isFooter#=false, #tw#=100, #bfs#=18, #bc#=#c52b2b, #ratc#=#000000, #bw#=5, #bs#=Solid')
     styleB = ['overrides':'#Class1#= .glow {animation: glow 3s ease-in-out infinite alternate;} @keyframes glow {from {text-shadow: 0 0 10px #fff, 0 0 20px #fff, 0 0 35px #e60073;}to {text-shadow: 0 0 10px #fff, 0 0 15px #ff4da6;}} | #row#=text-align: center |#rp#=0 | #bp#=-5| #row#=text-align: center |#rp#=0 | #bp#=-5']
     style = styleA + styleB
     state.'*Style-AM Mailbox (See Docs)' = style
 	
-	styleA = convertStyleStringToMap('#tc#=#751f2e, #bp#=5, #isHeaders#=true, #hp#=0, #hta#=Center, #ts#=120, #shcolor#=#ffffff, #tbc#=#ffffff, #fc#=#66cbe0, #to#=1, #rabc#=#dff8aa, #hbc#=#832333, #shblur#=4, #hts#=100, #isCustomSize#=false, #bm#=Seperate, #rtc#=#f4b53b, #customWidth#=200, #hbo#=1, #iFrameColor#=#696969, #shver#=0, #tff#=Comic Sans MS, #isTitleShadow#=true, #rp#=0, #comment#=?, #tp#=3, #customHeight#=290, #hts2#=125, #th#=Auto, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.9, #isFrame#=false, #shhor#=0, #htc#=#f4b53b, #rbc#=#832333, #fa#=Center, #rts#=80, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=1, #fs#=100, #fbc#=#000000, #rta#=Center, #isFooter#=false, #tw#=100, #bfs#=18, #bc#=#d9b784, #ratc#=#000000, #bw#=2, #bs#=Solid')
+	styleA = convertStyleStringToMap('#tc#=#751f2e, #bp#=5, #isHeaders#=true, #hp#=0, #hta#=Center, #ts#=120, #shcolor#=#ffffff, #tbc#=#ffffff, #fc#=#66cbe0, #to#=1, #rabc#=#dff8aa, #hbc#=#832333, #shblur#=4, #hts#=100, #isCustomSize#=false, #bm#=Seperate, #rtc#=#f4b53b, #customWidth#=200, #hbo#=1, #iFrameColor#=#696969, #shver#=0, #tff#=Comic Sans MS, #isTitleShadow#=true, #rp#=0, #comment#=?, #tp#=3, #customHeight#=290, #hts2#=125, #th#=Auto, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.9, #isFrame#=false, #shhor#=0, #htc#=#f4b53b, #rbc#=#832333, #fa#=Center, #rts#=80, #isBorder#=true, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=1, #fs#=100, #fbc#=#000000, #rta#=Center, #isFooter#=false, #tw#=100, #bfs#=18, #bc#=#d9b784, #ratc#=#000000, #bw#=2, #bs#=Solid')
     styleB = ['overrides':'#Class1#=@keyframes myAnim {0% {opacity: 0;transform: rotate(-540deg) scale(0);}100% {opacity: 1;transform: rotate(0) scale(1);}} | #Header#=animation: myAnim 2s ease 0s 1 normal backwards; | #Row#=animation: myAnim 2s ease 0s 1 normal forwards;']
     style = styleA + styleB
     state.'*Style-AM Marooned' = style
 
-	styleA = convertStyleStringToMap('#isCustomSize#=false, #tc#=#b2e0de, #bp#=10, #isHeaders#=false, #hp#=5, #hta#=Center, #ts#=200, #shcolor#=#000000, #tbc#=#ffffff, #fc#=#000000, #to#=1, #rabc#=#dff8aa, #hbc#=#9ec1eb, #shblur#=3, #hts#=100, #bm#=Collapse, #rtc#=#282828, #hbo#=1, #iFrameColor#=#282828, #shver#=0, #tff#=Comic Sans MS, #isTitleShadow#=true, #rp#=10, #comment#=?, #tp#=15, #hts2#=125, #th#=Auto, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=1, #isFrame#=true, #shhor#=0, #htc#=#000000, #rbc#=#282828, #fa#=Center, #rts#=90, #isBorder#=false, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=1, #fs#=60, #fbc#=#282828, #rta#=Center, #isFooter#=false, #tw#=90, #bfs#=18, #bc#=#000000, #ratc#=#000000, #bw#=2, #bs#=Solid')
+	styleA = convertStyleStringToMap('#isCustomSize#=false, #tc#=#b2e0de, #bp#=10, #isHeaders#=false, #hp#=5, #hta#=Center, #ts#=200, #shcolor#=#000000, #tbc#=#ffffff, #fc#=#000000, #to#=1, #rabc#=#dff8aa, #hbc#=#9ec1eb, #shblur#=3, #hts#=100, #bm#=Collapse, #rtc#=#282828, #hbo#=1, #iFrameColor#=#282828, #shver#=0, #tff#=Comic Sans MS, #isTitleShadow#=true, #rp#=10, #comment#=?, #tp#=15, #hts2#=125, #th#=Auto, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=1, #isFrame#=true, #shhor#=0, #htc#=#000000, #rbc#=#282828, #fa#=Center, #rts#=90, #isBorder#=false, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=1, #fs#=60, #fbc#=#282828, #rta#=Center, #isFooter#=false, #tw#=90, #bfs#=18, #bc#=#000000, #ratc#=#000000, #bw#=2, #bs#=Solid')
     styleB = ['overrides' : '#Title#=margin-top: 0px; font-size: 70px; font-weight: bold; color: #CFC547; text-align: center; letter-spacing: 5px; text-shadow: 16px 22px 11px rgba(168,158,32,0.8)']
     style = styleA + styleB
     state.'*Style-AM Menu Bar (See Docs)' = style
 	
-	styleA = convertStyleStringToMap('#tc#=#cfc547, #bp#=10, #isHeaders#=true, #hp#=0, #hta#=Center, #ts#=200, #shcolor#=#000000, #tbc#=#282828, #fc#=#000000, #to#=1, #rabc#=#dff8aa, #hbc#=#c74343, #shblur#=3, #hts#=125, #bm#=Seperate, #rtc#=#282828, #hbo#=0.2, #iFrameColor#=#696969, #shver#=0, #tff#=Comic Sans MS, #isTitleShadow#=false, #rp#=10, #comment#=?, #tp#=0, #hts2#=125, #th#=Auto, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=1, #isFrame#=false, #shhor#=0, #htc#=#c5bc44, #rbc#=#696969, #fa#=Center, #rts#=90, #isBorder#=false, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=1, #fs#=60, #fbc#=#282828, #rta#=Center, #isFooter#=false, #tw#=100, #bfs#=18, #bc#=#000000, #ratc#=#000000, #bw#=2, #bs#=Solid')
+	styleA = convertStyleStringToMap('#tc#=#cfc547, #bp#=10, #isHeaders#=true, #hp#=0, #hta#=Center, #ts#=200, #shcolor#=#000000, #tbc#=#282828, #fc#=#000000, #to#=1, #rabc#=#dff8aa, #hbc#=#c74343, #shblur#=3, #hts#=125, #bm#=Seperate, #rtc#=#282828, #hbo#=0.2, #iFrameColor#=#696969, #shver#=0, #tff#=Comic Sans MS, #isTitleShadow#=false, #rp#=10, #comment#=?, #tp#=0, #hts2#=125, #th#=Auto, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=1, #isFrame#=false, #shhor#=0, #htc#=#c5bc44, #rbc#=#696969, #fa#=Center, #rts#=90, #isBorder#=false, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=1, #fs#=60, #fbc#=#282828, #rta#=Center, #isFooter#=false, #tw#=100, #bfs#=18, #bc#=#000000, #ratc#=#000000, #bw#=2, #bs#=Solid')
     styleB = ['overrides':'#Title#= letter-spacing: 5px; text-shadow: 16px 22px 11px rgba(168,158,32,0.8); background: #282828, ']
     style = styleA + styleB
     state.'*Style-AM Menu Bar Dual (See Docs)' = style
 	
-	styleA = convertStyleStringToMap('#isCustomSize#=false, #tc#=#66cbe0, #bp#=5, #isHeaders#=true, #hp#=0, #hta#=Center, #ts#=150, #shcolor#=#7a7a7a, #tbc#=#ffffff, #fc#=#66cbe0, #to#=1, #rabc#=#dff8aa, #hbc#=#66cbe0, #shblur#=10, #hts#=140, #bm#=Collapse, #rtc#=#eb822e, #hbo#=0.8, #iFrameColor#=#696969, #shver#=2, #tff#=Comic Sans MS, #isTitleShadow#=false, #rp#=0, #comment#=?, #tp#=3, #hts2#=125, #th#=Auto, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=1, #isFrame#=false, #shhor#=2, #htc#=#eb822e, #rbc#=#d9ddc6, #fa#=Center, #rts#=110, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=false, #bo#=1, #fs#=100, #fbc#=#000000, #rta#=Center, #isFooter#=false, #tw#=90, #bfs#=18, #bc#=#eb822e, #ratc#=#000000, #bw#=2, #bs#=Solid')
+	styleA = convertStyleStringToMap('#isCustomSize#=false, #tc#=#66cbe0, #bp#=5, #isHeaders#=true, #hp#=0, #hta#=Center, #ts#=150, #shcolor#=#7a7a7a, #tbc#=#ffffff, #fc#=#66cbe0, #to#=1, #rabc#=#dff8aa, #hbc#=#66cbe0, #shblur#=10, #hts#=140, #bm#=Collapse, #rtc#=#eb822e, #hbo#=0.8, #iFrameColor#=#696969, #shver#=2, #tff#=Comic Sans MS, #isTitleShadow#=false, #rp#=0, #comment#=?, #tp#=3, #hts2#=125, #th#=Auto, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=1, #isFrame#=false, #shhor#=2, #htc#=#eb822e, #rbc#=#d9ddc6, #fa#=Center, #rts#=110, #isBorder#=true, #rto#=1, #hto#=1, #isOverrides#=false, #bo#=1, #fs#=100, #fbc#=#000000, #rta#=Center, #isFooter#=false, #tw#=90, #bfs#=18, #bc#=#eb822e, #ratc#=#000000, #bw#=2, #bs#=Solid')
     styleB = ['overrides':'?']
     style = styleA + styleB
     state.'*Style-AM Palm Springs' = style
 	
-	styleA = convertStyleStringToMap('#isCustomSize#=false, #tbc#=#ffffff, #tc#=#000000, #bp#=10, #isHeaders#=true, #hp#=0, #hta#=Center, #ts#=140, #shcolor#=#bfe373, #fc#=#000000, #to#=1, #rabc#=#e9f5cf, #hbc#=#9bdbe8, #shblur#=4, #hts#=100, #bm#=Collapse, #rtc#=#fe7868, #hbo#=0.5, #iFrameColor#=#908989, #shver#=0, #tff#=Verdana, #isTitleShadow#=false, #rp#=0, #comment#=?, #tp#=0, #th#=Auto, #isAlternateRows#=false, #isTitle#=false, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.5, #isFrame#=false, #shhor#=0, #htc#=#650606, #rbc#=#ffffa0, #fa#=Center, #rts#=90, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=1, #fs#=80, #fbc#=#000000, #rta#=Center, #isFooter#=true, #tw#=100, #bfs#=18, #bc#=#000000, #ratc#=#000000, #bw#=2, #bs#=Solid')
+	styleA = convertStyleStringToMap('#isCustomSize#=false, #tbc#=#ffffff, #tc#=#000000, #bp#=10, #isHeaders#=true, #hp#=0, #hta#=Center, #ts#=140, #shcolor#=#bfe373, #fc#=#000000, #to#=1, #rabc#=#e9f5cf, #hbc#=#9bdbe8, #shblur#=4, #hts#=100, #bm#=Collapse, #rtc#=#fe7868, #hbo#=0.5, #iFrameColor#=#908989, #shver#=0, #tff#=Verdana, #isTitleShadow#=false, #rp#=0, #comment#=?, #tp#=0, #th#=Auto, #isAlternateRows#=false, #isTitle#=false, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.5, #isFrame#=false, #shhor#=0, #htc#=#650606, #rbc#=#ffffa0, #fa#=Center, #rts#=90, #isBorder#=true, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=1, #fs#=80, #fbc#=#000000, #rta#=Center, #isFooter#=true, #tw#=100, #bfs#=18, #bc#=#000000, #ratc#=#000000, #bw#=2, #bs#=Solid')
     styleB = ['overrides':'#Table#=background-image: repeating-radial-gradient(#0000 0% 6%,#c39f76 7% 13% ); background-size:40px 40px | #Row#=font-weight:bold']
     style = styleA + styleB
     state.'*Style-AM Pastel Swirl' = style
 	
-    styleA = convertStyleStringToMap('#isCustomSize#=false, #tbc#=#ffffff, #tc#=#b2e0de, #bp#=10, #isHeaders#=false, #hp#=5, #hta#=Center, #ts#=140, #shcolor#=#000000, #fc#=#000000, #to#=1, #rabc#=#dff8aa, #hbc#=#9ec1eb, #shblur#=3, #hts#=100, #bm#=Seperate, #rtc#=#000000, #hbo#=1, #iFrameColor#=#888686, #shver#=0, #tff#=Comic Sans MS, #isTitleShadow#=false, #rp#=10, #comment#=?, #tp#=15, #th#=Auto, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=1, #isFrame#=true, #shhor#=0, #htc#=#000000, #rbc#=#b2e0de, #fa#=Center, #rts#=90, #isBorder#=false, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=1, #fs#=60, #fbc#=#624141, #rta#=Center, #isFooter#=false, #tw#=90, #bfs#=18, #bc#=#000000, #ratc#=#000000, #bw#=2, #bs#=Solid')
+    styleA = convertStyleStringToMap('#isCustomSize#=false, #tbc#=#ffffff, #tc#=#b2e0de, #bp#=10, #isHeaders#=false, #hp#=5, #hta#=Center, #ts#=140, #shcolor#=#000000, #fc#=#000000, #to#=1, #rabc#=#dff8aa, #hbc#=#9ec1eb, #shblur#=3, #hts#=100, #bm#=Seperate, #rtc#=#000000, #hbo#=1, #iFrameColor#=#888686, #shver#=0, #tff#=Comic Sans MS, #isTitleShadow#=false, #rp#=10, #comment#=?, #tp#=15, #th#=Auto, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=1, #isFrame#=true, #shhor#=0, #htc#=#000000, #rbc#=#b2e0de, #fa#=Center, #rts#=90, #isBorder#=false, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=1, #fs#=60, #fbc#=#624141, #rta#=Center, #isFooter#=false, #tw#=90, #bfs#=18, #bc#=#000000, #ratc#=#000000, #bw#=2, #bs#=Solid')
     styleB = ['overrides':'#Table#=box-shadow: 0px 0px 10px 10px #E8DD95;']
     style = styleA + styleB
     state.'*Style-AM Sea Foam Glow' = style
    
-    styleA = convertStyleStringToMap('#isCustomSize#=false, #tbc#=#ffffff, #tc#=#000000, #bp#=0, #isHeaders#=true, #hp#=6, #hta#=Center, #ts#=150, #shcolor#=#7a7a7a, #fc#=#3be800, #to#=1, #rabc#=#dff8aa, #hbc#=#000000, #shblur#=10, #hts#=60, #bm#=Collapse, #rtc#=#41ff00, #hbo#=1, #iFrameColor#=#929090, #shver#=2, #tff#=Lucida, #isTitleShadow#=false, #rp#=6, #comment#=?, #tp#=3, #th#=Auto, #isAlternateRows#=false, #isTitle#=false, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.5, #isFrame#=false, #shhor#=2, #htc#=#41ff00, #rbc#=#000000, #fa#=Center, #rts#=50, #isBorder#=false, #isScrubHTML#=true, #rto#=0.7, #hto#=1, #isOverrides#=true, #bo#=0, #fs#=50, #fbc#=#000000, #rta#=Center, #isFooter#=true, #tw#=100, #bfs#=18, #bc#=#ffffff, #ratc#=#000000, #bw#=5, #bs#=Solid')
+    styleA = convertStyleStringToMap('#isCustomSize#=false, #tbc#=#ffffff, #tc#=#000000, #bp#=0, #isHeaders#=true, #hp#=6, #hta#=Center, #ts#=150, #shcolor#=#7a7a7a, #fc#=#3be800, #to#=1, #rabc#=#dff8aa, #hbc#=#000000, #shblur#=10, #hts#=60, #bm#=Collapse, #rtc#=#41ff00, #hbo#=1, #iFrameColor#=#929090, #shver#=2, #tff#=Lucida, #isTitleShadow#=false, #rp#=6, #comment#=?, #tp#=3, #th#=Auto, #isAlternateRows#=false, #isTitle#=false, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.5, #isFrame#=false, #shhor#=2, #htc#=#41ff00, #rbc#=#000000, #fa#=Center, #rts#=50, #isBorder#=false, #rto#=0.7, #hto#=1, #isOverrides#=true, #bo#=0, #fs#=50, #fbc#=#000000, #rta#=Center, #isFooter#=true, #tw#=100, #bfs#=18, #bc#=#ffffff, #ratc#=#000000, #bw#=5, #bs#=Solid')
     styleB = ['overrides':'#Table#=background: linear-gradient(180deg, #060606 0%, #11610B 100%)']
     style = styleA + styleB
     state.'*Style-AM Terminal' = style
 	
-	styleA = convertStyleStringToMap('#tc#=#000000, #bp#=0, #isHeaders#=true, #hp#=0, #hta#=Center, #ts#=120, #shcolor#=#f6cd00, #tbc#=#696969, #fc#=#000000, #to#=1, #rabc#=#a8c171, #hbc#=#f9e66c, #shblur#=2, #hts#=85, #isCustomSize#=false, #bm#=Seperate, #rtc#=#000000, #customWidth#=200, #hbo#=1, #iFrameColor#=#696969, #shver#=2, #tff#=Comic Sans MS, #isTitleShadow#=false, #rp#=0, #comment#=?, #tp#=0, #customHeight#=190, #hts2#=125, #th#=Auto, #isAlternateRows#=false, #isTitle#=false, #br#=10, #ta#=Center, #isComment#=false, #rbo#=1, #isFrame#=false, #shhor#=2, #htc#=#000000, #rbc#=#d1dd2c, #fa#=Left, #rts#=70, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=1, #fs#=80, #fbc#=#282828, #rta#=Center, #isFooter#=true, #tw#=100, #bfs#=18, #bc#=#000000, #ratc#=#000000, #bw#=3, #bs#=Dotted')
+	styleA = convertStyleStringToMap('#tc#=#000000, #bp#=0, #isHeaders#=true, #hp#=0, #hta#=Center, #ts#=120, #shcolor#=#f6cd00, #tbc#=#696969, #fc#=#000000, #to#=1, #rabc#=#a8c171, #hbc#=#f9e66c, #shblur#=2, #hts#=85, #isCustomSize#=false, #bm#=Seperate, #rtc#=#000000, #hbo#=1, #iFrameColor#=#696969, #shver#=2, #tff#=Comic Sans MS, #isTitleShadow#=false, #rp#=0, #comment#=?, #tp#=0, #hts2#=125, #th#=Auto, #isAlternateRows#=false, #isTitle#=false, #br#=10, #ta#=Center, #isComment#=false, #rbo#=1, #isFrame#=false, #shhor#=2, #htc#=#000000, #rbc#=#d1dd2c, #fa#=Left, #rts#=70, #isBorder#=true, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=1, #fs#=80, #fbc#=#282828, #rta#=Center, #isFooter#=true, #tw#=100, #bfs#=18, #bc#=#000000, #ratc#=#000000, #bw#=3, #bs#=Dotted')
     styleB = ['overrides':'#Table#=transform: rotate(2deg) translate(0px,8px)']
     style = styleA + styleB
     state.'*Style-AM Tickets' = style
 	
-	styleA = convertStyleStringToMap('#isCustomSize#=false, #tc#=#412f86, #bp#=5, #isHeaders#=true, #hp#=0, #hta#=Center, #ts#=175, #shcolor#=#ffc62f, #tbc#=#e3b994, #fc#=#000000, #to#=1, #rabc#=#f7c104, #hbc#=#4c247e, #shblur#=4, #hts#=140, #bm#=Collapse, #rtc#=#f7f7f7, #hbo#=0.9, #iFrameColor#=#dbc0a9, #shver#=0, #tff#=Brush Script MT, #isTitleShadow#=true, #rp#=0, #comment#=?, #tp#=3, #hts2#=125, #th#=Auto, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.7, #isFrame#=false, #shhor#=0, #htc#=#f7c104, #rbc#=#4d2081, #fa#=Center, #rts#=110, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=false, #bo#=0.6, #fs#=90, #fbc#=#000000, #rta#=Center, #isFooter#=false, #tw#=90, #bfs#=18, #bc#=#f7c104, #ratc#=#000000, #bw#=2, #bs#=Solid')
+	styleA = convertStyleStringToMap('#isCustomSize#=false, #tc#=#412f86, #bp#=5, #isHeaders#=true, #hp#=0, #hta#=Center, #ts#=175, #shcolor#=#ffc62f, #tbc#=#e3b994, #fc#=#000000, #to#=1, #rabc#=#f7c104, #hbc#=#4c247e, #shblur#=4, #hts#=140, #bm#=Collapse, #rtc#=#f7f7f7, #hbo#=0.9, #iFrameColor#=#dbc0a9, #shver#=0, #tff#=Brush Script MT, #isTitleShadow#=true, #rp#=0, #comment#=?, #tp#=3, #hts2#=125, #th#=Auto, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.7, #isFrame#=false, #shhor#=0, #htc#=#f7c104, #rbc#=#4d2081, #fa#=Center, #rts#=110, #isBorder#=true, #rto#=1, #hto#=1, #isOverrides#=false, #bo#=0.6, #fs#=90, #fbc#=#000000, #rta#=Center, #isFooter#=false, #tw#=90, #bfs#=18, #bc#=#f7c104, #ratc#=#000000, #bw#=2, #bs#=Solid')
     styleB = ['overrides':'?']
     style = styleA + styleB
     state.'*Style-AM Vikings' = style
 
-    styleA = convertStyleStringToMap('#isCustomSize#=false, #tc#=#d6ae7b, #bp#=6, #isHeaders#=false, #hp#=0, #hta#=Center, #ts#=200, #shcolor#=#000000, #tbc#=#ffffff, #fc#=#d6ae7b, #to#=1, #rabc#=#dff8aa, #hbc#=#9ec1eb, #shblur#=10, #hts#=100, #bm#=Collapse, #rtc#=#786854, #hbo#=1, #iFrameColor#=#000000, #shver#=2, #tff#=Brush Script MT, #isTitleShadow#=true, #rp#=0, #comment#=?, #tp#=3, #hts2#=125, #th#=Auto, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.6, #isFrame#=true, #shhor#=2, #htc#=#000000, #rbc#=#ba8c63, #fa#=Center, #rts#=150, #isBorder#=true, #isScrubHTML#=true, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=1, #fs#=90, #fbc#=#560b0b, #rta#=Center, #isFooter#=true, #tw#=90, #bfs#=18, #bc#=#786854, #ratc#=#000000, #bw#=2, #bs#=Solid')
+    styleA = convertStyleStringToMap('#isCustomSize#=false, #tc#=#d6ae7b, #bp#=6, #isHeaders#=false, #hp#=0, #hta#=Center, #ts#=200, #shcolor#=#000000, #tbc#=#ffffff, #fc#=#d6ae7b, #to#=1, #rabc#=#dff8aa, #hbc#=#9ec1eb, #shblur#=10, #hts#=100, #bm#=Collapse, #rtc#=#786854, #hbo#=1, #iFrameColor#=#000000, #shver#=2, #tff#=Brush Script MT, #isTitleShadow#=true, #rp#=0, #comment#=?, #tp#=3, #hts2#=125, #th#=Auto, #isAlternateRows#=false, #isTitle#=true, #br#=0, #ta#=Center, #isComment#=false, #rbo#=0.6, #isFrame#=true, #shhor#=2, #htc#=#000000, #rbc#=#ba8c63, #fa#=Center, #rts#=150, #isBorder#=true, #rto#=1, #hto#=1, #isOverrides#=true, #bo#=1, #fs#=90, #fbc#=#560b0b, #rta#=Center, #isFooter#=true, #tw#=90, #bfs#=18, #bc#=#786854, #ratc#=#000000, #bw#=2, #bs#=Solid')
     styleB = ['overrides':'#Row#=text-shadow:3px 3px 8px #660000']
     style = styleA + styleB
     state.'*Style-AM Wood' = style
 
-    styleA = convertStyleStringToMap('#tbo#=1, #hp#=0, #top4#=0, #fc#=#000000, #to#=1, #rabc#=#f2dcdb, #myKeywordCount#=1, #hbc#=#c0504d, #isCustomSize#=false, #bm#=Collapse, #iFrameColor#=#bbbbbb, #shver#=0, #top5#=0, #tff#=Comic Sans MS, #isTitleShadow#=false, #tp#=3, #customHeight#=190, #th#=Auto, #isAlternateRows#=true, #ta#=Center, #isComment#=false, #rbo#=0.3, #isFrame#=false, #shhor#=0, #top2#=0, #rts#=75, #isBorder#=true, #hto#=1, #bo#=1, #fbc#=#bbbbbb, #rta#=Left, #isFooter#=false, #top3#=0, #bw#=2, #tc#=#000000, #bp#=0, #isHeaders#=true, #hta#=Center, #ts#=125, #shcolor#=#000000, #tbc#=#c89393, #shblur#=5, #myThresholdCount#=1, #rtc#=#000000, #customWidth#=200, #hbo#=1, #rp#=3, #top1#=0, #isTitle#=false, #br#=0, #htc#=#000000, #rbc#=#f2dcdb, #fa#=Center, #rto#=1, #isOverrides#=true, #fs#=60, #tw#=100, #bfs#=18, #bc#=#000000, #ratc#=#000000, #bs#=Solid')
+    styleA = convertStyleStringToMap('#tbo#=1, #hp#=0, #top4#=0, #fc#=#000000, #to#=1, #rabc#=#f2dcdb, #hbc#=#c0504d, #isCustomSize#=false, #bm#=Collapse, #iFrameColor#=#bbbbbb, #shver#=0, #top5#=0, #tff#=Comic Sans MS, #isTitleShadow#=false, #tp#=3, #th#=Auto, #isAlternateRows#=true, #ta#=Center, #isComment#=false, #rbo#=0.3, #isFrame#=false, #shhor#=0, #top2#=0, #rts#=75, #isBorder#=true, #hto#=1, #bo#=1, #fbc#=#bbbbbb, #rta#=Left, #isFooter#=false, #top3#=0, #bw#=2, #tc#=#000000, #bp#=0, #isHeaders#=true, #hta#=Center, #ts#=125, #shcolor#=#000000, #tbc#=#c89393, #shblur#=5, #rtc#=#000000, #hbo#=1, #rp#=3, #isTitle#=false, #br#=0, #htc#=#000000, #rbc#=#f2dcdb, #fa#=Center, #rto#=1, #isOverrides#=true, #fs#=60, #tw#=100, #bfs#=18, #bc#=#000000, #ratc#=#000000, #bs#=Solid')
     styleB = ['overrides':'#class1#=td:nth-child(1) {text-align:center} | #class2#=td:nth-child(2) {padding-left:10px !important;padding-right:10px !important} | #class3#=hr{border-color:#c0504d;border-style:dashed}']
     style = styleA + styleB
     state.'*Style-AM Zigbee Monitor' = style
+    
+    styleA = convertStyleStringToMap('#tbo#=1, #hp#=0, #fc#=#000000, #ttr1#=?, #to#=1, #rabc#=#f49e86, #myKeywordCount#=0, #hbc#=#a5300f, #bm#=Collapse, #iFrameColor#=#bbb, #tff#=Comic Sans MS, #tp#=3, #th#=Auto, #isAlternateRows#=true, #ta#=Center, #isComment#=false, #rbo#=0.5, #isFrame#=false, #isBorder#=true, #hto#=1, #bo#=1, #fbc#=#bbb, #rta#=Left, #isFooter#=false, #bw#=2, #tc#=#a5300f, #bp#=0, #isHeaders#=true, #hta#=Center, #ts#=125, #tbc#=#d9ecb1, #myThresholdCount#=0, #rtc#=#000000, #hbo#=1, #rp#=3, #comment#=?, #isTitle#=true, #br#=0, #htc#=#ffffff, #rbc#=#ee704a, #fa#=Center, #rto#=1, #isOverrides#=false, #fs#=60, #tw#=100, #bfs#=18, #bc#=#000000, #ratc#=#000000, #bs#=Solid')
+    styleB = ['overrides':'?']
+    style = styleA + styleB
+    state.'*Style-AM Brown Stripes' = style
+    
+    styleA = convertStyleStringToMap('#tbo#=1, #hp#=0, #fc#=#000000, #ttr1#=?, #to#=1, #rabc#=#bdd7ee, #myKeywordCount#=0, #hbc#=#5b9bd5, #bm#=Collapse, #iFrameColor#=#bbb, #tff#=Comic Sans MS, #tp#=3, #th#=Auto, #isAlternateRows#=true, #ta#=Center, #isComment#=false, #rbo#=0, #isFrame#=false, #isBorder#=true, #hto#=1, #bo#=1, #fbc#=#bbb, #rta#=Left, #isFooter#=false, #bw#=2, #tc#=#000000, #bp#=0, #isHeaders#=true, #hta#=Center, #ts#=125, #tbc#=#9bc2e6, #myThresholdCount#=0, #rtc#=#000000, #hbo#=1, #rp#=3, #comment#=?, #isTitle#=true, #br#=0, #htc#=#000000, #rbc#=#9bc2e6, #fa#=Center, #rto#=1, #isOverrides#=false, #fs#=60, #tw#=100, #bfs#=18, #bc#=#000000, #ratc#=#000000, #bs#=Solid')
+    styleB = ['overrides':'?']
+    style = styleA + styleB
+    state.'*Style-AM Blue Stripes' = style
     
     log.info("Default Styles have been rebuilt.")
 	return
@@ -1137,9 +1159,10 @@ def getOverrideTextList(){
 
 def getOverrideMarginPaddingList(){
     return [
-    'Margin: Adds a margin to an element to increase space between elements for visual appeal. Margin can be a negative number. See also padding.' : "#Title#=margin-top:10px; margin-bottom:5px; margin-left:-50px | #Footer#=margin-top:5px",    
+    'Margin: Adds a margin to an element to increase space between elements for visual appeal. Margin can be a negative number. See also padding.' : "#Title#=margin-top:10px; margin-bottom:5px; margin-left:-50px | #Footer#=margin-top:5px",
 	'Padding: Show a border around all primary elements to help diagnose\\understand margin & padding issues.' : '#Title#=outline: 2px dotted red | #Table#=outline: 2px dotted yellow | #Footer#=outline: 2px dotted blue | #Box#=outline: 2px dotted green | #Alternaterow#=outline: 2px dashed purple;',
-    'Padding: Adds a minimum amount of space between or within an object. If you have Borders enabled use border padding to control row height. If not, use text padding. Example uses both.' : '#Border#=padding:5px; | #Title#=padding-bottom:10px; | #Data#=padding:5px;' 
+    'Padding: Adds a minimum amount of space between or within an object. If you have Borders enabled use border padding to control row height. If not, use text padding. Example uses both.' : '#Border#=padding:5px; | #Title#=padding-bottom:10px; | #Data#=padding:5px;',
+    'ToolTip: Sets the margin on the [P] paragraph element to 0. This is useful to override the enlarged margin when using the [Title] element to create a ToolTip.' : '#class1#=p{margin:0px}'
     ]
 }
 
@@ -1255,12 +1278,59 @@ def highlightNotes() {
     myText += "On a battery monitoring tile you could change the display for all batteries <= 50 to 'Replace' and highlight it in red.<br>"
 	myText += "You can animate a result by using something like this: '[div class=cl99]❌[/div]' as the replacement text. The class must be defined in the Advanced Tab - Overrides field or in the dashboard CSS. See Overrides Helper for examples.<br>"
     myText += "Each active <b>highlight style adds 35 bytes plus 11 bytes per affected row</b> to the HTML size. This may be partially offset by replacing longer phrases like 'not present' with 'Away'. <br>"
-    myText += "<b>Format Rules:</b> These are only available in Multi-Attribute Monitor and are used to apply custom formatting to particular rows of the table. Common examples are: <br>"
+    myText += "<b>Format Rules:</b> These are only available in Multi-Attribute Monitor & Grid, and are used to apply custom formatting to particular rows of the table. Common examples are: <br>"
     myText += "Progress Bar Example: <mark>%value%%[br][progress value=%value% max=100][/progress]</mark><br>"
     myText += "Meter Example: <mark>%value%%[br][meter low=50 high=80 max=100 optimum=100 value=%value%][/meter]</mark><br>"
+    myText += "Direction Example: <mark>[style].dir{transform:rotate(%value%deg);font-size:38px}[/style][div class=dir]↑[/div] (%value%°)</mark><br>"
+    myText += "Speed Example: <mark>[style]@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}} .sp1{animation:spin calc(5s / %value%) linear infinite}[/style][div class=sp1]🌀[/div]</mark><br>"
+    myText += "Size Example: <mark>[p style='font-size:48px'>%value%[/p]</mark><br>"
+    myText += "Color Example 1: <mark>[p style=color:blue]%value%[/p]</mark><br>"
+    myText += "Color Example 2: <mark>[p style=color:%value%]%value%[/p]</mark><br>"
+    myText += "Background Example: <mark>[p style=background:orange]%value%[/p]</mark><br>"
     myText += "Common Symbols: °F °C <br>"
     myText += "<b>Also Highlight Device Names:</b> This will apply the same highlighting tags to the device name that were applied to the data when keyword or threshold conditions have been met.<br>"
-    myText += "This function is sensitive to the presence of special ASCII characters like () [] {} \\ , * + ? | ^ and \$ . In lieu of these you can use unicode equivalents which you can cut and paste from here: ❨ ❩ ❪ ❫ ❴ ❵ ❬ ❭ ❮ ❯ ❰ ❱ ❲ ❳ ❟ ٭ ＋︖ ＄ ｜ˆ"
+    myText += "This function is sensitive to the presence of special ASCII characters like () [] {} \\ , * + ? | ^ and \$ . In lieu of these you can use unicode equivalents which you can cut and paste from here: ❨ ❩ ❪ ❫ ❴ ❵ ❬ ❭ ❮ ❯ ❰ ❱ ❲ ❳ ❟ ٭ ＋︖ ＄ ｜ˆ ”〝 "
+    return myText
+}
+
+def textFieldNotes() {
+    myText = "<b>Italicized Fields:</b><ul><li>Any field/control with an italicized title does not automatically refresh the table when the content is changed.</ul>"
+    myText += "<b>Variables:</b> <ul><li>You can place a variable in any text field using the syntax %variableName%. Variable names are assigned in the UI and are not case sensitive. Built-in variables are shown below:</ul>"
+    myText += "<b>Built-In variables - Any Layout Mode</b><br>"
+    myText += "<ul><li>%day% - Day of week in form: Fri</li>"
+    myText += "<li>%date% - Date in form: 22-12</li>"
+    myText += "<li>%date1% - Date in form: Dec-22</li>"
+    myText += "<li>%time% - Time in form: 23:35 PM</li>"
+    myText += "<li>%time1% - Time in form: 23:35</li>"
+    myText += "<li>%time2% - Time in form: 11:35 PM</li>"
+    myText += "<li>%today% - Current day as day of week in form: Friday</li>"
+    myText += "<li>%tomorrow% - Tomorrow as day of week in form: Saturday</li>"
+    myText += "<li>%dayAfterTomorrow% - Day after tomorrow as day of week in form: Sunday</li></ul>"
+    myText += "<b>Additional Built-In variables for Device Groups</b><br>"
+    myText += "<ul><li>%deviceName% - Name of the device.</li>"
+    myText += "<li>%deviceLabel% - Label of the device.</li>"
+    myText += "<li>%lastOn% - Last time 'switch' was turned on. N/A if not applicable or not available.</li>"
+    myText += "<li>%lastOff% - Last time 'switch' was turned off. N/A if not applicable or not available.</li>"
+    myText += "<li>%lastOpen% - Last time 'contact' was opened. N/A if not applicable or not available.</li>"
+    myText += "<li>%lastClosed% - Last time 'contact' was closed. N/A if not applicable or not available.</li>"
+    myText += "<li>%lastActivity% - Date and time of Last Activity on the device.</li>"
+    myText += "<li>%lastEvent% - Last event that occurred on the device and the corresponding value.</li></ul>"
+    myText += "<b>HTML Tags</b><br>"
+    myText += "<ul><li>Simple Tags: You can use standard HTML tags such as [b]Bold[/b], [u]Underline[/u], [i]Italic[/i], [mark]Mark[/mark] anywhere in a text field. </li>"
+    myText += "<li>Vertical Spacing: For vertical spacing you can use tags [br] for a new line or [hr] for a horizontal line.</li>"
+    myText += "<li>Spaces: Tile Builder may purge repeated spaces depending on your compression level. To embed multiple spaces that won't be purged you can use the null character. This can be entered using the key combination 'Alt 255' on the keypad.</li></ul>"
+    myText += "<b>Advanced HTML Examples:</b><br>"
+    myText += "<ul><li>Progress Bar Example: <mark>%value%%[br][progress value=%value% max=100][/progress]</mark></li>"
+    myText += "<li>Meter Example: <mark>%value%%[br][meter low=50 high=80 max=100 optimum=100 value=%value%][/meter]</mark></li>"
+    myText += "<li>Direction Example: <mark>[style].dir{transform:rotate(%value%deg);font-size:38px}[/style][div class=dir]↑[/div] (%value%°)</mark></li>"
+    myText += "<li>Speed Example: <mark>[style]@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}} .sp1{animation:spin calc(5s / %value%) linear infinite}[/style][div class=sp1]🌀[/div]</mark></li>"
+    myText += "<li>Size Example: <mark>[p style='font-size:48px'>%value%[/p]</mark></li>"
+    myText += "<li>Color Example 1: <mark>[p style=color:blue]%value%[/p]</mark></li>"
+    myText += "<li>Color Example 2: <mark>[p style=color:%value%]%value%[/p]</mark></li>"
+    myText += "<li>Background Example: <mark>[p style=background:orange]%value%[/p]</mark></li>"
+    myText += "<li>Tooltip Example: <mark>[p title='Last Event: %lastEvent% @ %lastActivity%']%deviceLabel%[/p]</mark></li></ul>"
+    myText += "<b>Units:</b> <ul><li>Common units can be cut and paste from here: °F °C </ul>"
+    myText += '<b>Restricted Characters</b>: <ul><li>Tile Builder is sensitive to the presence of special ASCII characters like () [] {} \\ , " * + ? | ^ and \$ . In lieu of these you can use unicode equivalents which you can cut and paste from here: ❨ ❩ ❪ ❫ ❴ ❵ ❬ ❭ ❮ ❯ ❰ ❱ ❲ ❳ ❟ ٭ ＋︖ ＄ ｜ˆ ”</ul>'
     return myText
 }
 
