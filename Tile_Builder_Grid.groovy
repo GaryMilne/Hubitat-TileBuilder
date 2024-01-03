@@ -20,8 +20,9 @@
 *
 *  CHANGELOG
 *  Version 1.0.0 - Initial Public Release
+*  Version 1.0.1 - Added %lastOpen% and %lastClosed% as variables for contacts. Added logic to handle device with a deviceLabel of null. Added logic for Boolean values to dataType(). Cleanup up some logging.
 *
-*  Gary Milne - December 30th, 2023 2:48 PM
+*  Gary Milne - January 2nd, 2024 7:16 PM
 *
 **/
 import groovy.transform.Field
@@ -45,7 +46,7 @@ import java.util.Date
     "voltageMeasurement": ["voltage", "frequency"], "waterSensor": ["water"], "windowBlind": ["position", "windowBlind", "tilt"], "windowShade": ["position", "windowShade"], "zwMultichannel": ["epEvent", "epInfo"], "pHMeasurement": ["pH"]
 ]
 
-def Version() { return "<b>Tile Builder Grid v1.0.0 (12/30/23)</b>"}
+def Version() { return "<b>Tile Builder Grid v1.0.1 (2/1/24)</b>"}
 def cleanups() { return ["None", "Capitalize", "Capitalize All", "Commas", "0 Decimal Places","1 Decimal Place", "Upper Case", "OW Code to Emoji", "OW Code to PNG", "Image URL", "Remove Tags [] <>"] }
 def rules() { return ["None", "All Keywords","All Thresholds", "Threshold 1","Threshold 2", "Threshold 3", "Threshold 4", "Threshold 5", "Format Rule 1", "Format Rule 2", "Format Rule 3", "Replace Chars"] }
 def invalidAttributeStrings() { return ["N/A", "n/a", " ", "-", "--"] }
@@ -471,6 +472,7 @@ def mainPage() {
                         }
                         paragraph "<b>Once you have imported a new Style you can save it if you wish to preserve it.</b>"
                     }
+                    
                 }
                 
                 //Advanced Settings
@@ -594,7 +596,7 @@ def mainPage() {
         myText = '<div style="display: flex; justify-content: space-between;">'
         myText += '<div style="text-align:left;font-weight:small;font-size:12px"> <b>Documentation:</b> ' + myDocURL + '</div>'
         myText += '<div style="text-align:center;font-weight:small;font-size:12px">Version: ' + Version() + '</div>'
-        myText += '<div style="text-align:right;font-weight:small;font-size:12px">Copyright 2022 - 2023</div>'
+        myText += '<div style="text-align:right;font-weight:small;font-size:12px">Copyright 2022 - 2024</div>'
         myText += '</div>'
         paragraph myText
         }    
@@ -619,7 +621,7 @@ def createCellTemplates(){
     if (isLogTrace) log.info("<b>createCellTemplates: Entering.</b>" )
     def attributeList = getSelectedAttributes()
     def replacementList = attributeList + ["deviceName","deviceLabel"]
-    if (gatherEventInfo.toString() == "True" ) replacementList = replacementList + ["lastActivity","lastOn","lastOff","lastEvent"]
+    if (gatherEventInfo.toString() == "True" ) replacementList = replacementList + ["lastActivity","lastOn","lastOff","lastOpen","lastClosed","lastEvent"]
     def deviceCount = myDeviceList?.size() ?: 0
     
     for (int i = 1; i <= deviceCount; i++) {
@@ -660,9 +662,20 @@ def cleanupCore(dataType, myName, myValue, i){
         if (isLogCleanups) log.info ("cleanup: The attribute for device $deviceName is a null value")
         newMap [ myName ] = "Null"
         return newMap
-    }     
+    }    
     
-    if (dataType == "String") {
+    if (dataType == "Boolean") {
+        newMap[myName] = myValue.toString()
+         switch (settings["actionA$i"]) {
+            case "Capitalize":
+                newMap[myName] = myValue.toString().capitalize()
+                break
+            default:
+                newMap[myName] = myValue.toString()
+         }
+    }
+    
+    if (dataType == "String" ) {
         switch (settings["actionA$i"]) {
             case "Capitalize":
                 newMap[myName] = myValue.toString().capitalize()
@@ -732,7 +745,7 @@ def truncateName(deviceName){
     //Make sure all of the device names meet the minimum length by padding the end with spaces.
     shortName = deviceName + "                            "
     //Truncate the name if required
-    //if (isLogDebug) log.debug ("refreshTable: myTruncateLength.toInteger() is ${myTruncateLength.toInteger() }")
+    if (isLogTrace) log.info ("truncateName: Entering with: deviceName $deviceName and truncate length is ${myTruncateLength.toInteger() }")
     if ( myTruncateLength != null && myTruncateLength.toInteger() == 96) shortName = findSpace(shortName, 3)
     if ( myTruncateLength != null && myTruncateLength.toInteger() == 97 ) shortName = findSpace(shortName, 2)
     if ( myTruncateLength != null && myTruncateLength.toInteger() == 98 ) shortName = findSpace(shortName, 1)
@@ -789,7 +802,8 @@ def getVariablesDeviceGroup(){
         myDeviceList.sort{it.getLabel()}.each { it ->
             def deviceName = "${it.getName().toString()}"
             def deviceLabel = "${it.getLabel().toString()}"
-            if (isLogVariables) log.info("getVariablesDeviceGroup: Processing: $deviceLabel")
+            if (deviceLabel == null || deviceLabel == "null" || deviceLabel.size() == 0 ) deviceLabel = "No Device Label"
+            if (isLogVariables) log.info("getVariablesDeviceGroup: Processing: Device: $deviceName with label: $deviceLabel")
             state.vars."devicelabel$i" = truncateName (deviceLabel)
             state.vars."devicename$i" = truncateName (deviceName)
             
@@ -803,14 +817,22 @@ def getVariablesDeviceGroup(){
 
                 def lastEvent = it.events(max:1)
                 log.info ("last event: " + lastEvent.name[0])
+                //Switch Events
                 def lastOn = it.events(max:20).find{ it.name=="switch" && it.value=="on" } 
                 def lastOff = it.events(max:20).find{ it.name=="switch" && it.value=="off" } 
                 def lastOnDate = formatTime( lastOn?.getDate(), 0 ) ?: invalidAttribute.toString()
                 def lastOffDate = formatTime( lastOff?.getDate(), 0 ) ?: invalidAttribute.toString()
+                //Contact Events
+                def lastOpen = it.events(max:20).find{ it.name=="contact" && it.value=="open" } 
+                def lastClosed = it.events(max:20).find{ it.name=="switch" && it.value=="closed" } 
+                def lastOpenDate = formatTime( lastOpen?.getDate(), 0 ) ?: invalidAttribute.toString()
+                def lastClosedDate = formatTime( lastClosed?.getDate(), 0 ) ?: invalidAttribute.toString()
                 
                 state.events."lastActivity$i" = lastActivity
                 state.events."lastOn$i" = lastOnDate
                 state.events."lastOff$i" = lastOffDate
+                state.events."lastOpen$i" = lastOpenDate
+                state.events."lastClosed$i" = lastClosedDate
                 state.events."lastEvent$i" = lastEvent.name[0] + ":" + lastEvent.value[0]
             }
                     
@@ -864,7 +886,7 @@ def cleanupDeviceGroup(myName, myAttribute, myIndex, myValue ){
     i = selectedAttributes.indexOf(myAttribute).toInteger() + 1
     
     //log.info ("cleanupDeviceGroup: myAttribute is: $myAttribute, myIndex is: $myIndex, myValue is: $myValue, myName is: $myName and ActionIndex is $i")
-    dataType = getDataType( myValue)    
+    dataType = getDataType( myValue.toString())    
     def myAction = settings["actionA$ia"]
         
     newMap = cleanupCore(dataType, myName, myValue, i)
@@ -938,28 +960,29 @@ def cleanupFreeForm(i){
     def myMap = [:]
     def myValue
     def myName = settings["name$i"]
-    def dataType = "String"
+    def dataType
     
     if (isLogCleanups) log.info ("<u>cleanup: Performing cleanup for: $myName</u>")
     
     if ( settings["variableSource$i"] == "Default Device" && settings["defaultDevice"] != null ) {
         myValue = settings["defaultDevice"].currentValue(settings["myAttribute$i"]).toString()
-        dataType = getDataType( myValue )        
+        dataType = deviceLabel ( myValue.toString() )        
         if (isLogCleanups) log.info ("cleanup: It's the Default Device: $myName with index:$i and the myValue is:$myValue with dataType: $dataType")
     }
     if ( settings["variableSource$i"] == "Device Attribute" && settings["myDevice$i"] != null && settings["myAttribute$i"] != null ) {
         myValue = settings["myDevice$i"].currentValue(settings["myAttribute$i"]).toString()
-        dataType = getDataType( myValue )
+        dataType = getDataType( myValue.toString() )
         if (isLogCleanups) log.info ("cleanup: It's a Device: $myName with index:$i and the value is:$myValue with dataType: $dataType")
     }
     
     if ( settings["variableSource$i"] == "Hub Variable"  && settings["myHubVariable$i"] != null) {
         myMap = getGlobalVar(settings["myHubVariable$i"])
         myValue = myMap.value
-        dataType = getDataType( myValue )
+        if ( myValue instanceof Boolean ) dataType = "Boolean"
+        else dataType = getDataType( myValue.toString() )
         if (isLogCleanups) log.info ("cleanup: It's a Hub Variable: $myName with index:$i and the value is:$myValue with dataType: $dataType")
     }
-    
+        
     myMap = cleanupCore(dataType, myName, myValue, i)
     if (isLogCleanups) log.info ("cleanup: myMap is: $myMap")
     return myMap
@@ -1488,7 +1511,7 @@ def highlightValue(attributeValue, myIndex){
         def oldCharacters = settings["oc1"] ?: ""
         def newCharacters = settings["nc1"] ?: ""
         //Replace the old character(s) with the new character(s) if found.
-        attributeValue = attributeValue.replace(oldCharacters, newCharacters)
+        if (oldCharacters != "?" && newCharacters != "?" ) attributeValue = attributeValue.replace(oldCharacters, newCharacters)
     }
     
     if ( settings["actionB$myIndex"] == "Format Rule 1" ) {
@@ -2396,11 +2419,11 @@ def clearHTML(HTML){
 
 //Receives a string and determines whether it can be converted to a float, integer or a string
 def getDataType(String myVal) {
-    if (isLogTrace) log.trace ("<b>getDataType: Entering with $myVal</b>")
+    if (isLogTrace) log.trace ("<b>getDataType: Entering with " + unHTML(myVal) + "</b>")
     if (myVal == null || myVal == "null") return "Null" 
     
     //If myVal contains anything other than 0-9 and . then it must be a string.
-    if (!(myVal =~ /^[0-9.]+$/)) { return "String"}
+    if (!(myVal =~ /^[0-9.]+$/) ) { return "String"}
     try { def myInteger = myVal.toInteger(); return "Integer" } 
     catch (Exception e) {} // Ignore exception if conversion to integer fails 
     try { def myFloat = myVal.toFloat(); return "Float" } 
