@@ -21,6 +21,7 @@
 *  CHANGELOG
 *  Version 1.0.0 - Initial Public Release
 *  Version 1.0.1 - Added %lastOpen% and %lastClosed% as variables for contacts. Added logic to handle device with a deviceLabel of null. Added logic for Boolean values to dataType(). Cleanup up some logging.
+*  Version 1.0.2 - Fixed typo in line 969\970
 *
 *  Gary Milne - January 2nd, 2024 7:16 PM
 *
@@ -966,7 +967,7 @@ def cleanupFreeForm(i){
     
     if ( settings["variableSource$i"] == "Default Device" && settings["defaultDevice"] != null ) {
         myValue = settings["defaultDevice"].currentValue(settings["myAttribute$i"]).toString()
-        dataType = deviceLabel ( myValue.toString() )        
+        dataType = getDataType( myValue.toString() )        
         if (isLogCleanups) log.info ("cleanup: It's the Default Device: $myName with index:$i and the myValue is:$myValue with dataType: $dataType")
     }
     if ( settings["variableSource$i"] == "Device Attribute" && settings["myDevice$i"] != null && settings["myAttribute$i"] != null ) {
