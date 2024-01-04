@@ -122,7 +122,7 @@ def mainPage() {
         }
     refreshTable()
     refreshUIbefore()
-    def pageTitle = (parent.checkLicense() == true) ? "Multi Attribute Monitor - Advanced" : "Multi Attribute Monitor - Standard";
+    def pageTitle = (parent.checkLicense() == true) ? "Attribute Monitor - Advanced" : "Attribute Monitor - Standard";
     dynamicPage(name: "mainPage", title: titleise("<center><h2>$pageTitle</h2></center>"), uninstall: true, install: true, singleThreaded:true) {
     //paragraph buttonLink ("test", "test", 0)
         
