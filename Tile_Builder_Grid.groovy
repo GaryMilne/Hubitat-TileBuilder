@@ -22,8 +22,9 @@
 *  Version 1.0.0 - Initial Public Release
 *  Version 1.0.1 - Added %lastOpen% and %lastClosed% as variables for contacts. Added logic to handle device with a deviceLabel of null. Added logic for Boolean values to dataType(). Cleanup up some logging.
 *  Version 1.0.2 - Fixed typo in line 969\970
+*  Version 1.0.3 - Added Try\Catch logic around device\hub variable retrieval in the event of a deleted or renamed device or hub variable. Split %lastEvent% into %lastEvent% (changed attribute) and %lastEventValue% (changed attribute value)
 *
-*  Gary Milne - January 2nd, 2024 7:16 PM
+*  Gary Milne - January 3rd, 2024 8:53 PM
 *
 **/
 import groovy.transform.Field
@@ -47,7 +48,7 @@ import java.util.Date
     "voltageMeasurement": ["voltage", "frequency"], "waterSensor": ["water"], "windowBlind": ["position", "windowBlind", "tilt"], "windowShade": ["position", "windowShade"], "zwMultichannel": ["epEvent", "epInfo"], "pHMeasurement": ["pH"]
 ]
 
-def Version() { return "<b>Tile Builder Grid v1.0.1 (2/1/24)</b>"}
+def Version() { return "<b>Tile Builder Grid v1.0.3 (1/3/24)</b>"}
 def cleanups() { return ["None", "Capitalize", "Capitalize All", "Commas", "0 Decimal Places","1 Decimal Place", "Upper Case", "OW Code to Emoji", "OW Code to PNG", "Image URL", "Remove Tags [] <>"] }
 def rules() { return ["None", "All Keywords","All Thresholds", "Threshold 1","Threshold 2", "Threshold 3", "Threshold 4", "Threshold 5", "Format Rule 1", "Format Rule 2", "Format Rule 3", "Replace Chars"] }
 def invalidAttributeStrings() { return ["N/A", "n/a", " ", "-", "--"] }
@@ -622,7 +623,7 @@ def createCellTemplates(){
     if (isLogTrace) log.info("<b>createCellTemplates: Entering.</b>" )
     def attributeList = getSelectedAttributes()
     def replacementList = attributeList + ["deviceName","deviceLabel"]
-    if (gatherEventInfo.toString() == "True" ) replacementList = replacementList + ["lastActivity","lastOn","lastOff","lastOpen","lastClosed","lastEvent"]
+    if (gatherEventInfo.toString() == "True" ) replacementList = replacementList + ["lastActivity","lastOn","lastOff","lastOpen","lastClosed","lastEvent","lastEventValue"]
     def deviceCount = myDeviceList?.size() ?: 0
     
     for (int i = 1; i <= deviceCount; i++) {
@@ -800,54 +801,58 @@ def getVariablesDeviceGroup(){
               
     //Go through the list of selected devices to get the data of interest.
     if ( deviceCount > 0 ){
-        myDeviceList.sort{it.getLabel()}.each { it ->
-            def deviceName = "${it.getName().toString()}"
-            def deviceLabel = "${it.getLabel().toString()}"
-            if (deviceLabel == null || deviceLabel == "null" || deviceLabel.size() == 0 ) deviceLabel = "No Device Label"
-            if (isLogVariables) log.info("getVariablesDeviceGroup: Processing: Device: $deviceName with label: $deviceLabel")
-            state.vars."devicelabel$i" = truncateName (deviceLabel)
-            state.vars."devicename$i" = truncateName (deviceName)
-            
-            //See if we are gathering event info
-            if (gatherEventInfo.toString() == "True" ){
-                //Last activity comes back as "2023-12-22 17:55:29+0000" so we convert it to "2023-12-22 17:55:29" for simplicity and use with the formatTime function.
-                def lastActivityInputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ssZ")
-                def lastActivityOutputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-                Date LastActivityDate = lastActivityInputFormat.parse(it.getLastActivity().toString())
-                lastActivity = lastActivityOutputFormat.format(LastActivityDate)
-
-                def lastEvent = it.events(max:1)
-                log.info ("last event: " + lastEvent.name[0])
-                //Switch Events
-                def lastOn = it.events(max:20).find{ it.name=="switch" && it.value=="on" } 
-                def lastOff = it.events(max:20).find{ it.name=="switch" && it.value=="off" } 
-                def lastOnDate = formatTime( lastOn?.getDate(), 0 ) ?: invalidAttribute.toString()
-                def lastOffDate = formatTime( lastOff?.getDate(), 0 ) ?: invalidAttribute.toString()
-                //Contact Events
-                def lastOpen = it.events(max:20).find{ it.name=="contact" && it.value=="open" } 
-                def lastClosed = it.events(max:20).find{ it.name=="switch" && it.value=="closed" } 
-                def lastOpenDate = formatTime( lastOpen?.getDate(), 0 ) ?: invalidAttribute.toString()
-                def lastClosedDate = formatTime( lastClosed?.getDate(), 0 ) ?: invalidAttribute.toString()
-                
-                state.events."lastActivity$i" = lastActivity
-                state.events."lastOn$i" = lastOnDate
-                state.events."lastOff$i" = lastOffDate
-                state.events."lastOpen$i" = lastOpenDate
-                state.events."lastClosed$i" = lastClosedDate
-                state.events."lastEvent$i" = lastEvent.name[0] + ":" + lastEvent.value[0]
-            }
-                    
-            //Go through the unique list of attributes the user has selected and if the attribute exists on the device then get it and save it to state.
-            attributeList.each { attributeName ->
-                myValue = it.currentValue(attributeName)?.toString() ?: invalidAttribute.toString()
-                varName = "$attributeName" + i
-                state.vars."$varName" = ( myValue.toString() ?: "")
-                if (isLogVariables) log.info("getVariablesDeviceGroup: Attribute: $myAttr ($myValue) saved to state.vars.$varName")
-            }
         
-        // At this point we have collected the device information and saved it state.vars.attributeX = ABC for example             
-        i++    
+        try{
+            myDeviceList.sort{it.getLabel()}.each { it ->
+                def deviceName = "${it.getName().toString()}"
+                def deviceLabel = "${it.getLabel().toString()}"
+                if (deviceLabel == null || deviceLabel == "null" || deviceLabel.size() == 0 ) deviceLabel = "No Device Label"
+                if (isLogVariables) log.info("getVariablesDeviceGroup: Processing: Device: $deviceName with label: $deviceLabel")
+                state.vars."devicelabel$i" = truncateName (deviceLabel)
+                state.vars."devicename$i" = truncateName (deviceName)
+            
+                //See if we are gathering event info
+                if (gatherEventInfo.toString() == "True" ){
+                    //Last activity comes back as "2023-12-22 17:55:29+0000" so we convert it to "2023-12-22 17:55:29" for simplicity and use with the formatTime function.
+                    def lastActivityInputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ssZ")
+                    def lastActivityOutputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+                    Date LastActivityDate = lastActivityInputFormat.parse(it.getLastActivity().toString())
+                    lastActivity = lastActivityOutputFormat.format(LastActivityDate)
+    
+                    def lastEvent = it.events(max:1)
+                    if (isLogVariables) log.info ("Last event: " + lastEvent.name[0] + "  Last value: " + lastEvent.value[0] )
+                    //Switch Events
+                    def lastOn = it.events(max:20).find{ it.name=="switch" && it.value=="on" } 
+                    def lastOff = it.events(max:20).find{ it.name=="switch" && it.value=="off" } 
+                    def lastOnDate = formatTime( lastOn?.getDate(), 0 ) ?: invalidAttribute.toString()
+                    def lastOffDate = formatTime( lastOff?.getDate(), 0 ) ?: invalidAttribute.toString()
+                    //Contact Events
+                    def lastOpen = it.events(max:20).find{ it.name=="contact" && it.value=="open" } 
+                    def lastClosed = it.events(max:20).find{ it.name=="switch" && it.value=="closed" } 
+                    def lastOpenDate = formatTime( lastOpen?.getDate(), 0 ) ?: invalidAttribute.toString()
+                    def lastClosedDate = formatTime( lastClosed?.getDate(), 0 ) ?: invalidAttribute.toString()
+                    state.events."lastActivity$i" = lastActivity
+                    state.events."lastOn$i" = lastOnDate
+                    state.events."lastOff$i" = lastOffDate
+                    state.events."lastOpen$i" = lastOpenDate
+                    state.events."lastClosed$i" = lastClosedDate
+                    state.events."lastEvent$i" = lastEvent.name[0]
+                    state.events."lastEventValue$i" = lastEvent.value[0]
+                }
+                    
+                //Go through the unique list of attributes the user has selected and if the attribute exists on the device then get it and save it to state.
+                attributeList.each { attributeName ->
+                    myValue = it.currentValue(attributeName)?.toString() ?: invalidAttribute.toString()
+                    varName = "$attributeName" + i
+                    state.vars."$varName" = ( myValue.toString() ?: "")
+                    if (isLogVariables) log.info("getVariablesDeviceGroup: Attribute: $myAttr ($myValue) saved to state.vars.$varName")
+                }
+        
+            // At this point we have collected the device information and saved it state.vars.attributeX = ABC for example             
+            i++    
+            }
         }
+        catch (ex) { log.error('getVariablesDeviceGroup(): Error getting Device info. Has a Device been deleted or renamed?') }
     }
     
     //Go through each of the attribute variables the user has selected and process cleanups
@@ -914,31 +919,35 @@ def getVariablesFreeForm(){
     
     //Loop through each of the Variables and generate it's content.
     for (int i = 1; i <= myVariableCount.toInteger(); i++) {
-        def displayValue = ""
-        if (settings["variableSource$i"] == "Default Device" && defaultDevice != null && settings["myAttribute$i"] != null ) { displayValue = settings["defaultDevice"].currentValue(settings["myAttribute$i"]).toString() }
-        if (settings["variableSource$i"] == "Device Attribute" && settings["myDevice$i"] != null && settings["myAttribute$i"] != null) { displayValue = settings["myDevice$i"].currentValue(settings["myAttribute$i"]).toString() }
-        if (settings["variableSource$i"] == "Hub Variable" && settings["myHubVariable$i"] != null) {
-            displayMap = getGlobalVar(settings["myHubVariable$i"].toString())
-            displayValue = displayMap.value
-            if (isLogVariables) log.info("getVariablesFreeForm: Hub Variable: " + displayMap.toString() + " displayValue is: $displayValue" )
-            }
-        resultMap = cleanupFreeForm(i)
-        if (isLogVariables) log.info("getVariablesFreeForm: Result Map is: " + resultMap.toString() )
-        def myName
-        def myValue
-        varName = settings["name$i"]
+        try {
+            def displayValue = ""
+            if (settings["variableSource$i"] == "Default Device" && defaultDevice != null && settings["myAttribute$i"] != null ) { displayValue = settings["defaultDevice"].currentValue(settings["myAttribute$i"]).toString() }
+            if (settings["variableSource$i"] == "Device Attribute" && settings["myDevice$i"] != null && settings["myAttribute$i"] != null) { displayValue = settings["myDevice$i"].currentValue(settings["myAttribute$i"]).toString() }
+            if (settings["variableSource$i"] == "Hub Variable" && settings["myHubVariable$i"] != null) {
+                displayMap = getGlobalVar(settings["myHubVariable$i"].toString())
+                displayValue = displayMap.value
+                if (isLogVariables) log.info("getVariablesFreeForm: Hub Variable: " + displayMap.toString() + " displayValue is: $displayValue" )
+                }
+            resultMap = cleanupFreeForm(i)
+            if (isLogVariables) log.info("getVariablesFreeForm: Result Map is: " + resultMap.toString() )
+            def myName
+            def myValue
+            varName = settings["name$i"]
                 
-        resultMap.each{ itemName, value ->
-            if (isLogVariables) log.info("getVariablesFreeForm: Item Name: $itemName, Value: $value,  varName is: $varName")
-            myName = itemName
-            myValue = highlightValue(value, i)
-            state.vars."$varName" = ( myValue.toString() ?: "")
-            if (isLogVariables) log.info("getVariablesFreeForm: state.vars.$varName is: " + myValue.toString() ?: "" )
+            resultMap.each{ itemName, value ->
+                if (isLogVariables) log.info("getVariablesFreeForm: Item Name: $itemName, Value: $value,  varName is: $varName")
+                myName = itemName
+                myValue = highlightValue(value, i)
+                state.vars."$varName" = ( myValue.toString() ?: "")
+                if (isLogVariables) log.info("getVariablesFreeForm: state.vars.$varName is: " + myValue.toString() ?: "" )
+            }
         }
+        catch (ex) { log.error('getVariablesFreeForm(): Error getting Device\\Variable info. Has a device or variable been deleted or renamed?') }
     }
     
-        def sortedMap = state.vars.entrySet().sort { it.key.capitalize() }.collectEntries { entry -> [entry.key, entry.value] }
-        sortedMap.each{ thisVar, value ->
+    //Go through each of the vars in state and mark them for display in the vars area.
+    def sortedMap = state.vars.entrySet().sort { it.key.capitalize() }.collectEntries { entry -> [entry.key, entry.value] }
+    sortedMap.each{ thisVar, value ->
         if ( value != null && value != "Null" ){ 
             varString1 += dodgerBlue(bold("$thisVar: ")) + toHTML(value) + ",  "  
             varString2 += dodgerBlue(bold("$thisVar: ")) + toHTML(value) + " (<mark>" + unHTML(value) + "</mark>),  " 

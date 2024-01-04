@@ -57,12 +57,13 @@
 *  Version 1.4.5 - Added some new examples for use with Format Rules and MAM 2.0 to the Highlight Notes Section. Removed redundant settings in the Styles section.
 *  Version 1.4.6 - Minor text additions in preparation for the release of TB Grid. Added textFieldNotes() function. Added ability to Show\Hide modules. (Unreleased version)
 *  Version 1.4.7 - Donation minimum increased by $1 to $8 for additional module - Grid.
+*  Version 1.4.8 - BugFix: Correct issue with the Multi-Attribute Monitor modiule name. Added notations for %lastEventValue% added to Grid.
 *
-*  Gary Milne - December 30th, 2023 @ 12:06 PM
+*  Gary Milne - January 3rd, 2024 @ 9:01 PM
 *
 **/
 import groovy.transform.Field
-@Field static final Version = "<b>Tile Builder Parent v1.4.7 (12/30/23)</b>"
+@Field static final Version = "<b>Tile Builder Parent v1.4.8 (1/3/23)</b>"
 
 //These are the data for the pickers used on the child forms.
 def elementSize() { return ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '30', '40', '50', '75', '100'] }
@@ -254,12 +255,12 @@ def mainPage() {
                     myString += '<b>2) Attribute Monitor:</b> Generates a table containing data for multiple devices\\single attribute into a single tile. For example, all room temps on a single tile.<br>'
                     myString += '<b>3) Multi Attribute Monitor:</b> Generates a table containing data for multiple devices\\multiple attributes into a single tile. For example, indoor temperature, humidity, AC\\Heat status and weather in a single tile.<br>'
                     myString += '<b>4) Rooms:</b> Generates a graphical layout of Icons representing devices within a room. Icons change appearance depending on the state of the device.<br>'
-                    myString += '<b>5) Grid:</b> Generates a Grid of Data up to 5 columns wide with freedom of placement for Data. Tile Builder Grid is only accesible to TB Advanced Users.<br>'
+                    myString += '<b>5) Grid:</b> Generates a Grid of Data up to 5 columns wide with freedom of placement for Data. Tile Builder Grid is only available to Tile Builder Advanced Users.<br>'
                     paragraph note('', myString)
                     
                     if (!hideActivityMonitor) app (name: 'TBPA', appName: 'Tile Builder - Activity Monitor', namespace: 'garyjmilne', title: 'Add New Activity Monitor')
                     if (!hideAttributeMonitor) app(name: 'TBPA', appName: 'Tile Builder - Attribute Monitor', namespace: 'garyjmilne', title: 'Add New Attribute Monitor')
-                    if (!hideMultiAM) app(name: 'TBPA', appName: 'Tile Builder - Multi AM', namespace: 'garyjmilne', title: 'Add New Multi-Attribute Monitor')
+                    if (!hideMultiAM) app(name: 'TBPA', appName: 'Tile Builder - Multi Attribute Monitor', namespace: 'garyjmilne', title: 'Add New Multi-Attribute Monitor')
                     if (!hideRooms) app(name: 'TBPA', appName: 'Tile Builder - Rooms', namespace: 'garyjmilne', title: 'Add New Room')
                     if (checkLicense() && !hideGrid ) app(name: 'TBPA', appName: 'Tile Builder - Grid', namespace: 'garyjmilne', title: 'Add New Grid')
                     }
@@ -329,7 +330,7 @@ def mainPage() {
             myText = '<div style="display: flex; justify-content: space-between;">'
             myText += '<div style="text-align:left;font-weight:small;font-size:12px"> Developer: Gary J. Milne</div>'
             myText += '<div style="text-align:center;font-weight:small;font-size:12px">Version: ' + Version + '</div>'
-            myText += '<div style="text-align:right;font-weight:small;font-size:12px">Copyright 2022 - 2023</div>'
+            myText += '<div style="text-align:right;font-weight:small;font-size:12px">Copyright 2022 - 2024</div>'
             myText += '</div>'
             paragraph myText  
            //paragraph ("setupState is: $state.setupState")
@@ -1314,7 +1315,8 @@ def textFieldNotes() {
     myText += "<li>%lastOpen% - Last time 'contact' was opened. N/A if not applicable or not available.</li>"
     myText += "<li>%lastClosed% - Last time 'contact' was closed. N/A if not applicable or not available.</li>"
     myText += "<li>%lastActivity% - Date and time of Last Activity on the device.</li>"
-    myText += "<li>%lastEvent% - Last event that occurred on the device and the corresponding value.</li></ul>"
+    myText += "<li>%lastEvent% - Last attribute that changed.</li></ul>"
+    myText += "<li>%lastEventValue% - Value of the last attribute that changed.</li></ul>"
     myText += "<b>HTML Tags</b><br>"
     myText += "<ul><li>Simple Tags: You can use standard HTML tags such as [b]Bold[/b], [u]Underline[/u], [i]Italic[/i], [mark]Mark[/mark] anywhere in a text field. </li>"
     myText += "<li>Vertical Spacing: For vertical spacing you can use tags [br] for a new line or [hr] for a horizontal line.</li>"
@@ -1328,7 +1330,7 @@ def textFieldNotes() {
     myText += "<li>Color Example 1: <mark>[p style=color:blue]%value%[/p]</mark></li>"
     myText += "<li>Color Example 2: <mark>[p style=color:%value%]%value%[/p]</mark></li>"
     myText += "<li>Background Example: <mark>[p style=background:orange]%value%[/p]</mark></li>"
-    myText += "<li>Tooltip Example: <mark>[p title='Last Event: %lastEvent% @ %lastActivity%']%deviceLabel%[/p]</mark></li></ul>"
+    myText += "<li>Tooltip Example: <mark>[p title='Last Event: %lastEvent% (%lastEventValue%) @ %lastActivity%']%deviceLabel%[/p]</mark></li></ul>"
     myText += "<b>Units:</b> <ul><li>Common units can be cut and paste from here: °F °C </ul>"
     myText += '<b>Restricted Characters</b>: <ul><li>Tile Builder is sensitive to the presence of special ASCII characters like () [] {} \\ , " * + ? | ^ and \$ . In lieu of these you can use unicode equivalents which you can cut and paste from here: ❨ ❩ ❪ ❫ ❴ ❵ ❬ ❭ ❮ ❯ ❰ ❱ ❲ ❳ ❟ ٭ ＋︖ ＄ ｜ˆ ”</ul>'
     return myText

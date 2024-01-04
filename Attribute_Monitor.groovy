@@ -51,8 +51,9 @@
 *  Version 1.4.2 - Bugfix: Units were not displaying when selected.
 *  Version 1.4.3 - Cosmetic Changes to the Menu Bar and Title. Adds a counter to a comment field for results > 1024 which ensures that every update is unique and causes the file to be reloaded in the Dashboard on any change. Added Character Replacement capability.
 *  Version 1.4.4 - Bugfix: Added ternary operators in highlightValue for float values that come back as null because the attribute is not populated.
+*  Version 1.4.5 - Bugfix: Incorrect Module Name
 *
-*  Gary Milne - January 2nd, 2024
+*  Gary Milne - January 3rd, 2024
 *
 *  This code is Activity Monitor and Attribute Monitor combined.
 *  The personality is dictated by @Field static moduleName a few lines ahead of this.
@@ -73,7 +74,7 @@ import groovy.transform.Field
 //These are unknown as to whether they report integer or float values.
 //capabilitiesUnknown = [" "carbonDioxideMeasurement":"carbonDioxide","pressureMeasurement":"pressure","relativeHumidityMeasurement":"humidity", "ultravioletIndex":"ultravioletIndex"]
 
-@Field static final Version = "<b>Tile Builder Attribute Monitor v1.4.4 (1/2/24)</b>"
+@Field static final Version = "<b>Tile Builder Attribute Monitor v1.4.5 (1/3/24)</b>"
 //@Field static final moduleName = "Activity Monitor"
 @Field static final moduleName = "Attribute Monitor"
 
