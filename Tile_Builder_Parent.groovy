@@ -1315,7 +1315,7 @@ def textFieldNotes() {
     myText += "<li>%lastOpen% - Last time 'contact' was opened. N/A if not applicable or not available.</li>"
     myText += "<li>%lastClosed% - Last time 'contact' was closed. N/A if not applicable or not available.</li>"
     myText += "<li>%lastActivity% - Date and time of Last Activity on the device.</li>"
-    myText += "<li>%lastEvent% - Last attribute that changed.</li></ul>"
+    myText += "<li>%lastEvent% - Last attribute that changed.</li>"
     myText += "<li>%lastEventValue% - Value of the last attribute that changed.</li></ul>"
     myText += "<b>HTML Tags</b><br>"
     myText += "<ul><li>Simple Tags: You can use standard HTML tags such as [b]Bold[/b], [u]Underline[/u], [i]Italic[/i], [mark]Mark[/mark] anywhere in a text field. </li>"
