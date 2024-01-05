@@ -21,10 +21,11 @@
 *  CHANGELOG
 *  Version 1.0.0 - Initial Public Release
 *  Version 1.0.1 - Added %lastOpen% and %lastClosed% as variables for contacts. Added logic to handle device with a deviceLabel of null. Added logic for Boolean values to dataType(). Cleanup up some logging.
-*  Version 1.0.2 - Fixed typo in line 969\970
+*  Version 1.0.2 - Bugfix: Fixed typo in line 969\970
 *  Version 1.0.3 - Added Try\Catch logic around device\hub variable retrieval in the event of a deleted or renamed device or hub variable. Split %lastEvent% into %lastEvent% (changed attribute) and %lastEventValue% (changed attribute value)
+*  Version 1.0.4 - Bugfix: Fixes issue with incomplete subscriptions when in Device Group mode.
 *
-*  Gary Milne - January 3rd, 2024 8:53 PM
+*  Gary Milne - January 4th, 2024 7:23 PM
 *
 **/
 import groovy.transform.Field
@@ -48,7 +49,7 @@ import java.util.Date
     "voltageMeasurement": ["voltage", "frequency"], "waterSensor": ["water"], "windowBlind": ["position", "windowBlind", "tilt"], "windowShade": ["position", "windowShade"], "zwMultichannel": ["epEvent", "epInfo"], "pHMeasurement": ["pH"]
 ]
 
-def Version() { return "<b>Tile Builder Grid v1.0.3 (1/3/24)</b>"}
+def Version() { return "<b>Tile Builder Grid v1.0.4 (1/4/24)</b>"}
 def cleanups() { return ["None", "Capitalize", "Capitalize All", "Commas", "0 Decimal Places","1 Decimal Place", "Upper Case", "OW Code to Emoji", "OW Code to PNG", "Image URL", "Remove Tags [] <>"] }
 def rules() { return ["None", "All Keywords","All Thresholds", "Threshold 1","Threshold 2", "Threshold 3", "Threshold 4", "Threshold 5", "Format Rule 1", "Format Rule 2", "Format Rule 3", "Replace Chars"] }
 def invalidAttributeStrings() { return ["N/A", "n/a", " ", "-", "--"] }
@@ -1667,19 +1668,31 @@ void publishSubscribe(){
     unsubscribe()
     def device
     def attribute
-    // Subscribe to Devices\Attributes\Variables that are not null
-    (1..myVariableCount.toInteger()).each { i ->
-                
-        if (settings["variableSource${i}"] == "Default Device") device = settings["defaultDevice"]
-        if (settings["variableSource${i}"] == "Device Attribute") device = settings["myDevice$i"]
+    
+    if (layoutMode.toString() == "Free Form"){
+        // Subscribe to Devices\Attributes\Variables that are not null
+        (1..myVariableCount.toInteger()).each { i ->
+            if (settings["variableSource${i}"] == "Default Device") device = settings["defaultDevice"]
+            if (settings["variableSource${i}"] == "Device Attribute") device = settings["myDevice$i"]
         
-        if (settings["variableSource${i}"] == "Default Device" || settings["variableSource${i}"] == "Device Attribute"){
-            attribute = settings["myAttribute$i"]
-            if (device && attribute) subscribe(device, attribute, handler)    
+            if (settings["variableSource${i}"] == "Default Device" || settings["variableSource${i}"] == "Device Attribute"){
+                attribute = settings["myAttribute$i"]
+                if (device && attribute) subscribe(device, attribute, handler)    
+            }
+            if (settings["variableSource${i}"] == "Hub Variable"){ 
+                device = settings["myHubVariable$i"].toString()
+                if (device && attribute) subscribe(location, "variable:$device", handler)
+            }
         }
-        if (settings["variableSource${i}"] == "Hub Variable"){ 
-            device = settings["myHubVariable$i"].toString()
-            subscribe(location, "variable:$device", handler)
+    }
+    
+    if (layoutMode.toString() == "Device Group"){
+        myDeviceList.each { it ->
+            device = it
+            (1..myVariableCount.toInteger()).each { i ->
+               attribute = settings["myAttribute$i"]  
+            }
+            if (device && attribute) subscribe(device, attribute, handler)    
         }
     }
     //Populate the Initial Table based on the present state.

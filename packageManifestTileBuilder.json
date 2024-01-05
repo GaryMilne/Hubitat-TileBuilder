@@ -1,10 +1,10 @@
 {
   "packageName": "Tile Builder",
   "author": "Gary J. Milne",
-  "version": "151",
+  "version": "152",
   "minimumHEVersion": "2.3.4.132",
-  "dateReleased": "2024-1-3",
-  "releaseNotes": "Package-151: Corrections to package names for AM and MAM. Split %lastEvent% into %lastEvent% and %lastEventValue% in Grid.\nPackage-150: Fixed typo in line 969 causing error.\nPackage-149: Improve null handling for AM. Various minor fixes for Grid.\nPackage-148: Adds support for Tile Builder Grid.\nPackage-147: Brings Activity and Attribute Monitor to feature parity (V1.4.3) with MAM (V1.2.1). Package-146: Increments MAM to 1.2.1 for multiple improvements.\nPackage-145: Increments Rooms to 1.1.2 to improve Null handling.\nPackage-144: Increments MAM to 1.2.0 to add additional rows.\nPackage-V143: Increments MAM to 1.1.3 to add %time1% and %time2% macros.",
+  "dateReleased": "2024-1-4",
+  "releaseNotes": "Package-152: Fixes issue in Grid with incomplete subscriptions in Device Group mode.\nPackage-151: Corrections to package names for AM and MAM. Split %lastEvent% into %lastEvent% and %lastEventValue% in Grid.\nPackage-150: Fixed typo in line 969 causing error.\nPackage-149: Improve null handling for AM. Various minor fixes for Grid.\nPackage-148: Adds support for Tile Builder Grid.\nPackage-147: Brings Activity and Attribute Monitor to feature parity (V1.4.3) with MAM (V1.2.1). Package-146: Increments MAM to 1.2.1 for multiple improvements.\nPackage-145: Increments Rooms to 1.1.2 to improve Null handling.\nPackage-144: Increments MAM to 1.2.0 to add additional rows.\nPackage-V143: Increments MAM to 1.1.3 to add %time1% and %time2% macros.",
   "apps": [
     {
       "id": "82c4cdaf-cadc-48b0-afc9-624d53543498",
@@ -64,7 +64,7 @@
       "required": false,
       "oauth": false,
       "primary": false,
-      "version": "1.0.3"
+      "version": "1.0.4"
     }
   ],
   "drivers": [
