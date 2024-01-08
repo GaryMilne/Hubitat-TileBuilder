@@ -24,8 +24,10 @@
 *  Version 1.0.2 - Bugfix: Fixed typo in line 969\970
 *  Version 1.0.3 - Added Try\Catch logic around device\hub variable retrieval in the event of a deleted or renamed device or hub variable. Split %lastEvent% into %lastEvent% (changed attribute) and %lastEventValue% (changed attribute value)
 *  Version 1.0.4 - Bugfix: Fixes issue with incomplete subscriptions when in Device Group mode.
+*  Version 1.0.5 - Bugfix: Fixes issue where only the first first attribute of interest would be subscribed correctly when in Device Group mode.
+*  Version 1.0.6 - Breaks out attribute subscription to a separate function and adds improved error handling and logging.
 *
-*  Gary Milne - January 4th, 2024 7:23 PM
+*  Gary Milne - January 8th, 2024 10:23 PM
 *
 **/
 import groovy.transform.Field
@@ -49,7 +51,7 @@ import java.util.Date
     "voltageMeasurement": ["voltage", "frequency"], "waterSensor": ["water"], "windowBlind": ["position", "windowBlind", "tilt"], "windowShade": ["position", "windowShade"], "zwMultichannel": ["epEvent", "epInfo"], "pHMeasurement": ["pH"]
 ]
 
-def Version() { return "<b>Tile Builder Grid v1.0.4 (1/4/24)</b>"}
+def Version() { return "<b>Tile Builder Grid v1.0.6 (1/8/24)</b>"}
 def cleanups() { return ["None", "Capitalize", "Capitalize All", "Commas", "0 Decimal Places","1 Decimal Place", "Upper Case", "OW Code to Emoji", "OW Code to PNG", "Image URL", "Remove Tags [] <>"] }
 def rules() { return ["None", "All Keywords","All Thresholds", "Threshold 1","Threshold 2", "Threshold 3", "Threshold 4", "Threshold 5", "Format Rule 1", "Format Rule 2", "Format Rule 3", "Replace Chars"] }
 def invalidAttributeStrings() { return ["N/A", "n/a", " ", "-", "--"] }
@@ -748,7 +750,7 @@ def truncateName(deviceName){
     //Make sure all of the device names meet the minimum length by padding the end with spaces.
     shortName = deviceName + "                            "
     //Truncate the name if required
-    if (isLogTrace) log.info ("truncateName: Entering with: deviceName $deviceName and truncate length is ${myTruncateLength.toInteger() }")
+    if (isLogTrace) log.info ("<b>truncateName: Entering with: deviceName $deviceName and truncate length is ${myTruncateLength.toInteger()} </b>")
     if ( myTruncateLength != null && myTruncateLength.toInteger() == 96) shortName = findSpace(shortName, 3)
     if ( myTruncateLength != null && myTruncateLength.toInteger() == 97 ) shortName = findSpace(shortName, 2)
     if ( myTruncateLength != null && myTruncateLength.toInteger() == 98 ) shortName = findSpace(shortName, 1)
@@ -1655,14 +1657,14 @@ def generateTableRows(rows, cols) {
 
 //Deletes all event subscriptions.
 void deleteSubscription(){
-    if (isLogTrace == true) log.trace ("<b>deleteSubscription: Entering.</b>")
+    if (isLogTrace) log.trace ("<b>deleteSubscription: Entering.</b>")
     if (isLogPublish) ("deleteSubscription: Deleted all subscriptions. To verify click on the App ⚙️ Symbol and look for the Event Subscriptions section. ")
     unsubscribe()
 }
 
 //This function removes all existing subscriptions for this app and replaces them with new ones corresponding to the devices and attributes being monitored.
 void publishSubscribe(){
-    if (isLogTrace == true) log.trace ("<b>publishSubscribe: Entering.</b>")
+    if (isLogTrace) log.trace ("<b>publishSubscribe: Entering.</b>")
     if (isLogPublish) log.info("publishSubscribe: Creating subscriptions for Tile: $myTile with description: $myTileName.")
     //Remove all existing subscriptions
     unsubscribe()
@@ -1677,11 +1679,12 @@ void publishSubscribe(){
         
             if (settings["variableSource${i}"] == "Default Device" || settings["variableSource${i}"] == "Device Attribute"){
                 attribute = settings["myAttribute$i"]
-                if (device && attribute) subscribe(device, attribute, handler)    
+                subscribeAttribute(device, attribute, handler)
             }
-            if (settings["variableSource${i}"] == "Hub Variable"){ 
+
+            if (settings["variableSource${i}"] == "Hub Variable"){
                 device = settings["myHubVariable$i"].toString()
-                if (device && attribute) subscribe(location, "variable:$device", handler)
+                subscribeAttribute(device, attribute, handler)
             }
         }
     }
@@ -1691,12 +1694,25 @@ void publishSubscribe(){
             device = it
             (1..myVariableCount.toInteger()).each { i ->
                attribute = settings["myAttribute$i"]  
+               subscribeAttribute(device, attribute, handler)
             }
-            if (device && attribute) subscribe(device, attribute, handler)    
         }
     }
     //Populate the Initial Table based on the present state.
     publishTable()
+}
+
+//Performs the actual subscription to an attribute.
+void subscribeAttribute(device, attribute, handler){
+    if (isLogTrace) log.trace ("<b>subscribeAttribute: Entering with $device  $attribute  $handler.</b>")
+    try { 
+        subscribe(device, attribute, handler) 
+        if (isLogPublish) log.info("subscribeAttribute: Subscribed to device: $device - attribute: $attribute.")
+        }
+    catch (Exception e){
+        if (isLogPublish) log.error("subscribeAttribute: Error subscribing to device: $device - attribute: $attribute.")
+    }
+    return
 }
 
 //This should get executed whenever any of the subscribed devices receive an update to the monitored attribute.
@@ -1745,7 +1761,7 @@ void publishTable(){
         return
     }
     
-    if (isLogPublish) log.info ("Size is: ${state.HTML.size()}")
+    if (isLogPublish) log.info ("publishTable: Size is: ${state.HTML.size()}")
     //If the tile is less than 1024 we just publish to the attribute. If it's more than 1,024 then we publish it as a file then update the attribute to cause it to reload the file.
     if (state.HTML.size() < 1024 ) {
         myStorageDevice.createTile(settings.myTile, state.HTML, settings.myTileName)
