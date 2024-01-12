@@ -52,8 +52,9 @@
 *  Version 1.4.3 - Cosmetic Changes to the Menu Bar and Title. Adds a counter to a comment field for results > 1024 which ensures that every update is unique and causes the file to be reloaded in the Dashboard on any change. Added Character Replacement capability.
 *  Version 1.4.4 - Bugfix: Added ternary operators in highlightValue for float values that come back as null because the attribute is not populated.
 *  Version 1.4.5 - Bugfix: Incorrect Module Name
+*  Version 1.4.6 - Bugfix: Correct issue with logic in highlightValue related to use of Ternary operators (introduced v1.4.4). Corrected issue with duplicate units under some conditions.
 *
-*  Gary Milne - January 3rd, 2024
+*  Gary Milne - January 12th, 2024
 *
 *  This code is Activity Monitor and Attribute Monitor combined.
 *  The personality is dictated by @Field static moduleName a few lines ahead of this.
@@ -74,7 +75,7 @@ import groovy.transform.Field
 //These are unknown as to whether they report integer or float values.
 //capabilitiesUnknown = [" "carbonDioxideMeasurement":"carbonDioxide","pressureMeasurement":"pressure","relativeHumidityMeasurement":"humidity", "ultravioletIndex":"ultravioletIndex"]
 
-@Field static final Version = "<b>Tile Builder Attribute Monitor v1.4.5 (1/3/24)</b>"
+@Field static final Version = "<b>Tile Builder Attribute Monitor v1.4.6 (1/12/24)</b>"
 //@Field static final moduleName = "Activity Monitor"
 @Field static final moduleName = "Attribute Monitor"
 
@@ -104,10 +105,8 @@ preferences {
 def mainPage() {
     //Basic initialization for the initial release
     if (state.initialized == null ) initialize()
-    
-    //Configure a default value for eventTimeout for tiles that preceed this setting.
-    if (eventTimeout == null) app.updateSetting("eventTimeout", "2000")
-    
+    checkNulls()
+        
     //Handles the initialization of new variables added after the original release.
     updateVariables( )
     
@@ -122,7 +121,7 @@ def mainPage() {
         }
     refreshTable()
     refreshUIbefore()
-    def pageTitle = (parent.checkLicense() == true) ? "Attribute Monitor - Advanced" : "Attribute Monitor - Standard";
+    def pageTitle = (parent.checkLicense() == true) ? moduleName + " - Advanced" : moduleName + " - Standard";
     dynamicPage(name: "mainPage", title: titleise("<center><h2>$pageTitle</h2></center>"), uninstall: true, install: true, singleThreaded:true) {
     //paragraph buttonLink ("test", "test", 0)
         
@@ -702,6 +701,14 @@ def mainPage() {
     }
 }
 
+//Checks for critical Null values that can be introduced by the user by clicking "No Selection" in an enum dialog.
+def checkNulls(){
+    if (myThresholdCount == null ) app.updateSetting("myThresholdCount", [value:"0", type:"enum"])
+    if (myKeywordCount == null ) app.updateSetting("myKeywordCount", [value:"0", type:"enum"])
+    if (myDeviceLimit == null ) app.updateSetting("myDeviceLimit", [value:"0", type:"enum"])
+    if (eventTimeout == null) app.updateSetting("eventTimeout", "2000")
+}
+
 //Get a list of supported attributes for a given device and return a sorted list.
 def getAttributeList (thisDevice){
     if (thisDevice != null) {
@@ -711,7 +718,6 @@ def getAttributeList (thisDevice){
         return myAttributesList.unique().sort()
      }
 }
-
 
 //************************************************************************************************************************************************************************************************************************
 //************************************************************************************************************************************************************************************************************************
@@ -1563,20 +1569,19 @@ def highlightValue(attributeValue){
         if (settings["tcv$i"] != null && settings["tcv$i"] != "" && settings["tcv$i"] != "None" )  {
             
             //This is the ideal place for a switch statement but using a break within switch causes it to exit the while loop also.
-			if ( ( settings["top$i"] == "1" || settings["top$i"] == "<=" ) && originalValue.toFloat() ?: 0.0 <= settings["tcv$i"].toFloat() ) {
-								   
+			if ((settings["top$i"] == "1" || settings["top$i"] == "<=") && (originalValue?.toFloat() ?: 0.0) <= settings["tcv$i"].toFloat()) {							   
                 if (isLogDebug)  log.debug("highlightThreshold: A <= than condition was met.")
                 if ( ( settings["ttr$i"] != null && settings["ttr$i"] != " " ) && settings["ttr$i"] != "?") { returnValue = settings["ttr$i"]  + myUnit } 
                 lastThreshold = i
 				}
-            if ( ( settings["top$i"] == "2" || settings["top$i"] == "==" ) && originalValue.toFloat() ?: 0.0 == settings["tcv$i"].toFloat() ) {
-								  
+            
+            if ( ( settings["top$i"] == "2" || settings["top$i"] == "==" ) && (originalValue?.toFloat() ?: 0.0) == settings["tcv$i"].toFloat() ) {
                 if (isLogDebug) log.debug("highlightThreshold: An == condition was met.")
                 if (settings["ttr$i"] != null && settings["ttr$i"] != " " && settings["ttr$i"] != "?") { returnValue = settings["ttr$i"] + myUnit } 
 				lastThreshold = i
 				}
-            if ( ( settings["top$i"] == "3" || settings["top$i"] == ">=" ) && originalValue.toFloat() ?: 0.0  >= settings["tcv$i"].toFloat() ) {
-								  
+            
+            if ( ( settings["top$i"] == "3" || settings["top$i"] == ">=" ) && (originalValue?.toFloat() ?: 0.0) >= settings["tcv$i"].toFloat() ) {
                 if (isLogDebug) log.debug("highlightThreshold: A >= than condition was met.")
                 if (settings["ttr$i"] != null && settings["ttr$i"] != " " && settings["ttr$i"] != "?") { returnValue = settings["ttr$i"]  + myUnit } 
                 lastThreshold = i
@@ -1592,7 +1597,7 @@ def highlightValue(attributeValue){
         }                
     else { 
         returnValue = returnValue.replace("%value%", attributeValue.toString()) 
-        return "[td][hqq$lastThreshold]" + returnValue + myUnit + "[/hqq$lastThreshold][/td]"
+        return "[td][hqq$lastThreshold]" + returnValue  + "[/hqq$lastThreshold][/td]"
 	}
 } //End of function
 		
