@@ -26,8 +26,9 @@
 *  Version 1.0.4 - Bugfix: Fixes issue with incomplete subscriptions when in Device Group mode.
 *  Version 1.0.5 - Bugfix: Fixes issue where only the first first attribute of interest would be subscribed correctly when in Device Group mode.
 *  Version 1.0.6 - Breaks out attribute subscription to a separate function and adds improved error handling and logging.
+*  Version 1.0.7 - Bugfix: Corrects error where swtiching from Device Group to Free From prevents multiple rows from being displayed. Adds function checkNulls() to check for any unhandled null values introduced by the user selecting "No Selection" from a dialog box.
 *
-*  Gary Milne - January 8th, 2024 10:23 PM
+*  Gary Milne - January 15th, 2024 4:43 PM
 *
 **/
 import groovy.transform.Field
@@ -51,7 +52,7 @@ import java.util.Date
     "voltageMeasurement": ["voltage", "frequency"], "waterSensor": ["water"], "windowBlind": ["position", "windowBlind", "tilt"], "windowShade": ["position", "windowShade"], "zwMultichannel": ["epEvent", "epInfo"], "pHMeasurement": ["pH"]
 ]
 
-def Version() { return "<b>Tile Builder Grid v1.0.6 (1/8/24)</b>"}
+def Version() { return "<b>Tile Builder Grid v1.0.7 (1/15/24)</b>"}
 def cleanups() { return ["None", "Capitalize", "Capitalize All", "Commas", "0 Decimal Places","1 Decimal Place", "Upper Case", "OW Code to Emoji", "OW Code to PNG", "Image URL", "Remove Tags [] <>"] }
 def rules() { return ["None", "All Keywords","All Thresholds", "Threshold 1","Threshold 2", "Threshold 3", "Threshold 4", "Threshold 5", "Format Rule 1", "Format Rule 2", "Format Rule 3", "Replace Chars"] }
 def invalidAttributeStrings() { return ["N/A", "n/a", " ", "-", "--"] }
@@ -71,6 +72,8 @@ def mainPage() {
     
     //Basic initialization for the initial release
     if (state.initialized == null ) initialize()
+    checkNulls()
+    
     //Handles the initialization of new variables added after the original release.
     //updateAppVariables()
     //Checks to see if there are any messages for this child app. This is used to recover broken child apps from certain error conditions
@@ -610,6 +613,18 @@ def mainPage() {
     }
 }
 
+
+//Checks for critical Null values that can be introduced by the user by clicking "No Selection" in an enum dialog.
+def checkNulls(){
+    if (myThresholdCount == null ) app.updateSetting("myThresholdCount", [value:"0", type:"enum"])
+    if (myKeywordCount == null ) app.updateSetting("myKeywordCount", [value:"0", type:"enum"])
+    if (myVariableCount == null ) app.updateSetting("myVariableCount", [value:"0", type:"enum"])
+    if (rows == null ) app.updateSetting("rows", [value:"1", type:"enum"])
+    if (myColumns == null ) app.updateSetting("myColumns", [value:"1", type:"enum"])
+    if (varColumns == null ) app.updateSetting("varColumns", [value:"1", type:"enum"])
+    if (eventTimeout == null) app.updateSetting("eventTimeout", "2000")
+}
+
 //Returns a formatted title for a section header based on whether the section is visible or not.
 def getSectionTitle(section){
     if ( section == "Layout Mode" ) { if ( state.hidden.LayoutMode == true ) return sectionTitle("Layout Mode ▶") else return sectionTitle("Layout Mode ▼") }
@@ -798,9 +813,9 @@ def getVariablesDeviceGroup(){
     def attributeList = getSelectedAttributes()
     def replacementList = attributeList + ["deviceName","deviceLabel"]
     def deviceCount = myDeviceList?.size() ?: 0
-    
+    log.info ("Device Count is: $deviceCount")
     //Set the number of table rows to match the result size.
-    app.updateSetting("rows", [value:deviceCount, type:"number"]) 
+    app.updateSetting("rows", [value:"$deviceCount", type:"enum"]) 
               
     //Go through the list of selected devices to get the data of interest.
     if ( deviceCount > 0 ){
@@ -1032,6 +1047,7 @@ def resetVariables(){
     app.removeSetting("name1")
     app.updateSetting("myVariableCount", [value:"1", type:"enum"])
     app.updateSetting("myColumns", [value:"2", type:"enum"])
+    app.updateSetting("rows", [value:"1", type:"enum"])
     
 }
 
@@ -2058,10 +2074,10 @@ def initialize(){
     if (isLogTrace) log.trace ("<b>initialize: Initializing has begun.</b>")
     //Set the flag so that this should only ever run once.
     state.initialized = true
-    app.updateSetting("myVariableCount", 1)
-    app.updateSetting("myColumns", 2)
-    app.updateSetting("rows", 1)
-    app.updateSetting("varColumns", 1)
+    app.updateSetting("myVariableCount", [value:"1", type:"enum"])
+    app.updateSetting("myColumns", [value:"2", type:"enum"])
+    app.updateSetting("rows", [value:"1", type:"enum"])
+    app.updateSetting("varColumns", [value:"1", type:"enum"])
     if ( layoutMode == null ) app.updateSetting("layoutMode", "Device Group")
             
     //General
