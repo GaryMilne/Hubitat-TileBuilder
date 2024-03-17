@@ -58,12 +58,13 @@
 *  Version 1.4.6 - Minor text additions in preparation for the release of TB Grid. Added textFieldNotes() function. Added ability to Show\Hide modules. (Unreleased version)
 *  Version 1.4.7 - Donation minimum increased by $1 to $8 for additional module - Grid.
 *  Version 1.4.8 - BugFix: Correct issue with the Multi-Attribute Monitor modiule name. Added notations for %lastEventValue% added to Grid.
+*  Version 1.4.9 - Minor text additions to highlightNotes and textFieldNotes in support of Active links.
 *
-*  Gary Milne - January 3rd, 2024 @ 9:01 PM
+*  Gary Milne - March 17th, 2024 @ 1:44 PM
 *
 **/
 import groovy.transform.Field
-@Field static final Version = "<b>Tile Builder Parent v1.4.8 (1/3/23)</b>"
+@Field static final Version = "<b>Tile Builder Parent v1.4.9 (3/17/24)</b>"
 
 //These are the data for the pickers used on the child forms.
 def elementSize() { return ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '30', '40', '50', '75', '100'] }
@@ -1273,8 +1274,14 @@ def footerNotes() {
 }
 
 def highlightNotes() {
+    myText = "<b>Italicized Fields:</b>Any field/control with an italicized title does not automatically refresh the table when the content is changed. Click on <b>Refresh Table</b> to apply changes.<br>"
     myText = "<b>Keywords:</b> These are used to match a string value and can be enhanced with color, size or completely replaced. For example, rather than display the word 'closed', a ✔️ mark could be displayed instead or "
-    myText += "the phrase 'not present' could be replaced with 'Away' or 'Out' if preferred. You can use HTML tags as part of the replacement string, for example replace 'closed' with '[b]OK[/b]' will make the result show as bolded.<br>"
+    myText += "the phrase 'not present' could be replaced with 'Away' or 'Out' if preferred. You can use HTML tags as part of the replacement string, for example replace 'closed' with '[b]OK[/b]' will make the result show as bolded. "
+    myText += "To show the actual value of the result you can use %value% or include HTML formatting such as [b]%value%[/b]. See also <b>Text Field</b> Notes for more information.<br>"
+    myText += "You can utilize the MakerAPI to add control links to your table. Using Keywords to replace the values on and off with the following links.<br>"
+    myText += "   Replace <b>off</b>: with <mark>[iframe name=a width=0 height=0 frameborder=0][/iframe] [a href=http://192.168.0.200/apps/api/3685/devices/%deviceID%/on?access_token=6f018dbf-2b96-4df9-92cc-521197f27aad target=a style=opacity:0.5]💡[/a]</mark><br>"
+    myText += "   Replace <b>on</b>: with <mark>[iframe name=a width=0 height=0 frameborder=0][/iframe] [a href=http://192.168.0.200/apps/api/3685/devices/%deviceID%/off?access_token=6f018dbf-2b96-4df9-92cc-521197f27aad target=a]💡[/a]</mark><br>"
+    myText += "   Replace the <b>IP address</b>, <b>MakerAPI address</b> (3685) and <b>access_token</b> with your own values. This will give you a clickable light bulb icon that will toggle a switch off and on.<br>"
     myText += "<b>Thresholds:</b> These allow numeric values that meet >=, ==, or <= conditions to be highlighted. These use the same highlight controls as Keywords and have the same impact on HTML size. You can use replacement values for numeric data. "
     myText += "On a battery monitoring tile you could change the display for all batteries <= 50 to 'Replace' and highlight it in red.<br>"
 	myText += "You can animate a result by using something like this: '[div class=cl99]❌[/div]' as the replacement text. The class must be defined in the Advanced Tab - Overrides field or in the dashboard CSS. See Overrides Helper for examples.<br>"
@@ -1310,6 +1317,7 @@ def textFieldNotes() {
     myText += "<b>Additional Built-In variables for Device Groups</b><br>"
     myText += "<ul><li>%deviceName% - Name of the device.</li>"
     myText += "<li>%deviceLabel% - Label of the device.</li>"
+    myText += "<li>%deviceID% - The numeric ID of the device.</li>"
     myText += "<li>%lastOn% - Last time 'switch' was turned on. N/A if not applicable or not available.</li>"
     myText += "<li>%lastOff% - Last time 'switch' was turned off. N/A if not applicable or not available.</li>"
     myText += "<li>%lastOpen% - Last time 'contact' was opened. N/A if not applicable or not available.</li>"
@@ -1330,7 +1338,8 @@ def textFieldNotes() {
     myText += "<li>Color Example 1: <mark>[p style=color:blue]%value%[/p]</mark></li>"
     myText += "<li>Color Example 2: <mark>[p style=color:%value%]%value%[/p]</mark></li>"
     myText += "<li>Background Example: <mark>[p style=background:orange]%value%[/p]</mark></li>"
-    myText += "<li>Tooltip Example: <mark>[p title='Last Event: %lastEvent% (%lastEventValue%) @ %lastActivity%']%deviceLabel%[/p]</mark></li></ul>"
+    myText += "<li>Tooltip Example: <mark>[p title='Last Event: %lastEvent% (%lastEventValue%) @ %lastActivity%']%deviceLabel%[/p]</mark></li>"
+    myText += "<li>Marquee Example: <mark>[marquee]Last Event: %lastEvent% (%lastEventValue%) @ %lastActivity% %deviceLabel%[/marquee]</mark></li></ul>"
     myText += "<b>Units:</b> <ul><li>Common units can be cut and paste from here: °F °C </ul>"
     myText += '<b>Restricted Characters</b>: <ul><li>Tile Builder is sensitive to the presence of special ASCII characters like () [] {} \\ , " * + ? | ^ and \$ . In lieu of these you can use unicode equivalents which you can cut and paste from here: ❨ ❩ ❪ ❫ ❴ ❵ ❬ ❭ ❮ ❯ ❰ ❱ ❲ ❳ ❟ ٭ ＋︖ ＄ ｜ˆ ”</ul>'
     return myText

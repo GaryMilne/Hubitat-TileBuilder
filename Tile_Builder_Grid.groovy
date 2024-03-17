@@ -28,8 +28,9 @@
 *  Version 1.0.6 - Breaks out attribute subscription to a separate function and adds improved error handling and logging.
 *  Version 1.0.7 - Bugfix: Corrects error where swtiching from Device Group to Free From prevents multiple rows from being displayed. Adds function checkNulls() to check for any unhandled null values introduced by the user selecting "No Selection" from a dialog box.
 *  Version 1.0.8 - Bugfix: Keywords not working properly, needed Break statements to exit case statement correctly. Eliminates "double refresh" resulting from the "Refresh" action.
+*  Version 1.0.9 - Feature: Added %deviceID% to allow creation of Dynamic URL's using keywork substitution. Some cosmetic changes to Keyword screen.
 *
-*  Gary Milne - March 14th, 2024 11:21 AM
+*  Gary Milne - March 17th, 2024 11:48 AM
 *
 **/
 import groovy.transform.Field
@@ -53,7 +54,7 @@ import java.util.Date
     "voltageMeasurement": ["voltage", "frequency"], "waterSensor": ["water"], "windowBlind": ["position", "windowBlind", "tilt"], "windowShade": ["position", "windowShade"], "zwMultichannel": ["epEvent", "epInfo"], "pHMeasurement": ["pH"]
 ]
 
-def Version() { return "<b>Tile Builder Grid v1.0.8 (3/14/24)</b>"}
+def Version() { return "<b>Tile Builder Grid v1.0.9 (3/17/24)</b>"}
 def cleanups() { return ["None", "Capitalize", "Capitalize All", "Commas", "0 Decimal Places","1 Decimal Place", "Upper Case", "OW Code to Emoji", "OW Code to PNG", "Image URL", "Remove Tags [] <>"] }
 def rules() { return ["None", "All Keywords","All Thresholds", "Threshold 1","Threshold 2", "Threshold 3", "Threshold 4", "Threshold 5", "Format Rule 1", "Format Rule 2", "Format Rule 3", "Replace Chars"] }
 def invalidAttributeStrings() { return ["N/A", "n/a", " ", "-", "--"] }
@@ -382,12 +383,11 @@ def mainPage() {
                         input (name: "myKeywordCount", title: "<b>How Many Keywords?</b>", type: "enum", options: [0,1,2,3,4,5], submitOnChange: true, defaultValue: 0, style: "width:12%;margin-top:-15px;margin-left:-5%", newLineAfter: true)   
                         for (int i = 1; i <= 5; i++) {
                             if (myKeywordCount.toInteger() >= i) {
-                                input(name: "kop${i}", type: "enum", title: "<b>Keyword Match Type</b>", options: ["Value Matches Keyword (Match Case)", "Value Matches Keyword (Ignore Case)", "Value Contains Keyword (Match Case)", "Value Contains Keyword (Ignore Case)"], defaultValue: "Value Contains Keyword (Ignore Case)", submitOnChange: true, width:3, newLine: true)
-                                input(name: "k${i}", type: "text", title: bold("Enter Keyword #${i}"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2, newLine: false)
-                                input(name: "ktr${i}", type: "text", title: bold("Replacement Text #${i}"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2)
-                                input(name: "hc${i}", type: "color", title: bold2("Highlight ${i} Color", settings["hc$i"]), required: false, submitOnChange: true, width: 2)
-                                //input(name: "hts${i}", type: "enum", title: bold("Highlight ${i} Text Scale"), options: parent.textScale(), required: false, submitOnChange: true, defaultValue: "125", style: "width:10%;margin-top:-15px;margin-left:0%", newLineAfter: true)
-                                input(name: "hts${i}", type: "enum", title: bold("Highlight ${i} Text Scale"), options: parent.textScale(), required: false, submitOnChange: true, defaultValue: "125", width:2, newLineAfter: true)
+                                input(name: "kop${i}", type: "enum", title: italicBold("Keyword Match Type"), options: ["Value Matches Keyword (Match Case)", "Value Matches Keyword (Ignore Case)", "Value Contains Keyword (Match Case)", "Value Contains Keyword (Ignore Case)"], defaultValue: "Value Contains Keyword (Ignore Case)", submitOnChange: false, newLine: true, style: "width:17.5%")
+                                input(name: "k${i}", type: "text", title: italicBold("Keyword #${i}"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: false, newLine: false, style:"width:8%")
+                                input(name: "ktr${i}", type: "text", title: italicBold("Replacement Text #${i}"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: false, style: "width:50%")
+                                input(name: "hc${i}", type: "color", title: bold2(italic("Color"), settings["hc$i"]), required: false, submitOnChange: false, style: "width:10%")
+                                input(name: "hts${i}", type: "enum", title: italicBold("Text Scale"), options: parent.textScale(), required: false, submitOnChange: false, defaultValue: "125", newLineAfter: true, style: "width:9%")
                             }
                         }                        
                     }
@@ -400,11 +400,11 @@ def mainPage() {
                         for (int i = 6; i <= 10; i++) {
                             if (myThresholdCount.toInteger() >= i - 5) {
                                 myColor = settings["hc$i"]
-                                input(name: "top${i}", type: "enum", title: bold("Operator #${i}"), required: false, options: parent.comparators(), displayDuringSetup: true, defaultValue: 0, submitOnChange: true, width: 1, newLine: true)
-                                input(name: "tcv${i}", type: "number", title: bold("Comparison Value #${i}"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2)
-                                input(name: "ttr${i}", type: "text", title: bold("Replacement Text #${i}"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2)
-                                input(name: "hc${i}", type: "color", title: bold2("Highlight ${i} Color", settings["hc$i"]), required: false, submitOnChange: true, width: 2)
-                                input(name: "hts${i}", type: "enum", title: bold("Highlight ${i} Text Scale"), options: parent.textScale(), required: false, submitOnChange: true, defaultValue: "125", width: 2, newLineAfter: true)
+                                input(name: "top${i}", type: "enum", title: italicBold("Operator #${i}"), required: false, options: parent.comparators(), displayDuringSetup: true, defaultValue: 0, submitOnChange: false, width: 1, newLine: true)
+                                input(name: "tcv${i}", type: "number", title: italicBold("Comparison Value #${i}"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: false, width: 2)
+                                input(name: "ttr${i}", type: "text", title: italicBold("Replacement Text #${i}"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: false, width: 2)
+                                input(name: "hc${i}", type: "color", title: bold2(italic("Highlight ${i} Color"), settings["hc$i"]), required: false, submitOnChange: false, width: 2)
+                                input(name: "hts${i}", type: "enum", title: italicBold("Highlight ${i} Text Scale"), options: parent.textScale(), required: false, submitOnChange: false, defaultValue: "125", width: 2, newLineAfter: true)
                             }
                         }
                     }
@@ -413,17 +413,17 @@ def mainPage() {
                      //FormatRules
                     if (state.show.FormatRules == true) {
                         input(name: 'btnShowFormatRules', type: 'button', title: 'Show Format Rules ▼', backgroundColor: 'navy', textColor: 'white', submitOnChange: true, width: 3, newLine: true, newLineAfter: true)  //▼ ◀ ▶ ▲
-                        input (name: "fr1", type: "text", title: bold("Format Rule 1"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 6, newLine: true)
-                        input (name: "fr2", type: "text", title: bold("Format Rule 2"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 6, newLine: true)
-                        input (name: "fr3", type: "text", title: bold("Format Rule 3"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 6, newLine: true, newLineAfter:true)
+                        input (name: "fr1", type: "text", title: italicBold("Format Rule 1"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: false, width: 10, newLine: true)
+                        input (name: "fr2", type: "text", title: italicBold("Format Rule 2"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: false, width: 10, newLine: true)
+                        input (name: "fr3", type: "text", title: italicBold("Format Rule 3"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: false, width: 10, newLine: true, newLineAfter:true)
                     }
                     else input(name: 'btnShowFormatRules', type: 'button', title: 'Show Format Rules ▶', backgroundColor: 'dodgerBlue', textColor: 'white', submitOnChange: true, width: 3, newLine: true, newLineAfter:true)  //▼ ◀ ▶ ▲
                     
                     //Replace Chars
                     if (state.show.ReplaceCharacters == true) {
                         input(name: 'btnShowReplaceCharacters', type: 'button', title: 'Show Replace Chars ▼', backgroundColor: 'navy', textColor: 'white', submitOnChange: true, width: 3, newLine: true, newLineAfter: true)  //▼ ◀ ▶ ▲
-                        input (name: "oc1", type: "text", title: bold("Original Character(s)"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2, newLine:false)
-                        input (name: "nc1", type: "text", title: bold("New Character(s)"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2, newLine: false)
+                        input (name: "oc1", type: "text", title: italicBold("Original Character(s)"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: false, width: 2, newLine:false)
+                        input (name: "nc1", type: "text", title: italicBold("New Character(s)"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: false, width: 2, newLine: false)
                     }
                     else input(name: 'btnShowReplaceCharacters', type: 'button', title: 'Show Replace Chars ▶', backgroundColor: 'dodgerBlue', textColor: 'white', submitOnChange: true, width: 3, newLine: true)  //▼ ◀ ▶ ▲
                     
@@ -641,7 +641,7 @@ def getSectionTitle(section){
 def createCellTemplates(){
     if (isLogTrace) log.info("<b>createCellTemplates: Entering.</b>" )
     def attributeList = getSelectedAttributes()
-    def replacementList = attributeList + ["deviceName","deviceLabel"]
+    def replacementList = attributeList + ["deviceName","deviceLabel","deviceID"]
     if (gatherEventInfo.toString() == "True" ) replacementList = replacementList + ["lastActivity","lastOn","lastOff","lastOpen","lastClosed","lastEvent","lastEventValue"]
     def deviceCount = myDeviceList?.size() ?: 0
     
@@ -812,9 +812,9 @@ def getVariablesDeviceGroup(){
     state.events = [:]
     int i = 1
     def attributeList = getSelectedAttributes()
-    def replacementList = attributeList + ["deviceName","deviceLabel"]
+    def replacementList = attributeList + ["deviceName","deviceLabel","deviceID"]
     def deviceCount = myDeviceList?.size() ?: 0
-    log.info ("Device Count is: $deviceCount")
+    if (isLogVariables) log.info ("Device Count is: $deviceCount")
     //Set the number of table rows to match the result size.
     app.updateSetting("rows", [value:"$deviceCount", type:"enum"]) 
               
@@ -825,10 +825,12 @@ def getVariablesDeviceGroup(){
             myDeviceList.sort{it.getLabel()}.each { it ->
                 def deviceName = "${it.getName().toString()}"
                 def deviceLabel = "${it.getLabel().toString()}"
+                def deviceID = "${it.getId()}"
                 if (deviceLabel == null || deviceLabel == "null" || deviceLabel.size() == 0 ) deviceLabel = "No Device Label"
-                if (isLogVariables) log.info("getVariablesDeviceGroup: Processing: Device: $deviceName with label: $deviceLabel")
-                state.vars."devicelabel$i" = truncateName (deviceLabel)
+                if (isLogVariables) log.info("getVariablesDeviceGroup: Processing: Device: $deviceName with label: $deviceLabel and deviceID: $deviceID")
                 state.vars."devicename$i" = truncateName (deviceName)
+                state.vars."devicelabel$i" = truncateName (deviceLabel)
+                state.vars."deviceID$i" = deviceID
             
                 //See if we are gathering event info
                 if (gatherEventInfo.toString() == "True" ){
@@ -890,6 +892,8 @@ def getVariablesDeviceGroup(){
                 newMap = cleanupDeviceGroup (myName, attribute, index, value)
                 newValue = newMap["$myName"]
                 myValue = highlightValue(newValue, i)
+                //If the Rules or Cleanup replacement text contains %deviceID% then replace it with %deviceIDX% where X is the row number.
+                myValue = myValue.replace("%deviceID%", "%deviceID" + index + "%")
                 //Update State with the updated value which comes back in the form ["Device Name":"Value"]
                 state.vars."$attribute$index" = myValue
             } 
@@ -907,7 +911,7 @@ def cleanupDeviceGroup(myName, myAttribute, myIndex, myValue ){
     def i
     
     selectedAttributes = getSelectedAttributes()
-    //log.info ("selectedAttributes is: $selectedAttributes")
+    if (isLogCleanups) log.info ("selectedAttributes is: $selectedAttributes")
     i = selectedAttributes.indexOf(myAttribute).toInteger() + 1
     
     //log.info ("cleanupDeviceGroup: myAttribute is: $myAttribute, myIndex is: $myIndex, myValue is: $myValue, myName is: $myName and ActionIndex is $i")
@@ -1443,22 +1447,24 @@ void makeTable(){
         interimHTML = interimHTML.replaceAll(it, value.toString())  
     }
     
-    //Now replace the variables with their values
-    state.vars.each{ varName, value -> 
-        if (isLogHTML == true) log.info ("makeTable: Replacing var: $varName with: $value")
-        varName = varName.toLowerCase()
-        interimHTML = interimHTML.replaceAll("(?i)%${varName}%", value.toString())  
+    //Now replace the variables with their values. This loop is run twice to handle any variables that are embedded within Keywords or Format Rules
+    for (int i = 0; i < 2; i++) {
+        state.vars.each{ varName, value -> 
+            if (isLogHTML == true) log.info ("makeTable: Loop(i) - Replacing var: $varName with: $value")
+            varName = varName.toLowerCase()
+            interimHTML = interimHTML.replaceAll("(?i)%${varName}%", value.toString())  
+        }
     }
     
     //Now replace the events with their values if it is enabled
     if (gatherEventInfo.toString() == "True" ){
         state.events.each{ eventName, value -> 
-            if (isLogHTML == true) log.info ("makeTable: Replacing event: $eventName with: $value")
+            if (isLogHTML) log.info ("makeTable: Replacing event: $eventName with: $value")
             eventName = eventName.toLowerCase()
             interimHTML = interimHTML.replaceAll("(?i)%${eventName}%", value.toString())  
         }
     }
-           
+             
     //Extract the Highlight Styles being used so we can use them on the preview page.
     state.highlightStyles = toHTML( extractValueBetweenStrings(unHTML(interimHTML), "#HIGHLIGHTSTARTSTYLE#","#HIGHLIGHTENDSTYLE#") )
     
