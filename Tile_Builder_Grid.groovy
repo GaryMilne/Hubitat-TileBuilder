@@ -29,8 +29,9 @@
 *  Version 1.0.7 - Bugfix: Corrects error where swtiching from Device Group to Free From prevents multiple rows from being displayed. Adds function checkNulls() to check for any unhandled null values introduced by the user selecting "No Selection" from a dialog box.
 *  Version 1.0.8 - Bugfix: Keywords not working properly, needed Break statements to exit case statement correctly. Eliminates "double refresh" resulting from the "Refresh" action.
 *  Version 1.0.9 - Feature: Added %deviceID% to allow creation of Dynamic URL's using keywork substitution. Some cosmetic changes to Keyword screen.
+*  Version 1.0.9A - Bugfix: Performed datatype check on line 896. Version not revved!
 *
-*  Gary Milne - March 17th, 2024 11:48 AM
+*  Gary Milne - March 18th, 2024 4:34 PM
 *
 **/
 import groovy.transform.Field
@@ -893,7 +894,9 @@ def getVariablesDeviceGroup(){
                 newValue = newMap["$myName"]
                 myValue = highlightValue(newValue, i)
                 //If the Rules or Cleanup replacement text contains %deviceID% then replace it with %deviceIDX% where X is the row number.
-                myValue = myValue.replace("%deviceID%", "%deviceID" + index + "%")
+                if (myValue instanceof String && myValue.contains("%deviceID%")) {
+					myValue = myValue.replace("%deviceID%", "%deviceID" + index + "%")
+				}
                 //Update State with the updated value which comes back in the form ["Device Name":"Value"]
                 state.vars."$attribute$index" = myValue
             } 
