@@ -1,10 +1,13 @@
 {
   "packageName": "Tile Builder",
   "author": "Gary J. Milne",
-  "version": "157",
+  "version": "158",
   "minimumHEVersion": "2.3.4.132",
-  "dateReleased": "2024-3-17",
-  "releaseNotes": "Package-157: Adds %deviceID% variable to Grid to enable control actions.\nPackage-156: Corrects error in Grid Keyword handling.\nPackage-155: Corrects error with rows when switching Layout Mode. Handles null conditions arising from user selecting 'No Selection' for critical values.\nPackage-154: Corrects error with highlightValues() in AM/AM introduces in v1.4.4 \nPackage-153: Adds additional error handling and logging to the Grid attribute subscription process.\nPackage-152: Fixes issue in Grid with incomplete subscriptions in Device Group mode.\nPackage-151: Corrections to package names for AM and MAM. Split %lastEvent% into %lastEvent% and %lastEventValue% in Grid.\nPackage-150: Fixed typo in line 969 causing error.\nPackage-149: Improve null handling for AM. Various minor fixes for Grid.\nPackage-148: Adds support for Tile Builder Grid.\nPackage-147: Brings Activity and Attribute Monitor to feature parity (V1.4.3) with MAM (V1.2.1). Package-146: Increments MAM to 1.2.1 for multiple improvements.\nPackage-145: Increments Rooms to 1.1.2 to improve Null handling.\nPackage-144: Increments MAM to 1.2.0 to add additional rows.\nPackage-V143: Increments MAM to 1.1.3 to add %time1% and %time2% macros.",
+  "dateReleased": "2024-3-21",
+  "releaseNotes": "Package-158: Updates to Rooms.\nPackage-157: Adds %deviceID% variable to Grid to enable control actions.\nPackage-156: Corrects error in Grid Keyword handling.\nPackage-155: Corrects error with rows when switching Layout Mode. Handles null conditions arising from user selecting 'No Selection' for critical values.\nPackage-154: Corrects error with highlightValues() in AM/AM introduces in v1.4.4 \nPackage-153: Adds additional error handling and logging to the Grid attribute subscription process.\nPackage-152: Fixes issue in Grid with incomplete subscriptions in Device Group mode.\nPackage-151: Corrections to package names for AM and MAM. Split %lastEvent% into %lastEvent% and %lastEventValue% in Grid.\nPackage-150: Fixed typo in line 969 causing error.\nPackage-149: Improve null handling for AM. Various minor fixes for Grid.\nPackage-148: Adds support for Tile Builder Grid.\nPackage-147: Brings Activity and Attribute Monitor to feature parity (V1.4.3) with MAM (V1.2.1). Package-146: Increments MAM to 1.2.1 for multiple improvements.\nPackage-145: Increments Rooms to 1.1.2 to improve Null handling.\nPackage-144: Increments MAM to 1.2.0 to add additional rows.\nPackage-V143: Increments MAM to 1.1.3 to add %time1% and %time2% macros.",
+  "documentationLink": "https://github.com/GaryMilne/Hubitat-TileBuilder/tree/main",
+  "communityLink": "https://community.hubitat.com/t/release-tile-builder-build-beautiful-dashboards/118822",
+  "payPalURL": "https://www.paypal.com/donate/?business=YEAFRPFHJCTFA&no_recurring=1&item_name=A+donation+of+%248+or+more+grants+you+a+license+to+Tile+Builder+Advanced.+Please+leave+your+Hubitat+Community+ID.&currency_code=USD",
   "apps": [
     {
       "id": "82c4cdaf-cadc-48b0-afc9-624d53543498",
@@ -54,7 +57,8 @@
       "required": false,
       "oauth": false,
       "primary": false,
-      "version": "1.1.2"
+      "version": "1.1.3",
+	  "releaseNotes": "Version 1.1.3: Adds a variety of text string options to the list of available Icons. Such as Off, On, Wet, Dry...etc.",
     },
 	{
       "id": "4e9f0cab-007b-4516-b918-1f73719b16dc",
