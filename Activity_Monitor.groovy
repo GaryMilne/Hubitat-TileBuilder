@@ -2261,7 +2261,7 @@ def initialize(){
     app.updateSetting("mySearchText2", "?")
     app.updateSetting("mySearchText3", "?")
     app.updateSetting("publishInterval", [value:1, type:"enum"])
-    app.updateSetting("republishDelay", [value:1, type:"enum"])
+    app.updateSetting("republishDelay", [value:0, type:"enum"])
     app.updateSetting("isCompactDisplay", false)
     
     app.updateSetting("overrideHelperCategory", [value:"Animation", type:"text"])
@@ -2381,6 +2381,7 @@ def updateVariables() {
     if (state.variablesVersion < 147 ) {
         log.info ("Updating Variables to Version 1.4.7")
         //Add the newly created variables.
+		app.updateSetting("republishDelay", [value:0, type:"enum"])
         if ( state.publish == null ) state.publish = [:]
         state.publish.lastPublished = 0
         state.variablesVersion = 147
