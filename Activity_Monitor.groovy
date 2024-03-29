@@ -53,8 +53,9 @@
 *  Version 1.4.4 - Bugfix: Added ternary operators in highlightValue for float values that come back as null because the attribute is not populated.
 *  Version 1.4.5 - Bugfix: Incorrect Module Name
 *  Version 1.4.6 - Bugfix: Correct issue with logic in highlightValue related to use of Ternary operators (introduced v1.4.4). Corrected issue with duplicate units under some conditions.
+*  Version 1.4.7 - Added Minimum Republish interval as introduced in Grid 1.0. Only applies to Attribute Monitor.
 *
-*  Gary Milne - January 12th, 2024
+*  Gary Milne - March 28th, 2024
 *
 *  This code is Activity Monitor and Attribute Monitor combined.
 *  The personality is dictated by @Field static moduleName a few lines ahead of this.
@@ -75,7 +76,8 @@ import groovy.transform.Field
 //These are unknown as to whether they report integer or float values.
 //capabilitiesUnknown = [" "carbonDioxideMeasurement":"carbonDioxide","pressureMeasurement":"pressure","relativeHumidityMeasurement":"humidity", "ultravioletIndex":"ultravioletIndex"]
 
-@Field static final Version = "<b>Tile Builder Activity Monitor v1.4.6 (1/12/24)</b>"
+@Field static final CodeDescription = "<b>Tile Builder Activity Monitor v1.4.7 (3/29/24)</b>"
+@Field static final CodeVersion = 147
 @Field static final moduleName = "Activity Monitor"
 //@Field static final moduleName = "Attribute Monitor"
 
@@ -105,11 +107,13 @@ preferences {
 def mainPage() {
     //Basic initialization for the initial release
     if (state.initialized == null ) initialize()
-    checkNulls()
-        
-    //Handles the initialization of new variables added after the original release.
-    updateVariables( )
     
+    //Handles the initialization of new variables added after the original release.
+    if (state.variablesVersion < CodeVersion) updateVariables()
+    
+    //Checks for critical Null values that can be introduced by the user by clicking "No Selection" in an enum dialog.
+    checkNulls()
+
     //Checks to see if there are any messages for this child app. This is used to recover broken child apps from certain error conditions
     //Although this function is complete I'm leaving it dormant for the present release - 1.4.0
     myMessage = parent.messageForTile( app.label )
@@ -650,14 +654,18 @@ def mainPage() {
                 //myText += "HTML data is less than 1,024 bytes it will be published via a tile attribute on the storage device.<br>"
                 //myText += "If HTML data is greater than 1,024 it will be published via file with the tile attribute being link to that file.<br>"
                 paragraph myText
-                input (name: "myTile", title: "<b>Which Tile Attribute will store the table?</b>", type: "enum", options: parent.allTileList(), required:true, submitOnChange:true, width:3, defaultValue: 0, newLine:false)
-                input (name:"myTileName", type:"text", title: "<b>Name this Tile</b>", submitOnChange: true, width:3, newLine:false, required: true)
-                input (name: "tilesAlreadyInUse", type: "enum", title: bold("For Reference Only: Tiles already in Use"), options: parent.getTileList(), required: false, defaultValue: "Tile List", submitOnChange: false, width: 3)
-                input (name: "eventTimeout", type: "enum", title: "<b>Event Timeout (millis)</b>", required: false, multiple: false, defaultValue: "2000", options: ["0","250","500","1000","2000","5000","10000"], submitOnChange: true, width: 2, newLineAfter:true)
-                if(myTileName) app.updateLabel(myTileName)
-                paragraph note("Note:", " The Tile Name given here will also be used as the name for this instance of " + moduleName + ".")
-				myText += "The <b>Event Timeout</b> period is how long Tile Builder will wait for subsequent events before publishing the table. Devices like Hub Info or Weather devices that do polling and bulk update multiple attributes and can create a lot of publishing requests in a short period of time.<br>"
-                myText += "In Attribute Monitor the default timeout period is 2000 millieseconds (2 seconds). If you want a more responsive table you can lower this number but it will increase the CPU utilization."
+                input (name: "myTile", title: "<b>Tile Attribute to store the table?</b>", type: "enum", options: parent.allTileList(), required:true, submitOnChange:true, width:2, defaultValue: 0, newLine:false)
+                input (name:"myTileName", type:"text", title: "<b>Name this Tile</b>", submitOnChange: true, width:2, newLine:false, required: true)
+                input (name: "tilesAlreadyInUse", type: "enum", title: bold("For Reference Only: Tiles in Use"), options: parent.getTileList(), required: false, defaultValue: "Tile List", submitOnChange: false, width: 2)
+                input (name: "eventTimeout", type: "enum", title: "<b>Event Timeout (millis)</b>", required: false, multiple: false, defaultValue: "2000", options: ["0","250","500","1000","2000","5000","10000"], submitOnChange: true, width: 2)
+                if (moduleName == "Attribute Monitor") input (name: "republishDelay", type: "enum", title: "<b>Republish Delay (minutes)</b>", required: false, multiple: false, defaultValue: 0, options: [0,1,2,3,4,5,10,15,20,25,30,35,40,45,50,55,60], submitOnChange: true, width: 2, newLineAfter:true)
+                if (myTileName) app.updateLabel(myTileName)
+                myText =  "The <b>Tile Name</b> given here will also be used as the name for this instance of Tile Builder. Appending the name with your chosen tile number can make parent display more readable.<br>"
+                myText += "The <b>Event Timeout</b> period is how long Tile Builder will wait for subsequent events before publishing the table. Devices that do bulk updates create a lot of events in a short period of time. This setting batches requests within this period into a single publishing event. "
+                myText += "The default timeout period is 2000 milliseconds (2 seconds). If you want a more responsive table you can lower this number, but it will slightly increase the CPU utilization.<br>"
+                myText += "The <b>Republish Delay</b> sets a minimum amount of time before a Tile is re-published. This can be used to prevent <b>chatty sensors</b> from causing a Tile to republish too frequently. The default value for this setting is 0 (no delay)." +\
+                           "<b>Republish Delay</b> is not available in Activity Monitor because it already works on a timed basis.<br>"
+                myText += "<b>When immediate updates are important such as switches, locks, motion or contact sensors then set both the the Event Timeout and Republish Delay to 0.</b>"
                 paragraph note("Notes: ", myText)																																																																														 
                 paragraph line(1)
             
@@ -691,7 +699,7 @@ def mainPage() {
         myDocURL = "<a href='https://github.com/GaryMilne/Hubitat-TileBuilder/blob/main/Tile%20Builder%20Help.pdf' target=_blank> <i><b>Tile Builder Help</b></i></a>"
         myText = '<div style="display: flex; justify-content: space-between;">'
         myText += '<div style="text-align:left;font-weight:small;font-size:12px"> <b>Documentation:</b> ' + myDocURL + '</div>'
-        myText += '<div style="text-align:center;font-weight:small;font-size:12px">Version: ' + Version + '</div>'
+        myText += '<div style="text-align:center;font-weight:small;font-size:12px">Version: ' + CodeDescription + '</div>'
         myText += '<div style="text-align:right;font-weight:small;font-size:12px">Copyright 2022 - 2024</div>'
         myText += '</div>'
         paragraph myText
@@ -861,7 +869,7 @@ def appButtonHandler(btn) {
             if (isLogTrace==true) log.trace("appButtonHandler: Clicked on Refresh")
             break
         case "publish":
-            //We will publish it right away and then shcedule the refresh as requested.
+            //We will publish it right away and then schedule the refresh as requested.
             if (isLogTrace) log.trace("appButtonHandler: Clicked on publish")
             publishTable()
             createSchedule()
@@ -908,6 +916,7 @@ def appButtonHandler(btn) {
             break
         case "test":    
             test()
+			break
         case "copyOverrides":
             if (isLogTrace) log.trace("appButtonHandler: Clicked on copyOverrides")
             state.flags.isCopyOverridesHelperCommand = true
@@ -1430,7 +1439,7 @@ void makeHTML(data, int myRows){
     //Now replace the placeholders with the actual data values for cells B1 - B10.
     myTemplate.each{ it, value -> 
         if (isLogInfo) log.info ("1)  Iterating myTemplate: it is: $it and value is: $value")
-        //If it's the data colum it will begin #B1# thru #B30#. Anything else we can just process normally.
+        //If it's the data column it will begin #B1# thru #B30#. Anything else we can just process normally.
         if ( beginsWith(it, "#B") == false || beginsWith(it,"#B00") == true ){
             interimHTML = interimHTML.replaceAll(it, value.toString())    
             }
@@ -1474,7 +1483,7 @@ void makeHTML(data, int myRows){
     } //end of myTemplate.each
     
     //Replace any %day%, %time%, %units%, %count% fields with the actual value
-    //Get the units we are using and corrent the formatting.
+    //Get the units we are using and correct the formatting.
     if (myUnits == null || myUnits == "None") myUnit = ""
     else myUnit = myUnits.replace("_"," ")
     //Set an appropriate format for day and time.
@@ -1664,20 +1673,40 @@ void publishSubscribe(){
 }
 
 //This should get executed whenever any of the subscribed devices receive an update to the monitored attribute.
+//Delays may occur if the eventTimeout or republishDelay is > 0
 def handler(evt) {
-    if (isLogEvents) log.info "Event received from Device:${evt.device}  -  Attribute:${evt.name}  -  Value:${evt.value}"
-    //This schedules a call to publishTable() 1 second into the future. If another event comes along within that second it re-schedules the call to publishTable another 1 second into the future.
-    //This greaty improves the efficiency when multiple attributes on the same device are being monitored. This is true for polling devices such as Hub Info or a Weather driver which receive batch updates to multiple attributes all at the same time.
-    //This logic reduces these multiple calls into a single call to publishTable() once things go quiet.
-    runInMillis(eventTimeout.toInteger(), publishTable, [overwrite: true])
+    //Update the variables if the application version has changed.
+    if (state.variablesVersion < CodeVersion) updateVariables()
+    
+    def nextPublicationTime
+    def nextPublicationDelay
+    if (isLogTrace) log.trace ("<b>handler: Entering with $evt</b>")
+    if (isLogInfo) log.info ("handler: Event received from Device:${evt.device}  -  Attribute:${evt.name}  -  Value:${evt.value}")
+        
+    //Test to see if we have met the minimum republishing delay.
+    def lastPublicationTime = state.publish.lastPublished ?: 0
+    if (republishDelay.toInteger() > 0 ) {
+        nextPublicationTime = ( republishDelay.toInteger() * 60 * 1000 ) + lastPublicationTime
+    }
+    else nextPublicationTime = now()
+    
+    if (isLogEvents) log.info("republishDelay is: $republishDelay mins. LastPub:$lastPublicationTime  NextPub:$nextPublicationTime")
+            
+    // This schedules a call to publishTable() X milliseconds into the future which optimizes for scenarios with multiple simultaneous attribute updates on the same device. Reduces multiple calls to a single publishTable() event.
+    if (nextPublicationTime >= now() ) { 
+        runInMillis( nextPublicationTime - now(), publishTable, [overwrite: true]) 
+        if (isLogEvents) log.info ("handler: republishDelay of $republishDelay minutes has not been met. Publication deferred. (" + ( nextPublicationTime - now())/1000 + " seconds)" ) 
+    }
+    
+    //If we are past the publicationDelay period we can publish right away, pending 
+    if (nextPublicationTime < now() ) {    
+        runInMillis(eventTimeout.toInteger(), publishTable, [overwrite: true])
+    }
 }
 
 //Save the current HTML to the variable. This is the function that is called by the scheduler.
 void publishTable(){
     if (isLogEvents) log.trace("publishTable: Entering publishTable.")
-    
-    //Handles the initialization of new variables added after the original release.
-    updateVariables()
     
     //Refresh the table with the new data and then save the HTML to the driver variable.
     refreshTable()
@@ -2232,6 +2261,7 @@ def initialize(){
     app.updateSetting("mySearchText2", "?")
     app.updateSetting("mySearchText3", "?")
     app.updateSetting("publishInterval", [value:1, type:"enum"])
+    app.updateSetting("republishDelay", [value:1, type:"enum"])
     app.updateSetting("isCompactDisplay", false)
     
     app.updateSetting("overrideHelperCategory", [value:"Animation", type:"text"])
@@ -2250,12 +2280,17 @@ def initialize(){
     
     //Have all the section collapsed to begin with except devices and Report
     state.show = [Devices: true, Report: true, Filter: false, Design: true, Publish: false, More: false, ReplaceCharacters: false]   
+    
+    //Configure default publishing values.
+    state.publish = [:]
+    state.publish.lastPublished = 0
 }
-
+    
+    
 
 //Handles the initialization of any variables created after the original creation of the child instance.
 //These are susceptible to change with each rev or feature add.
-def updateVariables( ) {
+def updateVariables() {
     //This will be called with release of version 1.3.0 which added search and replace within device names. Previously only myReplacementText1 and myReplacementText2 should have existed.
     if (state.variablesVersion == null || state.variablesVersion < 130 ) {
         log.info ("Updating Variables to Version 1.3.0")
@@ -2297,8 +2332,9 @@ def updateVariables( ) {
     }
     
     //Update variables from version 1.3.0 to 1.4.0
-    if (state.variablesVersion == 130 ) {
+    if (state.variablesVersion < 140 ) {
         //Add the newly created variables.
+        log.info ("Updating Variables to Version 1.4.0")
         app.updateSetting("scrubHTMLlevel", [value:"1", type:"enum"])
         app.updateSetting("myDeviceNaming", "Use Device Label")
         if (myKeywordCount > 0) state.show.Keywords = true
@@ -2339,11 +2375,17 @@ def updateVariables( ) {
         if (ttr3 != null) app.updateSetting("ttr8", [value:ttr3, type:"text"])
         if (ttr4 != null) app.updateSetting("ttr9", [value:ttr4, type:"text"])
         if (ttr5 != null) app.updateSetting("ttr10", [value:ttr5, type:"text"])
-        
         state.variablesVersion = 140
     }
+    
+    if (state.variablesVersion < 147 ) {
+        log.info ("Updating Variables to Version 1.4.7")
+        //Add the newly created variables.
+        if ( state.publish == null ) state.publish = [:]
+        state.publish.lastPublished = 0
+        state.variablesVersion = 147
+    }
 }
-
 
 //Will be used to remove retired variables at some future time.  
 //They are not deleted immediately upon upgrade to allow falling back to prior code version.
@@ -2671,7 +2713,7 @@ def scrubHTML(HTML, iFrame){
         //Black Objects     
         myHTML = myHTML.replaceAll("(?i)background:#00000000", "")
         myHTML = myHTML.replaceAll("(?i)background:#000000", "")
-        
+		
 		//Replace any remaining excess spaces.
         myHTML = myHTML.replace("  ", " ")
         myHTML = myHTML.replace("%%", "%")
