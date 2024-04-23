@@ -1422,7 +1422,7 @@ def textFieldNotesGrid() {
     myText2 += "<b>Free Form Mode:</b> Once these properties are selected they must be assigned a variable name. That variable name can then be placed into the grid.<br>" 
     group3 = "<details><summary>" + myTitle + "</summary>" + myText2 + "</details>"
     
-    myTitle = dodgerBlue("Selectable Hub Variables - Free Form Only<br>")
+    myTitle = dodgerBlue("Selectable Hub Properties - Free Form Only<br>")
     myText2 = "<ul><li>%currentMode% - The current Mode of the Hub.</li>"
     myText2 += "<li>%daylightSavingsTime% - Whether Daylight Savings is active or not.</li>"
     myText2 += "<li>%firmwareVersionString% - The current version of firmware on the Hub.</li>"
@@ -1434,7 +1434,7 @@ def textFieldNotesGrid() {
     myText2 += "<li>%sunsetTomorrow% - The time of sunset tomorrow.</li>"
     myText2 += "<li>%timeZone% - The time zone the hub is associated with.</li>"
     myText2 += "<li>%upTime% - The amount of time since the hub was last rebooted.</li>"
-    myText2 += "<li><b>ALL Hub Variables are instantaneous and are ONLY calculated when the table is refreshed.</b></li></ul>"
+    myText2 += "<li><b>ALL Hub Properties are instantaneous and are ONLY calculated when the table is refreshed.</b></li></ul>"
     group4 = "<details><summary>" + myTitle + "</summary>" + myText2 + "</details>"
     
     myTitle = dodgerBlue("HTML Tags<br>")
