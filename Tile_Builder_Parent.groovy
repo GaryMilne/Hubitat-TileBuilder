@@ -59,12 +59,13 @@
 *  Version 1.4.7 - Donation minimum increased by $1 to $8 for additional module - Grid.
 *  Version 1.4.8 - BugFix: Correct issue with the Multi-Attribute Monitor modiule name. Added notations for %lastEventValue% added to Grid.
 *  Version 1.4.9 - Minor text additions to highlightNotes and textFieldNotes in support of Active links.
+*  Version 1.5.0 - Added significant help for Tile Builder Grid upgrade.
 *
-*  Gary Milne - March 17th, 2024 @ 1:44 PM
+*  Gary Milne - April 23rd, 2024 @ 10:31 AM
 *
 **/
 import groovy.transform.Field
-@Field static final Version = "<b>Tile Builder Parent v1.4.9 (3/17/24)</b>"
+@Field static final Version = "<b>Tile Builder Parent v1.5.0 (4/23/24)</b>"
 
 //These are the data for the pickers used on the child forms.
 def elementSize() { return ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '30', '40', '50', '75', '100'] }
@@ -93,6 +94,7 @@ def comparators() { return [0:'None', 1:'<=', 2:'==', 3:'>='] }
 def htmlScrubLevel(){ return [0:'Basic', 1:'Normal', 2:'Aggressive', 3:'Extreme'] }
 def cleanups() { return ["None", "Capitalize","Commas", "0 Decimal Places","1 Decimal Place", "Upper Case"] }
 
+
 definition(
     name: 'Tile Builder',
     namespace: 'garyjmilne',
@@ -110,6 +112,8 @@ definition(
 preferences {
     page name: 'mainPage', title: '', install: true, uninstall: true // ,submitOnChange: true
 }
+
+
 
 def mainPage() {
     if (state.initialized == null ) initialize()
@@ -263,6 +267,7 @@ def mainPage() {
                     if (!hideAttributeMonitor) app(name: 'TBPA', appName: 'Tile Builder - Attribute Monitor', namespace: 'garyjmilne', title: 'Add New Attribute Monitor')
                     if (!hideMultiAM) app(name: 'TBPA', appName: 'Tile Builder - Multi Attribute Monitor', namespace: 'garyjmilne', title: 'Add New Multi-Attribute Monitor')
                     if (!hideRooms) app(name: 'TBPA', appName: 'Tile Builder - Rooms', namespace: 'garyjmilne', title: 'Add New Room')
+                    //Tile Builder Grid is a Premium only app and only visible to Advanced Users.
                     if (checkLicense() && !hideGrid ) app(name: 'TBPA', appName: 'Tile Builder - Grid', namespace: 'garyjmilne', title: 'Add New Grid')
                     }
                 else {
@@ -1065,7 +1070,8 @@ def getOverrideFontList(){
         "Load a Google Font and use as default. Loads the Google font Tangerine using the #head# tag from the web and uses it as the default font for the entire table." : "#head#=[link rel=stylesheet href='https://fonts.googleapis.com/css?family=Tangerine'] |#tff#='Tangerine'",
         "Specify a different font weight and size. Sets the base font weight to 700 and size to 36px. Use of % sizes will be relative to this base value." : "#table#=font-weight:400 ; font-size:24px",
         "Use a Google font for the just the Data column. Loads the Google font Orbitron and applies it only to the data column." : "#head#=[link rel=stylesheet href='https://fonts.googleapis.com/css?family=Orbitron'] |#class1#=td:nth-child(2) {font-family:Orbitron}",
-        "Use a different local font for the Table Header. Use Arial Black font for the header row." : "#Header#=font-family:'Arial Black'"
+        "Use a different local font for the Table Header. Use Arial Black font for the header row." : "#Header#=font-family:'Arial Black'",
+        "Use a Font Awesome icon in your table. Called with [i class='fa-solid fa-temperature-full'] in any text field. Replace 'fa-temperature-full' with the name of the icon of your choice." : "#head#=[link rel=stylesheet href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.css']"
     ]
 }
 
@@ -1179,7 +1185,7 @@ def getOverrideMiscList(){
     'Macros: Show the available macro terms that can be expanded. <b>Enable Title First!</b>' : "#ts#=80% | #ta#=Left | #tt#=Day = %day% (abbreviated day)[br]Time = %time% (abbreviated time) [br] Units = '%units%' (Selected units, if any)[br] Count = %count% (Results in table)",
     'Opacity: Sets the opacity of an object in the range 0 (transparent) to 1 (opaque).' : '#Header#=opacity: 0.5;',
     'Outline: Draws an outline around the OUTSIDE of an object.' : '#Table#=outline: 2px solid red;'   
-    ]     
+    ]
 }
 
 def getOverrideTransformList(){
@@ -1190,7 +1196,7 @@ def getOverrideTransformList(){
     'Skew: Skews an object to give it a 3D look.' : '#Data#=transform: skew(24deg, 2deg) | #Header#=transform: skew(-24deg, -2deg);',
     'Perspective: Changes the perspective of the affected object.' : '#Row#=Perspective: 150px; transform: rotateX(25deg) rotateY(20deg);transform-style: preserve-3d;',
     'Translate: Moves an object up, down, left or right.' : '#Row#=transform: translate(20px, -10px) | #Title#=transform: translate(0px, 300px);'
-    ]     
+    ]
 }
 
 
@@ -1274,33 +1280,37 @@ def footerNotes() {
 }
 
 def highlightNotes() {
-    myText = "<b>Italicized Fields:</b>Any field/control with an italicized title does not automatically refresh the table when the content is changed. Click on <b>Refresh Table</b> to apply changes.<br>"
+    myText = "<b>Italicized Fields:</b>Text fields with an italicized title do not automatically refresh the table when the content is changed. Click on <b>Refresh Table</b> to apply changes.<br>"
     myText = "<b>Keywords:</b> These are used to match a string value and can be enhanced with color, size or completely replaced. For example, rather than display the word 'closed', a ✔️ mark could be displayed instead or "
     myText += "the phrase 'not present' could be replaced with 'Away' or 'Out' if preferred. You can use HTML tags as part of the replacement string, for example replace 'closed' with '[b]OK[/b]' will make the result show as bolded. "
     myText += "To show the actual value of the result you can use %value% or include HTML formatting such as [b]%value%[/b]. See also <b>Text Field</b> Notes for more information.<br>"
-    myText += "You can utilize the MakerAPI to add control links to your table. Using Keywords to replace the values on and off with the following links.<br>"
-    myText += "   Replace <b>off</b>: with <mark>[iframe name=a width=0 height=0 frameborder=0][/iframe] [a href=http://192.168.0.200/apps/api/3685/devices/%deviceID%/on?access_token=6f018dbf-2b96-4df9-92cc-521197f27aad target=a style=opacity:0.5]💡[/a]</mark><br>"
-    myText += "   Replace <b>on</b>: with <mark>[iframe name=a width=0 height=0 frameborder=0][/iframe] [a href=http://192.168.0.200/apps/api/3685/devices/%deviceID%/off?access_token=6f018dbf-2b96-4df9-92cc-521197f27aad target=a]💡[/a]</mark><br>"
-    myText += "   Replace the <b>IP address</b>, <b>MakerAPI address</b> (3685) and <b>access_token</b> with your own values. This will give you a clickable light bulb icon that will toggle a switch off and on.<br>"
+    myText += "   <b>Control:</b> You can utilize the MakerAPI to add control links to your table. Using Keywords to replace the values on and off with the following links.<br>"
+    myText += "<ol><li>Replace <b>off</b>: with <mark>[iframe name=a width=0 height=0 frameborder=0][/iframe] [a href=http://192.168.0.200/apps/api/3685/devices/%deviceID%/on?access_token=6f018dbf-2b96-4df9-92cc-521197f27aad target=a style=opacity:0.5]💡[/a]</mark><br></li>"
+    myText += "<li>Replace <b>on</b>: with <mark>[iframe name=a width=0 height=0 frameborder=0][/iframe] [a href=http://192.168.0.200/apps/api/3685/devices/%deviceID%/off?access_token=6f018dbf-2b96-4df9-92cc-521197f27aad target=a]💡[/a]</mark><br></li>"
+    myText += "<li>Replace the <b>IP address</b>, <b>MakerAPI address</b> (3685) and <b>access_token</b> with your own values. This will give you a clickable light bulb icon that will toggle a switch off and on.<br></li></ol>"
     myText += "<b>Thresholds:</b> These allow numeric values that meet >=, ==, or <= conditions to be highlighted. These use the same highlight controls as Keywords and have the same impact on HTML size. You can use replacement values for numeric data. "
-    myText += "On a battery monitoring tile you could change the display for all batteries <= 50 to 'Replace' and highlight it in red.<br>"
-	myText += "You can animate a result by using something like this: '[div class=cl99]❌[/div]' as the replacement text. The class must be defined in the Advanced Tab - Overrides field or in the dashboard CSS. See Overrides Helper for examples.<br>"
-    myText += "Each active <b>highlight style adds 35 bytes plus 11 bytes per affected row</b> to the HTML size. This may be partially offset by replacing longer phrases like 'not present' with 'Away'. <br>"
+    myText += "On a battery monitoring tile you could change the display for all batteries <= 50 to 'Replace' and highlight it in red. Each active <b>highlight style adds 35 bytes plus 11 bytes per affected row</b> to the HTML size. This may be partially offset by replacing longer phrases like 'not present' with 'Away'. <br><br>"
+	myText += "<b>Classes: </b>You can add a class to a result using something like this: '[div class=cl99]❌[/div]' as the replacement text. The class 'cl99' must be defined in the Advanced Tab - Overrides field or in the dashboard CSS. See Overrides Helper for examples.<br><br>"
     myText += "<b>Format Rules:</b> These are only available in Multi-Attribute Monitor & Grid, and are used to apply custom formatting to particular rows of the table. Common examples are: <br>"
-    myText += "Progress Bar Example: <mark>%value%%[br][progress value=%value% max=100][/progress]</mark><br>"
-    myText += "Meter Example: <mark>%value%%[br][meter low=50 high=80 max=100 optimum=100 value=%value%][/meter]</mark><br>"
-    myText += "Direction Example: <mark>[style].dir{transform:rotate(%value%deg);font-size:38px}[/style][div class=dir]↑[/div] (%value%°)</mark><br>"
-    myText += "Speed Example: <mark>[style]@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}} .sp1{animation:spin calc(5s / %value%) linear infinite}[/style][div class=sp1]🌀[/div]</mark><br>"
-    myText += "Size Example: <mark>[p style='font-size:48px'>%value%[/p]</mark><br>"
-    myText += "Color Example 1: <mark>[p style=color:blue]%value%[/p]</mark><br>"
-    myText += "Color Example 2: <mark>[p style=color:%value%]%value%[/p]</mark><br>"
-    myText += "Background Example: <mark>[p style=background:orange]%value%[/p]</mark><br>"
-    myText += "Common Symbols: °F °C <br>"
-    myText += "<b>Also Highlight Device Names:</b> This will apply the same highlighting tags to the device name that were applied to the data when keyword or threshold conditions have been met.<br>"
+    myText += "<ul><li>Progress Bar Example: <mark>%value%%[br][progress value=%value% max=100][/progress]</mark></li>"
+    myText += "<li>Meter Example: <mark>%value%%[br][meter low=50 high=80 max=100 optimum=100 value=%value%][/meter]</mark><br></li>"
+    myText += "<li>Direction Example: <mark>[style].dir{transform:rotate(%value%deg);font-size:38px}[/style][div class=dir]↑[/div] (%value%°)</mark><br></li>"
+    myText += "<li>Speed Example: <mark>[style]@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}} .sp1{animation:spin calc(5s / %value%) linear infinite}[/style][div class=sp1]🌀[/div]</mark><br></li>"
+    myText += "<li>Size Example: <mark>[span style='font-size:48px']%time%[/span]</mark><br></li>"
+    myText += "<li>Color Example 1: <mark>[span style=color:blue]%value%[/span]</mark><br></li>"
+    myText += "<li>Color Example 2: <mark>[span style=color:%value%]%value%[/span]</mark><br></li>"
+    myText += "<li>Background Color Example: <mark>[span style=background:orange]%sunset%[/span]</mark><br></li>"
+    myText += "<li>Background Gradient Example: <mark>[span style='background:linear-gradient(to bottom, brown,orange);border-radius:30px;padding:3px']🔓[/span]</mark><br></li>"
+    myText += "<li>Opacity Example: <mark>[span style='opacity:0.5']%value%[/span]</mark><br></li>"
+    myText += "<li>Tooltip Example: <mark>[span title='Last Event: %lastEvent% (%lastEventValue%) @ %lastActivity%']%deviceLabel%[/span]</mark></li>"
+    myText += "<li>Marquee Example: <mark>[marquee]Last Event: %lastEvent% (%lastEventValue%) @ %lastActivity% %deviceLabel%[/marquee]</mark></li></ul>"
+    myText += "<b>Common Symbols:</b> °F °C <br><br>"
+    myText += "<b>Also Highlight Device Names:</b> This is only available in <b>Attribute Monitor and Activity Monitor</b> and will apply the same highlighting tags to the device name that were applied to the data when keyword or threshold conditions have been met.<br>"
     myText += "This function is sensitive to the presence of special ASCII characters like () [] {} \\ , * + ? | ^ and \$ . In lieu of these you can use unicode equivalents which you can cut and paste from here: ❨ ❩ ❪ ❫ ❴ ❵ ❬ ❭ ❮ ❯ ❰ ❱ ❲ ❳ ❟ ٭ ＋︖ ＄ ｜ˆ ”〝 "
     return myText
 }
 
+//This is the Text Field Notes for AM and MAM
 def textFieldNotes() {
     myText = "<b>Italicized Fields:</b><ul><li>Any field/control with an italicized title does not automatically refresh the table when the content is changed.</ul>"
     myText += "<b>Variables:</b> <ul><li>You can place a variable in any text field using the syntax %variableName%. Variable names are assigned in the UI and are not case sensitive. Built-in variables are shown below:</ul>"
@@ -1343,6 +1353,166 @@ def textFieldNotes() {
     myText += "<b>Units:</b> <ul><li>Common units can be cut and paste from here: °F °C </ul>"
     myText += '<b>Restricted Characters</b>: <ul><li>Tile Builder is sensitive to the presence of special ASCII characters like () [] {} \\ , " * + ? | ^ and \$ . In lieu of these you can use unicode equivalents which you can cut and paste from here: ❨ ❩ ❪ ❫ ❴ ❵ ❬ ❭ ❮ ❯ ❰ ❱ ❲ ❳ ❟ ٭ ＋︖ ＄ ｜ˆ ”</ul>'
     return myText
+}
+
+//This is only for Grid. Result is formatted in such a way as to present a nested details section under the primary title used in the Grid Module
+def textFieldNotesGrid() {
+    separator = "<div style='height:0.5em'></div>"
+    myText = "<b>Variables:</b> You can place a variable in any text field using the syntax %variableName%. Variable names are assigned in the UI and are not case sensitive. See variables in the lists below.<br>" + separator
+    myText += "<b>Units:</b> Common units can be cut and paste from here: °F °C <br>" + separator
+    myText += '<b>Restricted Characters</b>: Tile Builder is sensitive to the presence of special ASCII characters like () [] {} \\ , " * + ? | ^ and \$ . In lieu of these you can use unicode equivalents which you can cut and paste from here: ❨ ❩ ❪ ❫ ❴ ❵ ❬ ❭ ❮ ❯ ❰ ❱ ❲ ❳ ❟ ٭ ＋︖ ＄ ｜ˆ ” <br>' + separator
+    
+    myTitle = dodgerBlue("Built-In variables - Any Layout Mode<br>")
+    myText2 = "<ul><li>%day% - Day of week in form: Fri</li>"
+    myText2 += "<li>%date% - Date in form: 22-12</li>"
+    myText2 += "<li>%date1% - Date in form: Dec-22</li>"
+    myText2 += "<li>%sunrise% - Time in form: 06:47 AM</li>"
+    myText2 += "<li>%sunrise1% - Time in form: 06:47</li>"
+    myText2 += "<li>%sunrise2% - Time in form: 6:47 AM</li>"
+    myText2 += "<li>%sunset% - Time in form: 21:47 PM</li>"
+    myText2 += "<li>%sunset1% - Time in form: 21:47</li>"
+    myText2 += "<li>%sunset2% - Time in form: 9:47 PM</li>"
+    myText2 += "<li>%time% - Time in form: 23:35 PM</li>"
+    myText2 += "<li>%time1% - Time in form: 23:35</li>"
+    myText2 += "<li>%time2% - Time in form: 11:35 PM</li>"
+    myText2 += "<li>%today% - Current day as day of week in form: Friday</li>"
+    myText2 += "<li>%tomorrow% - Tomorrow as day of week in form: Saturday</li>"
+    myText2 += "<li>%dayAfterTomorrow% - Day after tomorrow as day of week in form: Sunday</li>"
+    myText2 += "<li><b>ALL Built-In Variables are instantaneous and are ONLY calculated when the table is refreshed.</b></li></ul>"
+    group1 = myText + "<details><summary>" + myTitle + "</summary>" + myText2 + "</details>"
+    
+    myTitle = dodgerBlue("Built-In Variables - Device Group Mode<br>")
+    myText2 = "<ul><li>%deviceName% - Name of the device.</li>"
+    myText2 += "<li>%deviceLabel% - Label of the device.</li>"
+    myText2 += "<li>%deviceID% - The numeric ID of the device.</li></ul>"
+    group2 = "<details><summary>" + myTitle + "</summary>" + myText2 + "</details>"
+    
+    myTitle = dodgerBlue("Selectable Device Details - Any Layout Mode<br>")
+    myText2 += "<li>%deviceID% - The numeric ID of the device.</li>"
+    myText2 += "<li>%deviceLabel% - Label of the device.</li>"
+    myText2 = "<ul><li>%deviceName% - Name of the device.</li>"
+    myText2 += "<li>%lastActive% - Last time 'motion' sensor was active. N/A if not applicable or not available.</li>"
+    myText2 += "<li>%lastActivity% - Date and time of Last Activity on the device as indicated by the lastActivityAt device property. N/A if not applicable or not available.</li>"
+    myText2 += "<li>%lastClosed% - Last time 'contact' sensor was closed. N/A if not applicable or not available.</li>"
+    myText2 += "<li>%lastEventDescription% - The description text associated with the last change. N/A if not applicable or not available.</li>"
+    myText2 += "<li>%lastEventName% - Name of the last attribute that changed. N/A if not applicable or not available.</li>"
+    myText2 += "<li>%lastEventType% - The type of the last command that was received. N/A if not applicable or not available.</li>"
+    myText2 += "<li>%lastEventValue% - Value of the last attribute that changed. N/A if not applicable or not available.</li>"
+    myText2 += "<li>%lastInactive% - Last time 'motion' sensor was inactive. N/A if not applicable or not available.</li>"
+    myText2 += "<li>%lastLocked% - Last time 'lock' was locked. N/A if not applicable or not available.</li>"
+    myText2 += "<li>%lastNotPresent% - Last time 'presense sensor' was marked not present. N/A if not applicable or not available.</li>"
+    myText2 += "<li>%lastOff% - Last time 'switch' was turned off. N/A if not applicable or not available.</li>"
+    myText2 += "<li>%lastOn% - Last time 'switch' was turned on. N/A if not applicable or not available.</li>"
+    myText2 += "<li>%lastOpen% - Last time 'contact' sensor was opened. N/A if not applicable or not available.</li>"
+    myText2 += "<li>%lastPresent% - Last time 'presense sensor' was marked present. N/A if not applicable or not available.</li>"
+    myText2 += "<li>%lastUnlocked% - Last time 'lock' was unlocked. N/A if not applicable or not available.</li>"
+    myText2 += "<li>%roomName% - The room a device is associated with. N/A if not applicable or not available.</li>"
+    myText2 += "<li>%lastOnDuration% - The duration the last time the switch was\\is on. N/A if not applicable or not available.</li>"
+    myText2 += "<li>%lastOffDuration% - The duration the last time the switch was\\is off. N/A if not applicable or not available.</li>"
+    myText2 += "<li>%lastOpenDuration% - The duration the last time the contact\\valve was\\is open. N/A if not applicable or not available.</li>"
+    myText2 += "<li>%lastClosedDuration% - The duration the last time the contact\\valve was\\is open. N/A if not applicable or not available.</li>"
+    myText2 += "<li>%lastLockedDuration% - The duration the last time the lock was\\is locked. N/A if not applicable or not available.</li>"
+    myText2 += "<li>%lastUnlockedDuration% - The duration the last time the lock was\\is unlocked. N/A if not applicable or not available.</li>"
+    myText2 += "<li>%lastPresentDuration% - The duration the last time the presence sensor lock was\\is present. N/A if not applicable or not available.</li>"
+    myText2 += "<li>%lastNotPresentDuration% - The duration the last time the presence sensor lock was\\is not present. N/A if not applicable or not available.</li>"
+    myText2 += "<li>%lastActiveDuration% - The duration the last time the motion sensor lock was\\is active. N/A if not applicable or not available.</li>"
+    myText2 += "<li>%lastInactiveDuration% - The duration the last time the motion sensor lock was\\is inactive. N/A if not applicable or not available.</li>"
+    myText2 += "<li><b>ALL Device Properties are instantaneous and are ONLY calculated when the table is refreshed.</b></li></ul>"
+    myText2 += "<b>Device Group Mode:</b> Once these properties are selected you can access them by using the above listed variable names.<br>"
+    myText2 += "<b>Free Form Mode:</b> Once these properties are selected they must be assigned a variable name. That variable name can then be placed into the grid.<br>" 
+    group3 = "<details><summary>" + myTitle + "</summary>" + myText2 + "</details>"
+    
+    myTitle = dodgerBlue("Selectable Hub Properties - Free Form Only<br>")
+    myText2 = "<ul><li>%currentMode% - The current Mode of the Hub.</li>"
+    myText2 += "<li>%daylightSavingsTime% - Whether Daylight Savings is active or not.</li>"
+    myText2 += "<li>%firmwareVersionString% - The current version of firmware on the Hub.</li>"
+    myText2 += "<li>%hsmStatus% - The current status of HSM.</li>"
+    myText2 += "<li>%hubName% - The name of the hub the software is running on.</li>"
+    myText2 += "<li>%sunrise% - The time of sunrise on the current day.</li>"
+    myText2 += "<li>%sunriseTomorrow% - The time of sunrise tomorrow.</li>"
+    myText2 += "<li>%sunset% - The time of sunset on the current day.</li>"
+    myText2 += "<li>%sunsetTomorrow% - The time of sunset tomorrow.</li>"
+    myText2 += "<li>%timeZone% - The time zone the hub is associated with.</li>"
+    myText2 += "<li>%upTime% - The amount of time since the hub was last rebooted.</li>"
+    myText2 += "<li><b>ALL Hub Properties are instantaneous and are ONLY calculated when the table is refreshed.</b></li></ul>"
+    group4 = "<details><summary>" + myTitle + "</summary>" + myText2 + "</details>"
+    
+    myTitle = dodgerBlue("HTML Tags<br>")
+    myText2 = "<ul><li>Simple Tags: You can use standard HTML tags such as [b]Bold[/b], [u]Underline[/u], [i]Italic[/i], [mark]Mark[/mark] anywhere in a text field. </li>"
+    myText2 += "<li>Vertical Spacing: For vertical spacing you can use tags [br] for a new line or [hr] for a horizontal line.</li>"
+    myText2 += "<li>Spaces: Tile Builder may purge repeated spaces depending on your compression level. To embed multiple spaces that won't be purged you can use the null character. This can be entered using the key combination 'Alt 255' on the keypad.</li></ul>"
+    group5 = "<details><summary>" + myTitle + "</summary>" + myText2 + "</details>"
+    
+    myTitle = dodgerBlue("Advanced HTML Examples</b><br>")
+    myText2 = "<ul><li>Progress Bar Example: <mark>%value%%[br][progress value=%value% max=100][/progress]</mark></li>"
+    myText2 += "<li>Meter Example: <mark>%value%%[br][meter low=50 high=80 max=100 optimum=100 value=%value%][/meter]</mark></li>"
+    myText2 += "<li>Direction Example: <mark>[style].dir{transform:rotate(%value%deg);font-size:38px}[/style][div class=dir]↑[/div] (%value%°)</mark></li>"
+    myText2 += "<li>Speed Example: <mark>[style]@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}} .sp1{animation:spin calc(5s / %value%) linear infinite}[/style][div class=sp1]🌀[/div]</mark></li>"
+    myText2 += "<li>Size Example: <mark>[span style='font-size:48px'>%value%[/span]</mark></li>"
+    myText2 += "<li>Color Example 1: <mark>[span style=color:blue]%value%[/span]</mark></li>"
+    myText2 += "<li>Color Example 2: <mark>[span style=color:%value%]%value%[/span]</mark></li>"
+    myText2 += "<li>Background Color Example: <mark>[span style=background:orange]%value%[/span]</mark></li>"
+    myText2 += "<li>Background Gradient Example: <mark>[span style='background:linear-gradient(to bottom, brown,orange);border-radius:30px;padding:3px']🔓[/span]</mark><br></li>"
+    myText2 += "<li>Opacity Example: <mark>[span style='opacity:0.5']%value%[/span]</mark><br></li>"
+    myText2 += "<li>Tooltip Example: <mark>[span title='Last Event: %lastEvent% (%lastEventValue%) @ %lastActivity%']%deviceLabel%[/span]</mark></li>"
+    myText2 += "<li>Marquee Example: <mark>[marquee]Last Event: %lastEvent% (%lastEventValue%) @ %lastActivity% %deviceLabel%[/marquee]</mark></li></ul>"
+    group6 = "<details><summary>" + myTitle + "</summary>" + myText2 + "</details>"
+    
+    return separator + group1 + separator + group2 + separator + group3 + separator + group4 + separator + group5 + separator + group6
+}
+
+def textCleanupsRules() {
+    separator = "<div style='height:0.5em'></div>"
+    
+    myTitle = dodgerBlue("Cleanups<br>")
+    myText = "Cleanups are a way of modifying\\formatting the data to be in a more pleasing form. Not all cleanups are available in all Tile Builder Modules<br>" + separator
+    myText += "<ul><li>None: The default value of no processing.</li>"
+    myText += "<li>Capitalize: Capitalize the first letter of the variable. Example: 'true' -> 'True', 'porch light' -> 'Porch light'</li>"
+    myText += "<li>Capitalize All: Capitalize the first letter of each word in the variable. Example: 'true' -> 'True', 'porch light' -> 'Porch Light'</li>"
+    myText += "<li>Commas: Adds commas to numeric values where appropriate. Example: '1842' -> '1,842'</li>"
+    myText += "<li>O Decimal Places: Rounds floating point numbers to nearest Integer (no decimal places). Example: '69.24' -> '69',  '70.56' -> '71'</li>"
+    myText += "<li>1 Decimal Places: Rounds floating point numbers to a single decimal place. Example: '69.24' -> '69.2',  '70.56' -> '70.6'</li>"
+    myText += "<li>Upper Case: Converts all lower case letters to their upper-case equivalent. Example: 'true' -> 'TRUE',  'porch light' -> 'PORCH LIGHT'</li>"
+    myText += "<li>OW Code to Emoji: Converts an OpenWeather weather code to the nearest emoji equivalent. Example: weatherIcons attribute is '04d' - > '☁︎'</li>"
+    myText += "<li>OW Code to PNG: Converts an OpenWeather weather icon to a URL pointing to the PNG file located at OpenWeather.com</li>"
+    myText += "<li>Image URL: Wraps an Image URL within the correct HTML structure to display the image as embedded within the file.</li>"
+    myText += "<li>Remove Tags: Strips any HTML tags from the data.</li>"
+    myText += "<li>To: HH:mm - Converts a valid time to the form 19:35</li>"
+    myText += "<li>To: h:mm a - Converts a valid time to the form 7:35 PM</li>"
+    myText += "<li>To: HH:mm:ss - Converts a valid time to the form 19:35:26</li>"
+    myText += "<li>To: h:mm:ss a - Converts a valid time to the form 7:35:26 PM</li>"
+    myText += "<li>To: E HH:mm - Converts a valid time to the form Tue 19:35</li>"
+    myText += "<li>To: E hh:mm a - Converts a valid time to the form Tue 19:35 PM</li>"
+    myText += "<li>To: EEEE hh:mm - Converts a valid time to the form Tuesday 19:35</li>"
+    myText += "<li>To: EEEE hh:mm a - Converts a valid time to the form Tuesday 19:35 PM</li>"
+    myText += "<li>To: MM-dd HH:mm - Converts a valid time to the form 4-9 19:35</li>"
+    myText += "<li>To: MM-dd HH:mm a - Converts a valid time to the form 4-9 7:35 PM</li>"
+    myText += "<li>To: MMMM-dd HH:mm - Converts a valid time to the form April 09 19:35</li>"
+    myText += "<li>To: MMMM-dd HH:mm a - Converts a valid time to the form April 09 7:35 PM</li>"
+    myText += "<li>To: yyyy-MM-dd HH:mm - Converts a valid time to the form 2024-04-09 19:35</li>"
+    myText += "<li>To: yyyy-MM-dd HH:mm a- Converts a valid time to the form 2024-04-09 7:35PM</li>"
+    myText += "<li>To: dd-MM-yyyy h:mm a - Converts a valid time to the form 092024-04-09 7:35 PM</li>"
+    myText += "<li>To: MM-dd-yyyy h:mm a - Converts a valid time to the form 04-09-2024 7:35 PM</li>"
+    myText += "<li>To: E @ h:mm a - Converts a valid time to the form Tue @ 7:35 PM</li>"
+    myText += "<li>To: Elapsed Time (dd):hh:mm:ss - Converts a valid time to an elapsed time from that date in the form 5d 14h 41m 44s. Days are only displayed if 1 or greater.</li>"
+    myText += "<li>To: Elapsed Time (dd):hh:mm - Converts a valid time to an elapsed time from that date in the form 5d 14h 41m. Days are only displayed if 1 or greater.</li>"
+    myText += "<li>To: Remaining Time (dd):hh:mm:ss - Converts a valid time to a remaining time until the future date provided in the form 3d 9h 15m 52s. Days are only displayed if 1 or greater.</li>"
+    myText += "<li>To: Remaining Time (dd):hh:mm - Converts a valid time to a remaining time until the future date provided in the form 3d 9h 15m. Days are only displayed if 1 or greater.</li>"
+    myText += "<li><b>ALL values are instantaneous and are ONLY calculated when the table is refreshed.</b></li></ul>"
+    myText += "For more information on Cleanups see the online documentation."
+    group1 = "<details><summary>" + myTitle + "</summary>" + myText + "</details>"
+    
+    myTitle = dodgerBlue("Rules<br>")
+    myText = "Rules are a way to modify data based upon its value to give it a modified value or appearance. An example of this would be to display temperatures in different colors dependant on their value.<br>" + separator
+    myText += "<ul><li>None: The default value of no processing.</li>"
+    myText += "<li>All Keywords: Will process all of the keywords specified in the Highlights\\Keywords section to find a match. If a match is found matched the data value is substitued with the replacement value and formatting. Keywords are used for string comparisons.</li>"
+    myText += "<li>Threshold 1-5: Will compare the value of numeric data using the operator and value specified in the corresponding Highlights\\Threshold. If a comparison is successful the data value is substitued with the replacement value and formatting. Thresholds are used for numeric data comparisons.</li>"
+    myText += "<li>Format Rules 1-3: These give you the opportunity to format data in a reusable way, with less clutter on the screen. Here is a format rule that displays the data as a meter. <mark>%value%%[br][progress value=%value% max=100][/progress]</mark></li>"
+    myText += "<li>Replace Chars: This does a simple string substitution and can be used to pre-process data. For example, replacing ',' with ' ' for an improved look.</li>"
+    myText += "<li><b>ALL values are instantaneous and are ONLY calculated when the table is refreshed.</b></li></ul>"
+    group2 = "<details><summary>" + myTitle + "</summary>" + myText + "</details>"
+        
+    return separator + group1 + separator + group2 
 }
 
 def styleNotes() {
@@ -1463,4 +1633,8 @@ def isSelectedDeviceChanged() {
         state.flags.selectedDeviceChanged = true
     }
     else { state.flags.selectedDeviceChanged = false }
+}
+
+def emptyFunction(message) {
+    log.info ("Child: $message")     
 }
