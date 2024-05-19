@@ -3,8 +3,8 @@
   "author": "Gary J. Milne",
   "version": "161",
   "minimumHEVersion": "2.3.4.132",
-  "dateReleased": "2024-05-18",
-  "releaseNotes": "Package-161: Updates Grid to 2.0.0 and Parent to 1.5.0\nPackage-160: Updates AttrMon and ActMon to version 1.4.8\nPackage-159: Updates AttrMon and ActMon to 1.4.7\nUpdates to Rooms.\nPackage-157: Adds %deviceID% variable to Grid to enable control actions.\nPackage-156: Corrects error in Grid Keyword handling.\nPackage-155: Corrects error with rows when switching Layout Mode. Handles null conditions arising from user selecting 'No Selection' for critical values.\nPackage-154: Corrects error with highlightValues() in AM/AM introduces in v1.4.4 \nPackage-153: Adds additional error handling and logging to the Grid attribute subscription process.\nPackage-152: Fixes issue in Grid with incomplete subscriptions in Device Group mode.\nPackage-151: Corrections to package names for AM and MAM. Split %lastEvent% into %lastEvent% and %lastEventValue% in Grid.\nPackage-150: Fixed typo in line 969 causing error.\nPackage-149: Improve null handling for AM. Various minor fixes for Grid.\nPackage-148: Adds support for Tile Builder Grid.\nPackage-147: Brings Activity and Attribute Monitor to feature parity (V1.4.3) with MAM (V1.2.1). Package-146: Increments MAM to 1.2.1 for multiple improvements.\nPackage-145: Increments Rooms to 1.1.2 to improve Null handling.\nPackage-144: Increments MAM to 1.2.0 to add additional rows.\nPackage-V143: Increments MAM to 1.1.3 to add %time1% and %time2% macros.",
+  "dateReleased": "2024-05-19",
+  "releaseNotes": "Package-162: Fix keyset error in TB Grid\nPackage-161: Updates Grid to 2.0.0 and Parent to 1.5.0\nPackage-160: Updates AttrMon and ActMon to version 1.4.8\nPackage-159: Updates AttrMon and ActMon to 1.4.7\nUpdates to Rooms.\nPackage-157: Adds %deviceID% variable to Grid to enable control actions.\nPackage-156: Corrects error in Grid Keyword handling.\nPackage-155: Corrects error with rows when switching Layout Mode. Handles null conditions arising from user selecting 'No Selection' for critical values.\nPackage-154: Corrects error with highlightValues() in AM/AM introduces in v1.4.4 \nPackage-153: Adds additional error handling and logging to the Grid attribute subscription process.\nPackage-152: Fixes issue in Grid with incomplete subscriptions in Device Group mode.\nPackage-151: Corrections to package names for AM and MAM. Split %lastEvent% into %lastEvent% and %lastEventValue% in Grid.\nPackage-150: Fixed typo in line 969 causing error.\nPackage-149: Improve null handling for AM. Various minor fixes for Grid.\nPackage-148: Adds support for Tile Builder Grid.\nPackage-147: Brings Activity and Attribute Monitor to feature parity (V1.4.3) with MAM (V1.2.1). Package-146: Increments MAM to 1.2.1 for multiple improvements.\nPackage-145: Increments Rooms to 1.1.2 to improve Null handling.\nPackage-144: Increments MAM to 1.2.0 to add additional rows.\nPackage-V143: Increments MAM to 1.1.3 to add %time1% and %time2% macros.",
   "documentationLink": "https://github.com/GaryMilne/Hubitat-TileBuilder/tree/main",
   "communityLink": "https://community.hubitat.com/t/release-tile-builder-build-beautiful-dashboards/118822",
   "payPalURL": "https://bit.ly/3TIffQa",
@@ -68,7 +68,7 @@
       "required": false,
       "oauth": false,
       "primary": false,
-      "version": "2.0.0"
+      "version": "2.0.1"
     }
   ],
   "drivers": [

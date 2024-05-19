@@ -3,7 +3,7 @@
 // type: app          <- valid values here are "app" and "device"
 // id: 1084           <- this is app or driver's id
 // hubitat end
-//This only works of the destination HUb is running the appropriate Beta version of the Hubitat firmware.
+//This only works of the destination Hub is running the appropriate Beta version of the Hubitat firmware.
 
 /**  Authors Notes:
  *  For more information on Tile Builder Grid check out these resources.
@@ -39,9 +39,10 @@
  *  Version 1.0.9A - Bugfix: Performed datatype check on line 896. Version not revved!
  *  Version 1.1.0 - Feature: Added %sunrise%, %sunset% variables with variations. (Unreleased)
  *  Version 1.2.0 - Features: Added input options for Device Details and Hub Properties when using Free Form mode.  Improved logging and minor UI tweaks. (Unreleased)
- *  Version 2.0.0
+ *  Version 2.0.0 - Complete overhaul - see documentation. Preliminary release April 2024. Production release May 18, 2024.
+ *  Version 2.0.1 - Bugfix: Spurious characters causing errors.
  *
- *  Gary Milne - April 16th, 2024 9:20 AM
+ *  Gary Milne - May 19th, 2024 12:33 PM
  *
  **/
 //file:noinspection GroovyVariableNotAssigned
@@ -73,9 +74,9 @@ static def capabilities() {
             "voltageMeasurement"      : ["voltage", "frequency"], "waterSensor": ["water"], "windowBlind": ["position", "windowBlind", "tilt"], "windowShade": ["position", "windowShade"], "zwMultichannel": ["epEvent", "epInfo"], "pHMeasurement": ["pH"]]
 }
 
-static def codeDescription() { return ("<b>Tile Builder Grid v2.0.0 (4/16/24)</b>") }
+static def codeDescription() { return ("<b>Tile Builder Grid v2.0.1 (5/19/24)</b>") }
 
-static def codeVersion() { return (200) }
+static def codeVersion() { return (201) }
 
 static def cleanups() {
     return ["None", "Capitalize", "Capitalize All", "Commas", "0 Decimal Places", "1 Decimal Place", "Upper Case", "OW Code to Emoji", "OW Code to PNG", "Image URL", "Remove Tags [] <>"]
@@ -261,7 +262,7 @@ def mainPage() {
         if (layoutMode.toString() == "Device Group") {
             section(hideable: true, hidden: state.hidden.DeviceGroup, title: buttonLink('btnHideDeviceGroup', getSectionTitle("Device Group"), 20)) {
                 //This input device list the items by attribute name but actually returns the capability.
-                input(name: "myCapability", title: "<b>Select Filter (Optional)</b>", type: "enum", options: capabilities.keySet().collect { it }.sort(), submitOnChange: true, width: 2, defaultValue: 1)
+                input(name: "myCapability", title: "<b>Select Filter (Optional)</b>", type: "enum", options: capabilities().keySet().collect { it }.sort(), submitOnChange: true, width: 2, defaultValue: 1)
                 if (myCapability != null) input "myDeviceList", "capability.$myCapability", title: "<b>Select Devices</b> " + dodgerBlue("(%deviceLabel%)"), multiple: true, required: false, submitOnChange: true, width: 3
                 else input "myDeviceList", "capability.*", title: "<b>Select Devices</b> " + dodgerBlue("(%deviceLabel%)"), multiple: true, required: false, submitOnChange: true, width: 3
                 input(name: "myVariableCount", title: "<b>Variable Count?</b>", type: "enum", options: [1, 2, 3, 4, 5, 6], submitOnChange: true, defaultValue: 0, style: "margin-left:20px; width:10%")
@@ -273,7 +274,7 @@ def mainPage() {
                     boolean isNewLine = (i % 4 == 0)
                     result = "(%" + settings["myAttribute$i"] + "%)" // ?: "N/A"
                     if (result.contains("null")) result = invalidAttribute.toString()
-                    if (myCapability != null) input(name: "myAttribute${i}", title: dodgerBlue("<b>Variable</b> " + result), type: "enum", options: capabilities.values().collectMany { it }.unique().sort(), submitOnChange: true, defaultValue: "Var${i}", newLine: isNewLine, style: "margin-left:10px;width:12%")
+                    if (myCapability != null) input(name: "myAttribute${i}", title: dodgerBlue("<b>Variable</b> " + result), type: "enum", options: capabilities().values().collectMany { it }.unique().sort(), submitOnChange: true, defaultValue: "Var${i}", newLine: isNewLine, style: "margin-left:10px;width:12%")
                     input "actionA${i}", "enum", title: "<b>Cleanup</b>", options: cleanups(), defaultValue: "None", required: false, submitOnChange: true, newLine: false, style: "margin-left:10px;width:8%"
                     input "actionB${i}", "enum", title: "<b>Rules</b>", options: rules(), defaultValue: "None", required: false, submitOnChange: true, newLine: false, style: "margin-right:20px;width:8%"
                     myAttr = settings["myAttribute$i"].toString()
@@ -1504,7 +1505,7 @@ def formatTime(timeValue, int format) {
         myType = "Hubitat Date"
     }
     catch (Exception e) {
-        log.info("Not a Hubitat Date: $e")
+        if (isLogDateTime) log.info("Not a Hubitat Date: $e")
     }
 
     switch (myType) {
@@ -1632,11 +1633,10 @@ String convertSecondsToDHMS(long seconds, boolean includeSeconds) {
 
     // Check if days are greater than 0
     def daysString = days > 0 ? "${days}d " : ""
-    def hoursString = hours > 0 ? "${hours}" : ""
+    def hoursString = hours > 0 ? "${hours}h " : ""
 
-    if (!includeSeconds) return "${daysString}${hoursString}h ${minutes}m"
-    else return "${daysString}${hoursString}h ${minutes}m ${remainingSeconds}s"
-
+    if (!includeSeconds) return "${daysString}${hoursString} ${minutes}m"
+    else return "${daysString}${hoursString}${minutes}m ${remainingSeconds}s"
 }
 
 //*******************************************************************************************************************************************************************************************
@@ -3044,9 +3044,9 @@ def isMyCapabilityChanged() {
 def updateAppVariables() {
     if (isLogTrace) log.trace("<b>updateAppVariables: Entering.</b>")
     //This is called with each successive upgrade if new variables have been introduced.
-    if (state.variablesVersion == null || state.variablesVersion < 100) {
-        log.info("Updating Variables to Version 2.0.0")
-        state.variablesVersion = 200
+    if (state.variablesVersion == null || state.variablesVersion < 200) {
+        log.info("Updating Variables to Version 2.0.1")
+        state.variablesVersion = 201
     }
 }
 
