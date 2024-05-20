@@ -41,8 +41,9 @@
  *  Version 1.2.0 - Features: Added input options for Device Details and Hub Properties when using Free Form mode.  Improved logging and minor UI tweaks. (Unreleased)
  *  Version 2.0.0 - Complete overhaul - see documentation. Preliminary release April 2024. Production release May 18, 2024.
  *  Version 2.0.1 - Bugfix: Spurious characters causing errors.
+ *  Version 2.0.2 - Bugfix: Missing controls under certain null conditions.
  *
- *  Gary Milne - May 19th, 2024 12:33 PM
+ *  Gary Milne - May 20th, 2024 2:18 PM
  *
  **/
 //file:noinspection GroovyVariableNotAssigned
@@ -74,9 +75,9 @@ static def capabilities() {
             "voltageMeasurement"      : ["voltage", "frequency"], "waterSensor": ["water"], "windowBlind": ["position", "windowBlind", "tilt"], "windowShade": ["position", "windowShade"], "zwMultichannel": ["epEvent", "epInfo"], "pHMeasurement": ["pH"]]
 }
 
-static def codeDescription() { return ("<b>Tile Builder Grid v2.0.1 (5/19/24)</b>") }
+static def codeDescription() { return ("<b>Tile Builder Grid v2.0.2 (5/20/24)</b>") }
 
-static def codeVersion() { return (201) }
+static def codeVersion() { return (202) }
 
 static def cleanups() {
     return ["None", "Capitalize", "Capitalize All", "Commas", "0 Decimal Places", "1 Decimal Place", "Upper Case", "OW Code to Emoji", "OW Code to PNG", "Image URL", "Remove Tags [] <>"]
@@ -275,6 +276,7 @@ def mainPage() {
                     result = "(%" + settings["myAttribute$i"] + "%)" // ?: "N/A"
                     if (result.contains("null")) result = invalidAttribute.toString()
                     if (myCapability != null) input(name: "myAttribute${i}", title: dodgerBlue("<b>Variable</b> " + result), type: "enum", options: capabilities().values().collectMany { it }.unique().sort(), submitOnChange: true, defaultValue: "Var${i}", newLine: isNewLine, style: "margin-left:10px;width:12%")
+                    else input (name: "myAttribute${i}", title: dodgerBlue("<b>Variable</b> " + result ), type: "enum", options: capabilities().values().collectMany {it}.unique().sort(), submitOnChange: true, defaultValue: "Var${i}", newLine:isNewLine, style: "margin-left:10px;width:12%")
                     input "actionA${i}", "enum", title: "<b>Cleanup</b>", options: cleanups(), defaultValue: "None", required: false, submitOnChange: true, newLine: false, style: "margin-left:10px;width:8%"
                     input "actionB${i}", "enum", title: "<b>Rules</b>", options: rules(), defaultValue: "None", required: false, submitOnChange: true, newLine: false, style: "margin-right:20px;width:8%"
                     myAttr = settings["myAttribute$i"].toString()
