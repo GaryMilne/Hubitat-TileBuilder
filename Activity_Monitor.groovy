@@ -55,12 +55,14 @@
 *  Version 1.4.6 - Bugfix: Correct issue with logic in highlightValue related to use of Ternary operators (introduced v1.4.4). Corrected issue with duplicate units under some conditions.
 *  Version 1.4.7 - Added Minimum Republish interval as introduced in Grid 1.0. Only applies to Attribute Monitor.
 *  Version 1.4.8 - Bugfix: Corrected issue with newly initialised variables.
+*  Version 1.4.9 - Bugfix: Improved handling of the lastPublished info and checking. Better null handling for input controls.
 *
-*  Gary Milne - April 1st, 2024
+*  Gary Milne - May 23rd, 2024
 *
 *  This code is Activity Monitor and Attribute Monitor combined.
 *  The personality is dictated by @Field static moduleName a few lines ahead of this.
 *  You must comment out the moduleName line that does not apply.
+*  You must change the text of the @Field codeDescription
 *  You must also comment out the 3 lines in the definition that do not apply.
 *  That is all that needs to be done.
 *
@@ -77,8 +79,8 @@ import groovy.transform.Field
 //These are unknown as to whether they report integer or float values.
 //capabilitiesUnknown = [" "carbonDioxideMeasurement":"carbonDioxide","pressureMeasurement":"pressure","relativeHumidityMeasurement":"humidity", "ultravioletIndex":"ultravioletIndex"]
 
-@Field static final codeDescription = "<b>Tile Builder Attribute Monitor v1.4.8 (4/2/24)</b>"
-@Field static final codeVersion = 148
+@Field static final codeDescription = "<b>Tile Builder Activity Monitor v1.4.9 (5/23/24)</b>"
+@Field static final codeVersion = 149
 @Field static final moduleName = "Activity Monitor"
 //@Field static final moduleName = "Attribute Monitor"
 
@@ -108,8 +110,7 @@ preferences {
 def mainPage() {
     //Basic initialization for the initial release
     if (state.initialized == null ) initialize()
-    
-    
+        
     //app.updateSetting("republishDelay", 1)
     //app.updateSetting("republishDelay", [value:"2", type:"enum"])
     
@@ -256,11 +257,11 @@ def mainPage() {
                 if (activeButton == 1){ 
                     if (isCompactDisplay == false) paragraph titleise("General Properties")
                     input (name: "tw", type: "enum", title: bold("Width %"), options: parent.tableSize(), required: false, defaultValue: "90", submitOnChange: true, width: 2)
-                    input (name: "th", type: "enum", title: bold("Height %"), options: parent.tableSize(), required: false, defaultValue: "auto", submitOnChange: true, width: 2)
+                    input (name: "th", type: "enum", title: bold("Height %"), options: parent.tableSize(), required: false, defaultValue: "Auto", submitOnChange: true, width: 2)
                     input (name: "tbc", type: "color", title: bold2("Table Background Color", tbc), required:false, defaultValue: "#ffffff", width:2, submitOnChange: true)
                     input (name: "tbo", type: "enum", title: bold("Table Background Opacity"), options: parent.opacity(), required: false, defaultValue: "1", submitOnChange: true, width: 2)
                     input (name: "tff", type: "enum", title: bold("Font"), options: parent.fontFamily(), required: false, defaultValue: "Roboto", submitOnChange: true, width: 2, newLineAfter: true)
-                    input (name: "bm", type: "enum", title: bold("Border Mode"), options: parent.tableStyle(), required: false, defaultValue: "collapse",  submitOnChange: true, width: 2)
+                    input (name: "bm", type: "enum", title: bold("Border Mode"), options: parent.tableStyle(), required: false, defaultValue: "Collapse",  submitOnChange: true, width: 2)
                     input (name: "bfs", type: "enum", title: bold("Base Font Size"), options: parent.baseFontSize(), required: false, defaultValue: "18", submitOnChange: true, width: 2)
                     
                     input (name: "isComment", type: "bool", title: "<b>Add comment?</b>", required: false, multiple: false, defaultValue: false, submitOnChange: true, width: 2)
@@ -561,7 +562,7 @@ def mainPage() {
                 //Advanced Settings
                 if (activeButton == 9){
                     if (isCompactDisplay == false) paragraph titleise("Advanced Settings")
-                    input (name: "scrubHTMLlevel", type: "enum", title: bold("HTML Scrub Level"), options: parent.htmlScrubLevel(), required: false, submitOnChange: true, defaultValue: 1, width: 2, newLineAfter:false)
+                    input (name: "scrubHTMLlevel", type: "enum", title: bold("HTML Scrub Level"), options: parent.htmlScrubLevel(), required: false, submitOnChange: true, defaultValue: "1", width: 2, newLineAfter:false)
                     input (name: "isOverrides", type: "bool", title: "<b>Enable Overrides?</b>", required: false, multiple: false, defaultValue: false, submitOnChange: true, width: 2, newLineAfter: false)
                     input (name: "isShowSettings", type: "bool", title: "<b>Show Effective Settings?</b>", required: false, multiple: false, defaultValue: false, submitOnChange: true, width: 2)
                     input (name: "isShowHTML", type: "bool", title: "<b>Show Pseudo HTML?</b>", required: false, multiple: false, defaultValue: false, submitOnChange: true, width: 2)
@@ -717,11 +718,21 @@ def mainPage() {
 }
 
 //Checks for critical Null values that can be introduced by the user by clicking "No Selection" in an enum dialog.
+//This occurs when the specific control value is accessed by various functions during the screen refresh before the "defaultValue" can be applied.
 def checkNulls(){
     if (myThresholdCount == null ) app.updateSetting("myThresholdCount", [value:"0", type:"enum"])
     if (myKeywordCount == null ) app.updateSetting("myKeywordCount", [value:"0", type:"enum"])
     if (myDeviceLimit == null ) app.updateSetting("myDeviceLimit", [value:"0", type:"enum"])
     if (eventTimeout == null) app.updateSetting("eventTimeout", "2000")
+    if (tbo == null) app.updateSetting("tbo", [value:"1", type:"enum"])
+    if (to == null) app.updateSetting("to", [value:"1", type:"enum"])
+    if (bo == null) app.updateSetting("bo", [value:"1", type:"enum"])
+    if (hbo == null) app.updateSetting("hbo", [value:"1", type:"enum"])
+    if (hto == null) app.updateSetting("hto", [value:"1", type:"enum"])
+    if (rbo == null) app.updateSetting("rbo", [value:"1", type:"enum"])
+    if (rto == null) app.updateSetting("rto", [value:"1", type:"enum"])
+    if (bp == null) app.updateSetting("bp", [value:"0", type:"enum"])
+    if (scrubLevelHTML == null ) app.updateSetting("scrubHTMLlevel", [value:"1", type:"enum"])
 }
 
 //Get a list of supported attributes for a given device and return a sorted list.
@@ -1726,6 +1737,8 @@ void publishTable(){
     }
     
     if (isLogEvents) log.info ("Size is: ${state.HTML.size()}")
+    state.publish.lastPublished = now()
+    
 	//If the tile is less than 1024 we just publish to the attribute. If it's more than 1,024 then we publish it as a file then update the attribute to cause it to reload the file.
     if (state.HTML.size() < 1024 ) {
         myStorageDevice.createTile(settings.myTile, state.HTML, settings.myTileName)
@@ -2250,7 +2263,7 @@ def initialize(){
     //Advanced
     app.updateSetting("bfs", "18")
     app.updateSetting("tff", "Roboto")
-    app.updateSetting("scrubHTMLlevel", 1)
+    app.updateSetting("scrubHTMLlevel", [value:"1", type:"enum"])
     app.updateSetting("eventTimeout", "2000")
     app.updateSetting("isShowImportExport", false)
     app.updateSetting("isShowHTML", false)
@@ -2296,7 +2309,7 @@ def initialize(){
 //Handles the initialization of any variables created after the original creation of the child instance.
 //These are susceptible to change with each rev or feature add.
 def updateVariables() {
-    if (republishDelay == null){ app.updateSetting("republishDelay", [value:"0", type:"enum"]) }
+    
     if (state.variablesVersion == null) { 
         log.info ("Initializing variablesVersion to: 146")
         state.variablesVersion = 140 
@@ -2397,6 +2410,16 @@ def updateVariables() {
         if ( state.publish == null ) state.publish = [:]
         state.publish.lastPublished = 0
         state.variablesVersion = 148
+    }
+    
+    //Update variables from version 1.4.8 to 1.4.9
+    if (state.variablesVersion < 149 ) {
+        log.info ("Updating Variables to Version 1.4.9")
+        //Add the newly created variables.
+		if (republishDelay == null){ app.updateSetting("republishDelay", [value:"0", type:"enum"]) }
+        if ( state.publish == null ) state.publish = [:]
+        if ( state.publish.lastPublished == null ) state.publish.lastPublished = 0
+        state.variablesVersion = 149
     }
 }
 
