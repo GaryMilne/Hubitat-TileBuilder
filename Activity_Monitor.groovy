@@ -56,13 +56,13 @@
 *  Version 1.4.7 - Added Minimum Republish interval as introduced in Grid 1.0. Only applies to Attribute Monitor.
 *  Version 1.4.8 - Bugfix: Corrected issue with newly initialised variables.
 *  Version 1.4.9 - Bugfix: Improved handling of the lastPublished info and checking. Better null handling for input controls.
+*  Version 1.5.0 - Bugfix: Added error handling when the device has a Null value for a monitored attribute.
 *
-*  Gary Milne - May 23rd, 2024
+*  Gary Milne - June 7th, 2024
 *
 *  This code is Activity Monitor and Attribute Monitor combined.
 *  The personality is dictated by @Field static moduleName a few lines ahead of this.
 *  You must comment out the moduleName line that does not apply.
-*  You must change the text of the @Field codeDescription
 *  You must also comment out the 3 lines in the definition that do not apply.
 *  That is all that needs to be done.
 *
@@ -79,8 +79,8 @@ import groovy.transform.Field
 //These are unknown as to whether they report integer or float values.
 //capabilitiesUnknown = [" "carbonDioxideMeasurement":"carbonDioxide","pressureMeasurement":"pressure","relativeHumidityMeasurement":"humidity", "ultravioletIndex":"ultravioletIndex"]
 
-@Field static final codeDescription = "<b>Tile Builder Activity Monitor v1.4.9 (5/23/24)</b>"
-@Field static final codeVersion = 149
+@Field static final codeDescription = "<b>Tile Builder Activity Monitor v1.5.0 (6/7/24)</b>"
+@Field static final codeVersion = 150
 @Field static final moduleName = "Activity Monitor"
 //@Field static final moduleName = "Attribute Monitor"
 
@@ -1546,9 +1546,13 @@ void makeHTML(data, int myRows){
 //If any are a match it uses the chosen CSS style to highlight it.
 def highlightValue(attributeValue){
     if (isLogTrace) log.trace("highlightValue: Received attributeValue: ${attributeValue}")
-    //Save a copy of the original value.
-    def originalValue = attributeValue.toString()
-    dataType = getDataType(attributeValue.toString())
+    
+    //Save a copy of the original value if it is non-null
+    def originalValue
+    if ( attributeValue == null || attributeValue == "" ) originalValue = "N/A"
+    else originalValue = attributeValue.toString()
+    
+    dataType = getDataType(originalValue.toString())
             
     //Take care of any character replacements first.
     if (dataType == "String" && isReplaceCharacters == true && settings["oc1"] != "?" && settings["nc1"] != "?" ) {
@@ -1693,32 +1697,29 @@ void publishSubscribe(){
 //This should get executed whenever any of the subscribed devices receive an update to the monitored attribute.
 //Delays may occur if the eventTimeout or republishDelay is > 0
 def handler(evt) {
+    if (isLogTrace) log.trace ("<b>handler: Entering with $evt</b>")
+    if (isLogInfo) log.info ("handler: Event received from Device:${evt.device}  -  Attribute:${evt.name}  -  Value:${evt.value}")
+    
     //Handles the initialization of new variables added after the original release.
     if (state.variablesVersion == null || state.variablesVersion < codeVersion) updateVariables() 
     
-    def nextPublicationTime
-    def nextPublicationDelay
-    if (isLogTrace) log.trace ("<b>handler: Entering with $evt</b>")
-    if (isLogInfo) log.info ("handler: Event received from Device:${evt.device}  -  Attribute:${evt.name}  -  Value:${evt.value}")
-        
-    //Test to see if we have met the minimum republishing delay.
-    def lastPublicationTime = state.publish.lastPublished ?: 0
-    if (republishDelay.toInteger() > 0 ) {
-        nextPublicationTime = ( republishDelay.toInteger() * 60 * 1000 ) + lastPublicationTime
-    }
-    else nextPublicationTime = now()
+    //Initialize variables
+    long lastPublicationTime = state.publish.lastPublished ?: 0
+    long nextPublicationTime = ( republishDelay.toInteger() * 60 * 1000 ) + lastPublicationTime
+    long delay = nextPublicationTime - now()
     
-    if (isLogEvents) log.info("republishDelay is: $republishDelay mins. LastPub:$lastPublicationTime  NextPub:$nextPublicationTime")
-            
-    // This schedules a call to publishTable() X milliseconds into the future which optimizes for scenarios with multiple simultaneous attribute updates on the same device. Reduces multiple calls to a single publishTable() event.
-    if (nextPublicationTime >= now() ) { 
-        runInMillis( nextPublicationTime - now(), publishTable, [overwrite: true]) 
-        if (isLogEvents) log.info ("handler: republishDelay of $republishDelay minutes has not been met. Publication deferred. (" + ( nextPublicationTime - now())/1000 + " seconds)" ) 
+    if (isLogEvents) log.info("nextPublicationTime: $nextPublicationTime, now: " + now() + ", delay: $delay,  republishDelay: $republishDelay, eventTimeout: $eventTimeout ")
+
+    //The next publication event is more than 1 second into the future so setup a delayed publish
+    if ( delay  > 1000 ) { 
+        runInMillis( delay, publishTable, [overwrite: true]) 
+        if (isLogEvents) log.info ("handler: republishDelay of $republishDelay minutes has not been met. Publication deferred. (" + delay/1000 + " seconds)" ) 
     }
     
-    //If we are past the publicationDelay period we can publish right away, pending 
-    if (nextPublicationTime < now() ) {    
+    //It is within 1 second of the nextPublicationTime, close enough to publish, subject to the eventTimeout setting.
+    if ( delay <= 1000 ) { 
         runInMillis(eventTimeout.toInteger(), publishTable, [overwrite: true])
+        if (isLogEvents) log.info ("handler: publishTable() has been called with a delay of $eventTimeout" ) 
     }
 }
 
