@@ -60,12 +60,13 @@
 *  Version 1.4.8 - BugFix: Correct issue with the Multi-Attribute Monitor modiule name. Added notations for %lastEventValue% added to Grid.
 *  Version 1.4.9 - Minor text additions to highlightNotes and textFieldNotes in support of Active links.
 *  Version 1.5.0 - Added significant help for Tile Builder Grid upgrade.
+*  Version 1.5.1 - Added support for Tile Builder Thermostat module. Donation minimum increased by $1 to $9 for additional module - Thermostat.
 *
-*  Gary Milne - April 23rd, 2024 @ 10:31 AM
+*  Gary Milne - June 17th, 2024 @ 7:17 PM
 *
 **/
 import groovy.transform.Field
-@Field static final Version = "<b>Tile Builder Parent v1.5.0 (4/23/24)</b>"
+@Field static final Version = "<b>Tile Builder Parent v1.5.1 (6/17/24 @ 7:17 PM)</b>"
 
 //These are the data for the pickers used on the child forms.
 def elementSize() { return ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '30', '40', '50', '75', '100'] }
@@ -168,14 +169,24 @@ def mainPage() {
                     input(name: 'btnShowLicense', type: 'button', title: 'Licensing ▼', backgroundColor: 'navy', textColor: 'white', submitOnChange: true, width: 2, newLineBefore: true, newLineAfter: false)  //▼ ◀ ▶ ▲
                     link1 = 'Click <a href="https://github.com/GaryMilne/Hubitat-TileBuilder/blob/main/Tile%20Builder%20Help.pdf" target="_blank">here</a> for more information.'
                     link2 = 'Click <a href="https://github.com/GaryMilne/Hubitat-TileBuilder/blob/main/Tile%20Builder%20Rooms%20Help.pdf" target="_blank">here</a> for more information.'
-                    myString = "<b>Tile Builder Standard is free</b> and provides a highly functional addition to the basic Hubitat Dashboard capabilities.<br>"
-                    myString += "<b>Tile Builder Advanced</b> adds Filters, Highlights, Styles and a range of powerful customizations options for Activity Monitor, Attribute Monitor and Multi-Attribute Monitor. " + link1 + " <br>"
-                    myString += "<b>Tile Builder Advanced</b> supports up to 10 devices plus 2 Icon Bars in Rooms. This is reduced to 3 devices and no Icon Bars for the Standard version. " + link2 + " <br><br>"
+                    link3 = 'Click <a href="https://github.com/GaryMilne/Hubitat-TileBuilder/blob/main/Tile%20Builder%20Grid%20Help.pdf" target="_blank">here</a> for more information.'
+                    link4 = 'Click <a href="https://github.com/GaryMilne/Hubitat-TileBuilder/blob/main/Tile%20Builder%20Thermostat%20Help.pdf" target="_blank">here</a> for more information.'
+                    
+                    myString = "<b>Tile Builder Standard (Free)</b> allows you to create powerful 2 column tables of device properties.<br>"
+                    myString += "Activity Monitor allows you to monitor device activity\\inactivity and set thresholds for table generation. Useful for detecting unresponsive devices.<br>"
+                    myString += "Attribute Monitor allows you to combine many devices with a shared attribute into a single table monitor and sort the results for easy comparison and a more compact display.<br>"
+                    myString += "Multi-Attribute Monitor Monitor allows you to mix and match attributes and devices into a single table. Very useful for monitoring related information such as hub statistics or weather info.<br><br>"
+                    myString += "<b>Tile Builder Advanced (Donation Required)</b><br>"
+                    myString += "Adds Filters, Highlights, Styles and a range of powerful customizations options for Activity Monitor, Attribute Monitor and Multi-Attribute Monitor. " + link1 + " <br>"
+                    myString += "Adds Rooms which supports up to 10 devices plus 2 Icon Bars per room. " + link2 + " <br>"
+                    myString += "Adds Grid which allows complex tables of up to 5 columns and free placement of data. " + link3 + " <br>"
+                    myString += "Adds Thermostat which provides an attractive and functional replacement to the Hubitat thermostat tile. " + link4 + " <br><br>"
             
                     myString = myString + "To purchase the license for <b>Tile Builder Advanced</b> you must do the following:<br>"
                     //New link: $7 page. https://www.paypal.com/donate/?business=YEAFRPFHJCTFA&no_recurring=0&item_name=A+donation+of+%247+or+more+grants+you+a+license+to+Tile+Builder+Advanced.+Please+leave+your+Hubitat+Community+ID.&currency_code=USD
-                    //New link: $8 page.  https://www.paypal.com/donate/?business=YEAFRPFHJCTFA&no_recurring=1&item_name=A+donation+of+%248+or+more+grants+you+a+license+to+Tile+Builder+Advanced.+Please+leave+your+Hubitat+Community+ID.&currency_code=USD
-                    myString += '<b>1)</b> Donate at least <b>\$8</b> to ongoing development via PayPal using this <a href="https://www.paypal.com/donate/?business=YEAFRPFHJCTFA&no_recurring=1&item_name=A+donation+of+%248+or+more+grants+you+a+license+to+Tile+Builder+Advanced.+Please+leave+your+Hubitat+Community+ID.&currency_code=USD" target="_blank">link.</a></br>'			
+                    //New link: $8 page. https://www.paypal.com/donate/?business=YEAFRPFHJCTFA&no_recurring=1&item_name=A+donation+of+%248+or+more+grants+you+a+license+to+Tile+Builder+Advanced.+Please+leave+your+Hubitat+Community+ID.&currency_code=USD
+                    //New link: $9 page. https://www.paypal.com/donate/?business=YEAFRPFHJCTFA&no_recurring=1&item_name=A+donation+of+%249+or+more+grants+you+a+license+to+Tile+Builder+Advanced.+Please+leave+your+Hubitat+Community+ID.&currency_code=USD
+                    myString += '<b>1)</b> Donate at least <b>\$9</b> to ongoing development via PayPal using this <a href="https://www.paypal.com/donate/?business=YEAFRPFHJCTFA&no_recurring=1&item_name=A+donation+of+%249+or+more+grants+you+a+license+to+Tile+Builder+Advanced.+Please+leave+your+Hubitat+Community+ID.&currency_code=USD" target="_blank">link.</a></br>'			
                     myString += "<b>2)</b> Forward the paypal eMail receipt along with your ID (<b>" + getID() + "</b>) to <b>TileBuilderApp@gmail.com</b>. Please include your Hubitat community ID for future notifications.<br>"
                     myString += "<b>3)</b> Wait for license key eMail notification (usually within 24 hours).<br>"
                     myString += "<b>4)</b> Apply license key using the input box below.<br>"
@@ -260,7 +271,8 @@ def mainPage() {
                     myString += '<b>2) Attribute Monitor:</b> Generates a table containing data for multiple devices\\single attribute into a single tile. For example, all room temps on a single tile.<br>'
                     myString += '<b>3) Multi Attribute Monitor:</b> Generates a table containing data for multiple devices\\multiple attributes into a single tile. For example, indoor temperature, humidity, AC\\Heat status and weather in a single tile.<br>'
                     myString += '<b>4) Rooms:</b> Generates a graphical layout of Icons representing devices within a room. Icons change appearance depending on the state of the device.<br>'
-                    myString += '<b>5) Grid:</b> Generates a Grid of Data up to 5 columns wide with freedom of placement for Data. Tile Builder Grid is only available to Tile Builder Advanced Users.<br>'
+                    myString += '<b>5) Grid:</b> Generates a Grid of Data up to 5 columns wide with freedom of placement for Data. Tile Builder Advanced Users only.<br>'
+                    myString += '<b>6) Thermostat:</b> Generates an attractive alternative to the Hubitat built-in thermostat control. Tile Builder Advanced Users only.<br>'
                     paragraph note('', myString)
                     
                     if (!hideActivityMonitor) app (name: 'TBPA', appName: 'Tile Builder - Activity Monitor', namespace: 'garyjmilne', title: 'Add New Activity Monitor')
@@ -269,6 +281,7 @@ def mainPage() {
                     if (!hideRooms) app(name: 'TBPA', appName: 'Tile Builder - Rooms', namespace: 'garyjmilne', title: 'Add New Room')
                     //Tile Builder Grid is a Premium only app and only visible to Advanced Users.
                     if (checkLicense() && !hideGrid ) app(name: 'TBPA', appName: 'Tile Builder - Grid', namespace: 'garyjmilne', title: 'Add New Grid')
+                    if (checkLicense() && !hideThermostat ) app(name: 'TBPA', appName: 'Tile Builder - Thermostat', namespace: 'garyjmilne', title: 'Add New Thermostat')
                     }
                 else {
                     input(name: 'btnShowCreateEdit', type: 'button', title: 'Create\\Edit Tiles ▶', backgroundColor: 'DodgerBlue', textColor: 'white', submitOnChange: true, width: 2, newLineBefore: true, newLineAfter: false)  //▼ ◀ ▶ ▲
@@ -317,6 +330,7 @@ def mainPage() {
                     input (name: "hideMultiAM", type: "bool", title: "<b>Hide Multi AM?</b>", defaultValue: false, submitOnChange: true, width: 2)
                     input (name: "hideRooms",  type: "bool", title: "<b>Hide Rooms?</b>", defaultValue: false, submitOnChange: true, width: 2)
                     input (name: "hideGrid",  type: "bool", title: "<b>Hide Grid?</b>", defaultValue: false, submitOnChange: true, width: 2, newLineAfter: true)
+                    input (name: "hideThermostat",  type: "bool", title: "<b>Hide Thermostat?</b>", defaultValue: false, submitOnChange: true, width: 2, newLineAfter: true)
                     paragraph line(1)
                                         
                     paragraph body('<b>Support Functions</b>')
