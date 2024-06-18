@@ -10,7 +10,7 @@
  *  Original posting on Hubitat Community forum: https://community.hubitat.com/t/release-tile-builder-build-beautiful-dashboards/118822
  *  Tile Builder Documentation: https://github.com/GaryMilne/Hubitat-TileBuilder/blob/main/Tile%20Builder%20Thermostat%20Help.pdf
  *
- *  Copyright 2022 Gary J. Milne
+ *  Copyright 2024 Gary J. Milne
  *  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed
  *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
  *  for the specific language governing permissions and limitations under the License.
@@ -28,13 +28,13 @@
  *  CHANGELOG
  *  Version 1.0.0 - Initial Public Release
  *
- *  Gary Milne - June 11th, 2024 2:18 PM
+ *  Gary Milne - June 17th, 2024 2:18 PM
  *
  **/
 
 import groovy.transform.Field
 
-static def codeDescription() { return ("<b>Tile Builder Thermostat v1.0.0 (6/11/24)</b>") }
+static def codeDescription() { return ("<b>Tile Builder Thermostat v1.0.0 (6/17/24)</b>") }
 static def codeVersion() { return (100) }
 static def baseFontSizeList() { return ['Default', '14', '15', '16', '17', '18', '19', '20'] }
 static def allTileList() { return [1: 'tile1', 2: 'tile2', 3: 'tile3', 4: 'tile4', 5: 'tile5', 6: 'tile6', 7: 'tile7', 8: 'tile8', 9: 'tile9', 10: 'tile10', 11: 'tile11', 12: 'tile12', 13: 'tile13', 14: 'tile14', 15: 'tile15', 16: 'tile16', 17: 'tile17', 18: 'tile18', 19: 'tile19', 20: 'tile20', 21: 'tile21', 22: 'tile22', 23: 'tile23', 24: 'tile24', 25: 'tile25'] }
@@ -68,11 +68,13 @@ def mainPage() {
                                                                                                                
             if (isCustomize == true) {
                 //Setup the Thermostat Style
-                paragraph "<style>#buttons {font-family: Arial, Helvetica, sans-serif;width:100%;text-align:'Center'} #buttons td,tr {background:#00a2ed;color:#FFFFFF;text-align:Center;opacity:0.75;padding: 8px} #buttons td:hover {background: #27ae61;opacity:1}</style>"
-                part1 = "<table id='buttons'><td>" + buttonLink('General', 'General', 1) + "</td><td>" + buttonLink('Display', 'Display', 2) + "</td><td>" + buttonLink('Heating', 'Heating', 3) + "</td><td>" + buttonLink('Cooling', 'Cooling', 4) + "</td>"
-                part2 = "<td>" + buttonLink('Idle', 'Idle', 5) + "</td><td>" + buttonLink('CSS', 'CSS', 6) + "</td>" 
+                paragraph "<style>#buttons {font-family: Arial, Helvetica, sans-serif;width:100%;text-align:'Center'; margin-left:0px} #buttons td,tr {background:#00a2ed;color:#FFFFFF;text-align:Center;opacity:0.75;padding:4px} #buttons td:hover {background: #27ae61;opacity:1}</style>"
+                part1 = "<table id='buttons'><td style=width:10%>" + buttonLink('General', 'General', 1) + "</td><td style=width:10%>" + buttonLink('Display', 'Display', 2) + "</td><td style=width:10%>" + buttonLink('Heating', 'Heating', 3) + "</td><td style=width:10%>" + buttonLink('Cooling', 'Cooling', 4) + "</td>"
+                part2 = "<td style=width:10%>" + buttonLink('Idle', 'Idle', 5) + "</td><td style=width:10%>" + buttonLink('Off', 'Other Modes', 6) + "</td><td style=width:10%>" + buttonLink('CSS', 'Dashboard CSS', 7) + "</td>" 
                 menuBar = part1 + part2 + "</table>"
                 paragraph menuBar
+                
+                //<td style="width: 150px;">Data 1</td>
 
                 //General Properties
                 if (activeButton == 1) {
@@ -130,16 +132,31 @@ def mainPage() {
                     input(name: "igo2", type: "enum", title: bold("Gradient Offset"), options: gradient(), required: false, defaultValue: ".9", width: 2, submitOnChange: true, style: "margin-right:100px")
                     paragraph line(2)
                 }
+                
+                //Other Modes Properties
+                if (activeButton == 6) {
+                    input(name: "ogc1", type: "color", title: bold("Off Gradient Color 1"), required: false, defaultValue: "#555555", width: 2, submitOnChange: true)
+                    input(name: "ogo1", type: "enum", title: bold("Off Gradient Offset"), options: gradient(), required: false, defaultValue: "0", width: 2, submitOnChange: true, style: "margin-right:100px")
+                    input(name: "ogc2", type: "color", title: bold("Off Gradient Color 2"), required: false, defaultValue: "#000000", width: 2, submitOnChange: true)
+                    input(name: "ogo2", type: "enum", title: bold("Off Gradient Offset"), options: gradient(), required: false, defaultValue: ".9", width: 2, submitOnChange: true, style: "margin-right:100px")
+                    paragraph line(2)
+                    input(name: "egc1", type: "color", title: bold("Emergency Heat Gradient Color 1"), required: false, defaultValue: "#555555", width: 3, submitOnChange: true, newLine: true)
+                    input(name: "ego1", type: "enum", title: bold("Emergency Heat Gradient Offset"), options: gradient(), required: false, defaultValue: "0", width: 3, submitOnChange: true)
+                    input(name: "egc2", type: "color", title: bold("Emergency Heat Gradient Color 2"), required: false, defaultValue: "#000000", width: 3, submitOnChange: true)
+                    input(name: "ego2", type: "enum", title: bold("Emergency Heat Gradient Offset"), options: gradient(), required: false, defaultValue: ".9", width: 3, submitOnChange: true)
+                    paragraph line(2)
+                }
 
 		        //CSS
-		        if (activeButton == 6) { 
+		        if (activeButton == 7) { 
 			        paragraph line(2)
-			        paragraph "<b>Tile Builder CSS:</b> This is the CSS used by Tile Builder Thermostat. <b>You must copy these lines to your Dashboard CSS in order for the Dashboard to work correctly</b>. Copy them exactly as shown here, including the comment lines and then edit to your needs."
+			        paragraph "<b>Tile Builder CSS:</b> This is the CSS used by Tile Builder Thermostat. <b>You must copy these lines to your Dashboard CSS in order for the Dashboard to work correctly</b>. Copy them exactly as shown here, including the comment lines and then edit to your needs. Using the Condense CSS option removes most comments."
+                    input (name: "condenseCSS", type: "enum", title: bold("Condense CSS"), options: ["True", "False"], required: false, defaultValue: "False", submitOnChange: true, width: 2)
 			        paragraph displayTileBuilderClasses()
 			        paragraph line(2)
-                    paragraph "<b>Useful Classes:</b> These are examples of classes that are commonly used in the Hubitat Dashboard CSS. You can use these to further customize Tile Builder tiles or any other tile located on the dashboard."
-                    paragraph displayUsefulClasses()
-                    paragraph line(2)
+                    //paragraph "<b>Useful Classes:</b> These are examples of classes that are commonly used in the Hubitat Dashboard CSS. You can use these to further customize Tile Builder tiles or any other tile located on the dashboard."
+                    //paragraph displayUsefulClasses()
+                    //paragraph line(2)
                 }
 
             }    //End of isCustomize
@@ -152,13 +169,15 @@ def mainPage() {
             }
             else paragraph ("Choose a Thermostat in the <b>Select Thermostat</b> section at the top of the page.")
             input (name: "simulationMode", title: "<b>Simulate Thermostat Mode</b>", type: "enum", options: ["Use Thermostat", "Simulate Cool - Cooling", \
-                        "Simulate Heat - Heating", "Simulate Any - Idle", "Simulate Auto - Heating", "Simulate Off - Idle", "Simulate Emergency Heat - Heating", "Fahrenheit Calibration", "Celsius Calibration"], submitOnChange:true, width:2, defaultValue: "Use Thermostat")
+                        "Simulate Heat - Heating", "Simulate Any - Idle", "Simulate Auto - Heating", "Simulate Off", "Simulate Emergency Heat - Heating", "Fahrenheit Calibration", "Celsius Calibration"], submitOnChange:true, width:2, defaultValue: "Use Thermostat")
             
             //Display the present size of the Tile
             paragraph line(1)
             if (state.SVG.size() < 1024 ) { paragraph "<div style='color:#17202A;text-align:left; margin-top:0em; margin-bottom:0em ; font-size:18px'>Current HTML size is: <font color = 'green'><b>${state.SVG.size()}</b></font color = '#17202A'> bytes. Maximum size for dashboard tiles is <b>1,024</b> bytes.</div>" }
 		    else { paragraph "<div style='color:#17202A;text-align:left; margin-top:0em; margin-bottom:0em ; font-size:18px'>Current HTML size is: <font color = 'red'><b>${state.SVG.size()}</b></font color = '#17202A'> bytes. Maximum size for dashboard tiles is <b>1,024</b> bytes.</div>" }    
+            paragraph "<div style='font-size:18px'><b>Important:</b> You must copy the CSS from the <b>Tile Builder Dashboard CSS tab</b> to your <b>Hubitat Dashboard CSS screen</b> for the Thermostat to work interactively.</div>" 
         }
+        
         //End of Design Thermostat Section
         
         //Start of Publish Section
@@ -263,8 +282,11 @@ def appButtonHandler(btn) {
         case "Idle":
             app.updateSetting("activeButton", 5)
             break
-        case "CSS":
+        case "Off":
             app.updateSetting("activeButton", 6)
+            break
+        case "CSS":
+            app.updateSetting("activeButton", 7)
             break
         case "test":
             test()
@@ -330,12 +352,11 @@ def getCurrentValues(){
         case "Simulate Auto (Heating)":
             values = [thermostatMode: "auto", thermostatOperatingState:"heating", coolingSetpoint:75, heatingSetpoint:64, temperature:70, customValue: customValue]
             break
-        case "Simulate Off - Idle":
-            //values = [thermostatMode: "off", thermostatOperatingState:"off", coolingSetpoint:75, heatingSetpoint:64, temperature:70, customValue: customValue]
-            values = [thermostatMode: "off", thermostatOperatingState:"off", coolingSetpoint:90, heatingSetpoint:50, temperature:70, customValue: customValue]
+        case "Simulate Off":
+            values = [thermostatMode: "off", thermostatOperatingState:"off", coolingSetpoint:80, heatingSetpoint:60, temperature:70, customValue: customValue]
             break
         case "Simulate Emergency Heat - Heating":
-            values = [thermostatMode: "emergency heat", thermostatOperatingState:"heating", coolingSetpoint:75, heatingSetpoint:64, temperature:70, customValue: customValue]
+            values = [thermostatMode: "emergency heat", thermostatOperatingState:"heating", coolingSetpoint:75, heatingSetpoint:64, temperature:52, customValue: customValue]
             break
         case "Fahrenheit Calibration":
             values = [thermostatMode: "idle", thermostatOperatingState:"idle", coolingSetpoint:80, heatingSetpoint:60, temperature:70, customValue: customValue]
@@ -378,6 +399,7 @@ def getSkin(){
     return skin
 }
 
+//Convert the Temperature text display size into a numeric value based on the base font
 def getTempSize(){
     def tempsize
     //Set the size of the temperature display text
@@ -398,6 +420,7 @@ def getTempSize(){
     return tempSize      
 }
 
+//Convert the user selectable attribute display size into a numeric value based on the base font
 def getAttributeTextSize(){
     def attributeTextSize
     switch (myAttributeTextSize.toString()) {
@@ -417,11 +440,11 @@ def getAttributeTextSize(){
     return myCustomTextSize
 }
 
+//Assemble a string to display for the user selectable attributes based on user selections
 def getCustomText(myValue){
     def customValue = ""
     //Assemble any Custom Text
     customValue = myPrependText.toString() + myValue.toString() + myAppendText.toString()
-    log.info ("customValue is: $customValue")
     customValue = customValue.replace("?", "")
     customValue = customValue.replace("null", "")
     
@@ -449,7 +472,6 @@ void makeThermostat() {
     def myCustomTextSize = getAttributeTextSize()
     def hsr, csr, tr
     
-    
     //Assemble the SVG 
     if ( fontFamily == "Default" ) line1 = "<svg width=%width% height=%height% fill=%fill% dominant-baseline=middle font-size=" + baseFontSize.toString() +">"
     else line1 = "<svg width=%width% height=%height% fill=%fill% dominant-baseline=middle font-size=%font-size% font-family=" + fontFamily.toString() + ">"
@@ -471,19 +493,21 @@ void makeThermostat() {
             modePrefix = "I"
     }  
     
-    //Override the scheme if the system is in Emergency Heat mode or off entirely.
+    //Override the scheme if the system is in Emergency Heat mode or Off entirely.
     switch (values.thermostatMode.toString()){
         case "emergency heat":
-            line3 = line3 = "<radialGradient id=E><stop offset=%cgo1% stop-color=#F00 /><stop offset=%cgo2% stop-color=#EF6 /></radialGradient>"  //This is the emergency heat
+            line3 = line3 = "<radialGradient id=E><stop offset=%ego1% stop-color=%egc1% /><stop offset=%ego2% stop-color=%egc2% /></radialGradient>"  //This is the emergency heat
             modePrefix = "E"
             break
         case "off":
-            line3 = "<radialGradient id=O><stop offset=%cgo1% stop-color=#DDD /><stop offset=%cgo2% stop-color=#BBB /></radialGradient>"  //This is the off gradient 
+            line3 = "<radialGradient id=O><stop offset=%ogo1% stop-color=%ogc1% /><stop offset=%ogo2% stop-color=%ogc2% /></radialGradient>"  //This is the off gradient
             modePrefix = "O"
             break
         default:
             break
     }
+    
+    log.info ("line3 is: " + unHTML(line3) )
     
     line4 = "<circle cx=50% cy=50% r=45% fill=url(#" + modePrefix + ") stroke=url(#S) stroke-width=10% />"
     
@@ -503,7 +527,6 @@ void makeThermostat() {
     line11 += "</g>"
     
     //Note this arc is 270 degrees
-    //line12 = "<path id=P d='M54,144 A65,65 0,1,1 130,145' fill=black />"
     line12 = "<path id=P d='M54,144 A65,65 0,1,1 130,144' fill=none />"
     
     //We put on 41 tick marks\40 gaps starting at the 30 degree mark and ending at the 270 degree mark. So each tick mark represents ~7 degrees of rotation. The vertical point is 70F.  I don't understand why the textLength has to be the value it is, but it works.
@@ -520,7 +543,6 @@ void makeThermostat() {
     }
     
     if (temperatureUnits == "Celsius") {
-        //line13 = "<text font-family=monospace><textPath href=#P font-size=10 textLength=326>╏❘❘❘❘|❘❘❘❘╏❘❘❘❘|❘❘❘❘╏❘❘❘❘|❘❘❘❘╏❘❘❘❘|❘❘❘❘╏</textPath></text>"
         hsr = ( 89 + (values.heatingSetpoint - 20 ) * 7.05 ).toInteger()
         csr = ( -89 + (values.coolingSetpoint - 20 ) * 7.05 ).toInteger()
         tr = ( -1 + (values.temperature - 20) * 7.05 ).toInteger()
@@ -536,7 +558,6 @@ void makeThermostat() {
     if (displayCoolingSetpoint == "Mark" ) line15 = "<text x=75% y=50% fill=%cspc% transform='rotate(%csr%,92,92)'>►</text>"
     if (displayCoolingSetpoint == "Mark Ring" ) line15 = "<text x=90% y=50% fill=%cspc% transform='rotate(%csr%,92,92)'>◄</text>"
     if (displayCoolingSetpoint == "Mark & Temp" ) line15 = "<text x=75% y=50% fill=%cspc% transform='rotate(%csr%,92,92)'>►   %coolingSetPoint%</text>"
-    //line15 += "<text x=80% y=50% fill=%cspc% transform='rotate(0,100,100)'>82.4 --●</text>"
     
     if (displayAnalogCheckmark == "True" ) line16 = "<text x=50% y=5% transform='rotate(%tr%,92,92)'>|</text>"
     if (displayGlassEffect == "True" ) line17 = '<path fill-opacity=10% d="M42,90 A80,65 25,0,1 90,40"/>'
@@ -576,6 +597,17 @@ void makeThermostat() {
     mySVG = mySVG.replace("%igc1%", compressHexColor(igc1.toString() )  ) 
     mySVG = mySVG.replace("%igo2%", igo2.toString() ) 
     mySVG = mySVG.replace("%igc2%", compressHexColor(igc2.toString() )  ) 
+    
+    //Off Mode
+    mySVG = mySVG.replace("%ogo1%", ogo1.toString() ) 
+    mySVG = mySVG.replace("%ogc1%", compressHexColor(ogc1.toString() )  ) 
+    mySVG = mySVG.replace("%ogo2%", ogo2.toString() ) 
+    mySVG = mySVG.replace("%ogc2%", compressHexColor(ogc2.toString() )  ) 
+    
+    mySVG = mySVG.replace("%ego1%", ego1.toString() ) 
+    mySVG = mySVG.replace("%egc1%", compressHexColor(egc1.toString() )  ) 
+    mySVG = mySVG.replace("%ego2%", ego2.toString() ) 
+    mySVG = mySVG.replace("%egc2%", compressHexColor(egc2.toString() )  ) 
     
     //All Modes
     mySVG = mySVG.replace("%myThermostatMode%", values.thermostatMode.capitalize() )
@@ -741,6 +773,18 @@ def initialize() {
     app.updateSetting("igc1", [value: "#555555", type: "color"])
     app.updateSetting("igo2", [value: ".9", type: "enum"])
     app.updateSetting("igc2", [value: "#000000", type: "color"])
+    
+    //Off
+    app.updateSetting("ogo1", [value: "0", type: "enum"])
+    app.updateSetting("ogc1", [value: "#DDDDDD", type: "color"])
+    app.updateSetting("ogo2", [value: ".9", type: "enum"])
+    app.updateSetting("ogc2", [value: "#BBBBBB", type: "color"])
+    
+    //Emergency Heat
+    app.updateSetting("ego1", [value: "0", type: "enum"])
+    app.updateSetting("egc1", [value: "#FF0000", type: "color"])
+    app.updateSetting("ego2", [value: ".9", type: "enum"])
+    app.updateSetting("egc2", [value: "#EEFF66", type: "color"])
 
     //Other
     app.updateSetting("mySelectedTile", "")
@@ -754,7 +798,7 @@ def initialize() {
     app.updateSetting("isLogDebug", false)
 
     //Have all the sections collapsed to begin with except devices
-    state.hidden = [Thermostat: false, Design: false, Publish: true, More: true]
+    state.hidden = [Thermostat: false, Design: false, Publish: false, More: true]
     
     state.SVG = "Initialized"
 }
@@ -845,57 +889,6 @@ String buttonLink(String btnName, String linkText, int buttonNumber) {
 //**************
 //************************************************************************************************************************************************************************************************************************
 
-//Returns formatted strings of useful class examples.
-def displayUsefulClasses(){
-    myHTML = "<style>.scrollableContainer2 {height: calc(15vh);overflow: auto;border: 2px solid #ccc;padding: 10px;}</style>"
-    myHTML += "<div class='scrollableContainer2'>"
-    myHTML += getUsefulClasses()
-    myHTML += "</div>"
-}
-
-//Returns examples of the varios class statement that might be used in the Hubitat dashboard CSS
-def getUsefulClasses(){
-    classes =  "/* This window contains examples of Hubitat CSS statements that can be used to modify your dashboard. These are only here for reference and not intended to be cut and paste wholesale into the Dashboard CSS. */\n"
-    classes += "/* If a setting does not appear to work, append the !important tag like this: #tile-0 {background-color: rgba(128,128,128,0.1) !important}. */\n\n"
-    classes += "/* Make the background color of tile 0 transparent, rendering the background invisible. */\n"
-    classes += "#tile-0 {background-color: rgba(128,128,128,0)}\n\n"
-    
-    classes += "/* Hides the title of tile 0. */\n"
-    classes += "#tile-0 .tile-title {visibility: hidden}\n\n"
-    
-    classes += "/* Changes the Z-Index of a tile to place it on top or underneath another tile. */\n"
-    classes += "#tile-0 {z-index:2}\n\n"
-    
-    classes += "/* Changes the Margin and Padding for tile 0 to a value of 0. */\n"
-    classes += "#tile-0 .tile-contents {margin:0px; padding: 0px}\n\n"
-    
-    classes += "/* Changes the Overflow properties for a tile to allow content to overflow outside the designated tile space. This setting should match the 'Allow Content Overflow on the Advanced tab if set to Visible.*/\n"
-    classes += "#tile-0 {overflow:visible}\n\n"
-    
-    classes += "/* Allow click events to pass through tile 0 to a tile below.*/\n"
-    classes +=  "#tile-0 {pointer-events: none}/\n\n"
-    
-    classes += "/* To completely hide tile 0 and prevent it from being interacted with.*/\n"
-    classes += "#tile-0 {visibility:hidden}\n\n"
-    
-    classes += "/* To hide tile 0 but still allow it to be interacted with.*/\n"
-    classes += "#tile-0 {opacity:0.0}\n\n"
-    
-    classes += "/* Enable Scroll Bars.*/\n"
-    classes += "#tile-0 {overflow-x: hidden !important; overflow-y: scroll !important;}\n\n"
-    
-    classes += "/* Change Tile Vertical Alignment.*/\n"
-    classes += "#tile-0 .tile-primary {vertical-align: top;}\n\n"
-    
-    classes += "/* Outline a Tile with a border. */\n"
-    classes += "#tile-0 .tile-primary {outline: 1px dotted white;}*/\n\n"
-    
-    classes += "/* Change a Tile margin or padding. */\n"
-    classes += "#tile-0 .tile-contents {margin:0px ; padding: 10px;}\n"
-    
-    return classes
-}
-
 //Returns all of the Core Classes within a scrollable container.
 def displayTileBuilderClasses(){
     myHTML = "<style>.scrollableContainer1 {height: calc(25vh);overflow: auto;border: 2px solid #ccc;padding: 10px;}</style>"
@@ -906,33 +899,43 @@ def displayTileBuilderClasses(){
 
 //Returns all the class statement that may be used by Tile Builder Rooms
 def getTileBuilderClasses(){
-    classes = "/* This CSS generated by Tile Builder Thermostat version: v1.0.0 (6/12/24 @ 08:24 PM) */ \n\n"
-    classes += "/* R E M O V E   B A C K G R O U N D */ \n"
+    classes = "/* This CSS generated by Tile Builder Thermostat version: v1.0.0 (6/17/24 @ 08:24 PM) */ \n"
+    if ( condenseCSS == "False" ) classes += "\n /* For diagnostic purposes every object has a border. These can be turned off by setting the border width to 0px using the BW CSS variable */ \n"    
+    classes += ":root {--BW:0px;} \n"
     
-    classes += "/* Make ALL TILES transparent and allow tiles to overflow.*/ \n"
-    classes += "[class*='tile']{background-color:rgba(128,128,128,0) !important; overflow:visible !important} \n\n"
+    if ( condenseCSS == "False" ) classes += "\n/* Hide the Device Name for all tiles */ \n"
+    classes += ".tile-title {visibility: hidden; display: none;} \n"
     
-    classes += "/* Make SPECIFIC TILES transparent and allow tiles to overflow.*/ \n"
-    classes += "/* #tile-2 {background-color:rgba(128,128,128,0) !important; overflow:visible !important} */ \n"
-    classes += "/* #tile-4 {background-color:rgba(128,128,128,0) !important; overflow:visible !important} */ \n\n"
+    if ( condenseCSS == "False" ) classes += "\n/* Attribute Tile - Used by Tile Builder */ \n"
+    classes += "[class*='attribute']{background-color:rgba(128,128,128,0); outline:var(--BW) solid white} \n"
+        
+    if ( condenseCSS == "False" ) classes += "\n/* Thermostat tile - makes the tile transparent and brings it to the front */ \n"
+    classes += "[class*='thermostat']{background-color:rgba(128,128,128,0) !important; outline:var(--BW) dashed purple; z-index:99 !important} \n"
     
-    classes += "/* H I D E   T I L E   T I T L E S  */ \n"
-    classes += "/* Hide the Tile Titles for ALL TILES. */ \n"
-    classes += "[class='tile-title']{visibility:hidden} \n\n"
-    classes += "/* Hide the Tile Titles for SPECIFIC TILES. */ \n"
-    classes += "/* #tile-2 .tile-title {visibility:hidden} */ \n"
-    classes += "/* #tile-4 .tile-title {visibility:hidden} */ \n\n"
+    if ( condenseCSS == "False" ) classes += "\n/* Very Top Line - Contains temperature and status */ \n"
+    classes += ".thermostat div.self-start {color:rgba(128,128,128,0); outline:var(--BW) dotted red;} \n"
     
-    classes += "/* Change the appearance of any Thermostat devices to only show the up and down controls */ \n"
-    classes += ".thermostat div.absolute.bottom-0.text-center.w-full {visibility:hidden;} \n"
-    classes += ".thermostat div.w-full.my-1>div.inline-block  {visibility:hidden;} \n"
-    classes += ".thermostat div.w-full.self-start {visibility:hidden;} \n"
-    classes += ".thermostat div.inline-block {visibility:hidden} \n"
-    classes += ".thermostat div.cooling.w-full{visibility:visible !important;outline: 0px dotted blue; margin-top:60px !important; margin-left:0px;} \n"
-    classes += ".thermostat {background-color:rgba(128,128,128,0) !important; overflow:visible !important} \n\n" 
-    classes += "[class*='he-circle-down']::before{content:'▼'; position:absolute; outline:0px dotted white; font-size:30px; margin-left:-30px} \n"
-    classes += "[class*='he-circle-up'  ]::before{;content:'▲'; position:absolute; outline: 0px dotted white; font-size:30px; margin-left:12px} \n"
-    classes += "/* End of Tile Builder Thermostat CSS */ \n"
+    if ( condenseCSS == "False" ) classes += "\n/* The temperature Up or Down controls */ \n"
+    classes += "[class*='he-circle-up']{position:absolute; outline:var(--BW) dotted orange; font-size:25px !important; margin-left: 15px; margin-top:8px; padding:0px} \n"
+    classes += "[class*='he-circle-down']{position:absolute; outline:var(--BW) dotted orange; font-size:25px !important; margin-left:-46px; margin-top:8px; padding:0px} \n" 
+    
+    if ( condenseCSS == "False" ) classes += "\n /* Information box between the two temperature arrows */ \n"
+    classes += ".thermostat div.inline-block {color:rgba(128,128,128,0); outline:var(--BW) dashed yellow;} \n"
+    
+    if ( condenseCSS == "False" ) classes += "\n /* Container for the two mode buttons */ \n"
+    classes += ".thermostat div.w-full.my-1  {color:rgba(128,128,128,0); outline:var(--BW) dotted blue; position:absolute !important; left:-60px; width:320px; top:161px} \n"
+    
+    if ( condenseCSS == "False" ) classes += "\n/* The Cool Mode and Fan Mode Buttons */ \n"
+    classes += ".thermostat div.w-full.my-1>div.inline-block {color:rgba(128,128,128,0); width:25px; height:25px; outline:var(--BW) dotted green; display: inline-block; vertical-align: middle; margin-left:53px; margin-right:60px;z-index:100}  \n"
+    
+    if ( condenseCSS == "False" ) classes += "\n/* The container for the Device Name at the bottom of the Tile */ \n"
+    classes += ".thermostat div.absolute.bottom-0.text-center.w-full {color:rgba(128,128,128,0); outline:var(--BW) dotted violet; z-index:-1} \n"
+        
+    classes += "/* End of Tile Builder Thermostat CSS */"
     
     return classes
 }
+
+
+
+
