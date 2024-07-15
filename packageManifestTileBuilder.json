@@ -1,10 +1,10 @@
 {
   "packageName": "Tile Builder",
   "author": "Gary J. Milne",
-  "version": "166",
+  "version": "168",
   "minimumHEVersion": "2.3.4.132",
-  "dateReleased": "2024-06-17",
-  "releaseNotes": "Package-166: Adds new module Tile Builder Thermostat.\nPackage-165: Update Activity and Attribute Monitor to V1.5.0 to handle devices with null attributes.\nPackage-164: Update to Activity and Attribute Monitor V1.4.9 for better Null handling\nPackage-163: Update Grid to 2.0.2 for ESSENTIAL bugfix\nPackage-161: Updates Grid to 2.0.0 and Parent to 1.5.0\n",
+  "dateReleased": "2024-07-15",
+  "releaseNotes": "Package-167: Update Activity and Attribute Monitor to make use of cloud endpoints.\nPackage-166: Updates TB Thermostat to 1.0.2.\nPackage-165: Update Activity and Attribute Monitor to V1.5.0 to handle devices with null attributes.\nPackage-164: Update to Activity and Attribute Monitor V1.4.9 for better Null handling\n\n",
   "documentationLink": "https://github.com/GaryMilne/Hubitat-TileBuilder/tree/main",
   "communityLink": "https://community.hubitat.com/t/release-tile-builder-build-beautiful-dashboards/118822",
   "payPalURL": "https://bit.ly/3TIffQa",
@@ -27,7 +27,7 @@
       "required": false,
       "oauth": false,
       "primary": false,
-      "version": "1.5.0"
+      "version": "1.5.2"
     },
     {
       "id": "b47eb226-2696-4b78-9c62-3a87545cdefc",
@@ -37,7 +37,7 @@
       "required": false,
       "oauth": false,
       "primary": false,
-      "version": "1.5.0"
+      "version": "1.5.2"
     },
     {
       "id": "f6f3310d-5376-4165-96f5-fc4e4a673b48",
@@ -78,7 +78,7 @@
       "required": false,
       "oauth": false,
       "primary": false,
-      "version": "1.0.0"
+      "version": "1.0.2"
     }
   ],
   "drivers": [

@@ -1,7 +1,7 @@
 // hubitat start
 // hub: 192.168.0.200  <- this is hub's IP address
 // type: app          <- valid values here are "app" and "device"
-// id: 1084           <- this is app or driver's id
+// id: 1157           <- this is app or driver's id
 // hubitat end
 //This only works of the destination Hub is running the appropriate Beta version of the Hubitat firmware.
 
@@ -27,18 +27,21 @@
  *
  *  CHANGELOG
  *  Version 1.0.0 - Initial Public Release
+ *  Version 1.0.1 - Added Horizontal and Vertical adjustments for the Temperature (It renders a bit off on Safari on an iPad.)  Fix some errant text carried over from the module origins.
+ *  Version 1.0.2 - Added fault handling logic for Thermostats that do not have a coolingSetpoint or heatingSetpoint. An error will be logged and a default value used.
  *
- *  Gary Milne - June 17th, 2024 2:18 PM
+ *  Gary Milne - July 15th, 2024 11:15 AM
  *
  **/
 
 import groovy.transform.Field
 
-static def codeDescription() { return ("<b>Tile Builder Thermostat v1.0.0 (6/17/24)</b>") }
+static def codeDescription() { return ("<b>Tile Builder Thermostat v1.0.2 (7/15/24)</b>") }
 static def codeVersion() { return (100) }
 static def baseFontSizeList() { return ['Default', '14', '15', '16', '17', '18', '19', '20'] }
 static def allTileList() { return [1: 'tile1', 2: 'tile2', 3: 'tile3', 4: 'tile4', 5: 'tile5', 6: 'tile6', 7: 'tile7', 8: 'tile8', 9: 'tile9', 10: 'tile10', 11: 'tile11', 12: 'tile12', 13: 'tile13', 14: 'tile14', 15: 'tile15', 16: 'tile16', 17: 'tile17', 18: 'tile18', 19: 'tile19', 20: 'tile20', 21: 'tile21', 22: 'tile22', 23: 'tile23', 24: 'tile24', 25: 'tile25'] }
 static def gradient() { return ['0', '.1', '.2', '.3', '.4', '.5', '.6', '.7', '.8', '.9', '1'] }
+static def percent() { return ['-8', '-7', '-6', '-5', '-4', '-3', '-2', '-1', '0', '1', '2', '3', '4', '5', '6', '7', '8'] }
 static def fontFamilyList() { return ['Default', 'Arial', 'Brush Script MT', 'Courier New', 'Georgia', 'Garamond', 'Helvetica', 'Impact', 'Lucida Sans Unicode', 'Monospace', 'Palatino Linotype', 'Roboto', 'Tahoma', 'Times New Roman', 'Trebuchet MS', 'Verdana'] }
                                 
 definition(
@@ -51,6 +54,10 @@ definition(
 preferences { page(name: "mainPage") }
 
 def mainPage() {
+    
+    if (tempVerticalAdjust == null ) app.updateSetting("tempVerticalAdjust", [value: "0", type: "enum"])
+    if (tempHorizontalAdjust == null ) app.updateSetting("tempHorizontalAdjust", [value: "0", type: "enum"])
+    
     //Basic initialization for the initial release
     if (state.initialized == null) initialize()
 
@@ -91,6 +98,9 @@ def mainPage() {
                 if (activeButton == 2) {
                     input (name: "mySkin", title: "<b>Thermostat Skin</b>", type: "enum", options: ["Black", "Copper", "Gold",  "Rose", "Silver" ], submitOnChange:true, width:2, defaultValue: "Silver")
                     input (name: "myTemperatureSize", type: "enum", title: bold("Temperature Display Size"), options: ["Small", "Medium", "Large"], required: false, defaultValue: "Medium", submitOnChange: true, width: 2)
+                    input (name: "tempVerticalAdjust", type: "enum", title: bold("Vertical Adjustment Percent"), options: percent(), required: false, defaultValue: "0", submitOnChange: true, width: 2)
+                    input (name: "tempHorizontalAdjust", type: "enum", title: bold("Horizontal Adjustment Percent"), options: percent(), required: false, defaultValue: "0", submitOnChange: true, width: 2)
+                    
                     input (name: "displayHeatingSetpoint", title: "<b>Display Heating Setpoint</b>", type: "enum", options: ["None", "Mark", "Mark Ring", "Mark & Temp" ], submitOnChange:true, width:2, defaultValue: "Mark", newLine:true)
                     input (name: "displayCoolingSetpoint", title: "<b>Display Cooling Setpoint</b>", type: "enum", options: ["None", "Mark", "Mark Ring", "Mark & Temp" ], submitOnChange:true, width:2, defaultValue: "Mark")
                     input (name: "displayAnalogCheckmark", title: "<b>Display Analog Checkmark</b>", type: "enum", options: ["True", "False" ], submitOnChange:true, width:2, defaultValue: "True")
@@ -189,10 +199,9 @@ def mainPage() {
             input(name: "tilesAlreadyInUse", type: "enum", title: bold("For Reference Only: Tiles in Use"), options: parent.getTileList(), required: false, defaultValue: "Tile List", submitOnChange: true, width: 2)
             input(name: "eventTimeout", type: "enum", title: "<b>Event Timeout (millis)</b>", required: false, multiple: false, defaultValue: "2000", options: ["0", "250", "500", "1000"], submitOnChange: true, width: 2)
             if (myTileName) app.updateLabel(myTileName)
-            myText = "The <b>Tile Name</b> given here will also be used as the name for this Grid. Appending the name with your chosen tile number can make parent display more readable.<br>"
+            myText = "The <b>Tile Name</b> given here will also be used as the name for this Thermostat. Appending the name with your chosen tile number can make parent display more readable.<br>"
             myText += "The <b>Event Timeout</b> period is how long Tile Builder will wait for subsequent events before publishing the table. Devices that do bulk updates create a lot of events in a short period of time. This setting batches requests within this period into a single publishing event. "
-            myText += "The default timeout period for TB Grid is 2000 milliseconds (2 seconds). If you want a more responsive table you can lower this number, but it will slightly increase the CPU utilization.<br>"
-            myText += "<b>When immediate updates are important such as switches, locks, motion or contact sensors then set both the the Event Timeout and Republish Delay to 0.</b>"
+            myText += "The default timeout period for TB Thermostat is 250 milliseconds (1/4 seconds). If you want a more responsive thermostat you can lower this number, but it will slightly increase the CPU utilization.<br>"
             paragraph summary("Publishing Controls", myText)
             paragraph line(1)
             if (state?.SVG?.size() ?: 0  < 1024 && settings.myTile != null && myTileName != null) {
@@ -332,11 +341,12 @@ def getCurrentValues(){
         case "Use Thermostat":
             if ( settings["myThermostat"] == null ) return [thermostatMode: "heat", thermostatOperatingState:"Idle", coolingSetpoint:0, heatingSetpoint:0, temperature:0, battery:0, fanOperatingState:"N/A", humidity:0]
         
+            //Force some default values using the Elvis operator to avoid null values.
             thermostatMode = myThermostat?.currentValue("thermostatMode") ?: "N/A"
             thermostatOperatingState = myThermostat?.currentValue("thermostatOperatingState") ?: "N/A"
-            coolingSetpoint = myThermostat?.currentValue("coolingSetpoint")?.toFloat()?.round(0)?.toInteger() ?: "N/A"
-            heatingSetpoint = myThermostat?.currentValue("heatingSetpoint")?.toFloat()?.round(0)?.toInteger() ?: "N/A"
-            temperature = myThermostat?.currentValue("temperature")?.toFloat()?.round(0)?.toInteger() ?: "N/A"
+            coolingSetpoint = myThermostat?.currentValue("coolingSetpoint")?.toFloat()?.round(0)?.toInteger()
+            heatingSetpoint = myThermostat?.currentValue("heatingSetpoint")?.toFloat()?.round(0)?.toInteger()
+            temperature = myThermostat?.currentValue("temperature")?.toFloat()?.round(0)?.toInteger()
             customValue = myThermostat?.currentValue("$myAttribute")?.toString()?.capitalize() ?: "?"
             values = [thermostatMode: thermostatMode, thermostatOperatingState: thermostatOperatingState, coolingSetpoint: coolingSetpoint, heatingSetpoint: heatingSetpoint, temperature: temperature, customValue: customValue ] 
             break
@@ -368,6 +378,17 @@ def getCurrentValues(){
             values = [thermostatMode: "auto", thermostatOperatingState:"heating", coolingSetpoint:80, heatingSetpoint:60, temperature:70, customValue: customValue]
             break
         }
+    
+    //Fix any null values that can result from poorly implemented device drivers.
+    if (temperatureUnits == "Fahrenheit") {
+        if (values.heatingSetpoint?.toInteger() == null) { values.heatingSetpoint = 65 ; log.error ("The heatingSetpoint is null. Please check your Thermostat device. Using 65F as a default.") }
+        if (values.coolingSetpoint?.toInteger() == null) { values.coolingSetpoint = 80 ; log.error ("The coolingSetpoint is null. Please check your Thermostat device. Using 80F as a default.") }
+    }
+    
+    if (temperatureUnits == "Celsius") {
+        if (values.heatingSetpoint?.toInteger() == null) { values.heatingSetpoint = 18 ; log.error ("The heatingSetpoint is null. Please check your Thermostat device. Using 18C as a default.") }
+        if (values.coolingSetpoint?.toInteger() == null) { values.coolingSetpoint = 30 ; log.error ("The coolingSetpoint is null. Please check your Thermostat device. Using 30C as a default.") }
+    }
     
     return values
     
@@ -465,7 +486,8 @@ void makeThermostat() {
     def modePrefix
         
     def values = getCurrentValues()   
-    log.info ("Device Values: $values")
+    if (isLogTrace) log.info ("Device Values: $values")
+    
     def skin = getSkin()
     def tempSize = getTempSize()    
     def myCustomText = getCustomText(values.customValue)
@@ -507,14 +529,17 @@ void makeThermostat() {
             break
     }
     
-    log.info ("line3 is: " + unHTML(line3) )
+    //log.info ("line3 is: " + unHTML(line3) )
     
     line4 = "<circle cx=50% cy=50% r=45% fill=url(#" + modePrefix + ") stroke=url(#S) stroke-width=10% />"
     
     //Set defaults for text block to save space
     line5 = "<g text-anchor=middle>"
     line6 = "<text x=50% y=32%>%myThermostatOperatingState%</text>"
-    line7 = "<text x=49% y=55% font-size=" + tempSize + ">%temperature%</text>"
+
+    def myY = (55 + tempVerticalAdjust.toInteger() ).toInteger()
+    def myX = (49 + tempHorizontalAdjust.toInteger() ).toInteger()
+    line7 = "<text x=" + myX + "% y=" + myY + "% font-size=" + tempSize + ">%temperature%</text>"
     line8 = "<text x=50% y=82%>%myThermostatMode%</text>"
     
     //Hide the Control Icons if selected
@@ -744,6 +769,9 @@ def initialize() {
     //Display
     app.updateSetting("mySkin", [value: "Silver", type: "enum"])
     app.updateSetting("myTemperatureSize", [value: "Medium", type: "enum"])
+    app.updateSetting("tempVerticalAdjust", [value: "0", type: "enum"])
+    app.updateSetting("tempHorizontalAdjust", [value: "0", type: "enum"])
+    
     app.updateSetting("displayHeatingSetpoint", [value: "Mark Ring", type: "enum"])
     app.updateSetting("displayCoolingSetpoint", [value: "Mark Ring", type: "enum"])
     app.updateSetting("displayModeandFanControls", [value: "True", type: "enum"])

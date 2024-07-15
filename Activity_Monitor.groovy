@@ -57,8 +57,10 @@
 *  Version 1.4.8 - Bugfix: Corrected issue with newly initialised variables.
 *  Version 1.4.9 - Bugfix: Improved handling of the lastPublished info and checking. Better null handling for input controls.
 *  Version 1.5.0 - Bugfix: Added error handling when the device has a Null value for a monitored attribute.
+*  Version 1.5.1 - Feature: Expanded the Device Name Modification from 3 to 5 values. - No External Release
+*  Version 1.5.2 - Feature: Added Cloud Endpoints as a publishing option for output > 1,024 bytes.
 *
-*  Gary Milne - June 7th, 2024
+*  Gary Milne - July 15th, 2024
 *
 *  This code is Activity Monitor and Attribute Monitor combined.
 *  The personality is dictated by @Field static moduleName a few lines ahead of this.
@@ -79,8 +81,11 @@ import groovy.transform.Field
 //These are unknown as to whether they report integer or float values.
 //capabilitiesUnknown = [" "carbonDioxideMeasurement":"carbonDioxide","pressureMeasurement":"pressure","relativeHumidityMeasurement":"humidity", "ultravioletIndex":"ultravioletIndex"]
 
-@Field static final codeDescription = "<b>Tile Builder Activity Monitor v1.5.0 (6/7/24)</b>"
-@Field static final codeVersion = 150
+//Cloud Endpoint Mapping
+mappings { path("/tb") { action: [GET: "getTile"] } }
+
+@Field static final codeDescription = "<b>Tile Builder Activity Monitor v1.5.2 (7/15/24)</b>"
+@Field static final codeVersion = 152
 @Field static final moduleName = "Activity Monitor"
 //@Field static final moduleName = "Attribute Monitor"
 
@@ -111,11 +116,6 @@ def mainPage() {
     //Basic initialization for the initial release
     if (state.initialized == null ) initialize()
         
-    //app.updateSetting("republishDelay", 1)
-    //app.updateSetting("republishDelay", [value:"2", type:"enum"])
-    
-    //log.info ("republishDelay is: " + republishDelay )
-    
     //Handles the initialization of new variables added after the original release.
     if (state.variablesVersion == null || state.variablesVersion < codeVersion) updateVariables()
     
@@ -199,6 +199,12 @@ def mainPage() {
             
                 input (name: "mySearchText3", title: "<b>Search Device Text #3</b>", type: "string", submitOnChange:true, width:2, defaultValue: "?", newLine:true)
                 input (name: "myReplaceText3", title: "<b>Replace Device Text #3</b>", type: "string", submitOnChange:true, width:2, defaultValue: "")
+                
+                input (name: "mySearchText4", title: "<b>Search Device Text #4</b>", type: "string", submitOnChange:true, width:2, defaultValue: "?", newLine:true)
+                input (name: "myReplaceText4", title: "<b>Replace Device Text #4</b>", type: "string", submitOnChange:true, width:2, defaultValue: "")
+                
+                input (name: "mySearchText5", title: "<b>Search Device Text #5</b>", type: "string", submitOnChange:true, width:2, defaultValue: "?", newLine:true)
+                input (name: "myReplaceText5", title: "<b>Replace Device Text #5</b>", type: "string", submitOnChange:true, width:2, defaultValue: "")
             }
         
             if (moduleName == "Activity Monitor") myText = "<b>Inactivity Threshold:</b> Only devices without activity since the threshold are eligible to be reported on. Using an inactivity time of 0 can be used to generate a most recently active list.<br>"
@@ -666,15 +672,23 @@ def mainPage() {
                 input (name:"myTileName", type:"text", title: "<b>Name this Tile</b>", submitOnChange: true, width:2, newLine:false, required: true)
                 input (name: "tilesAlreadyInUse", type: "enum", title: bold("For Reference Only: Tiles in Use"), options: parent.getTileList(), required: false, defaultValue: "Tile List", submitOnChange: false, width: 2)
                 input (name: "eventTimeout", type: "enum", title: "<b>Event Timeout (millis)</b>", required: false, multiple: false, defaultValue: "2000", options: ["0","250","500","1000","2000","5000","10000"], submitOnChange: true, width: 2)
-                if (moduleName == "Attribute Monitor") input (name: "republishDelay", type: "enum", title: "<b>Republish Delay (minutes)</b>", required: false, multiple: false, defaultValue: 0, options: [0,1,2,3,4,5,10,15,20,25,30,35,40,45,50,55,60], submitOnChange: true, width: 2, newLineAfter:true)
+                if (moduleName == "Attribute Monitor") input (name: "republishDelay", type: "enum", title: "<b>Republish Delay (minutes)</b>", required: false, multiple: false, defaultValue: 0, options: [0,1,2,3,4,5,10,15,20,25,30,35,40,45,50,55,60], submitOnChange: true, width: 2)
+                input (name: "oversizeTileHandling", type: "enum", title: "<b>Oversize Tile Handling</b>", required: false, multiple: false, defaultValue: "File Manager", options: ["File Manager","Cloud Endpoint"], submitOnChange: true, width: 2, newLineAfter:true)
+                
                 if (myTileName) app.updateLabel(myTileName)
                 myText =  "The <b>Tile Name</b> given here will also be used as the name for this instance of Tile Builder. Appending the name with your chosen tile number can make parent display more readable.<br>"
                 myText += "The <b>Event Timeout</b> period is how long Tile Builder will wait for subsequent events before publishing the table. Devices that do bulk updates create a lot of events in a short period of time. This setting batches requests within this period into a single publishing event. "
                 myText += "The default timeout period is 2000 milliseconds (2 seconds). If you want a more responsive table you can lower this number, but it will slightly increase the CPU utilization.<br>"
                 myText += "The <b>Republish Delay</b> sets a minimum amount of time before a Tile is re-published. This can be used to prevent <b>chatty sensors</b> from causing a Tile to republish too frequently. The default value for this setting is 0 (no delay)." +\
                            "<b>Republish Delay</b> is not available in Activity Monitor because it already works on a timed basis.<br>"
-                myText += "<b>When immediate updates are important such as switches, locks, motion or contact sensors then set both the the Event Timeout and Republish Delay to 0.</b>"
-                paragraph note("Notes: ", myText)																																																																														 
+                myText += "<b>When immediate updates are important such as switches, locks, motion or contact sensors then set both the the Event Timeout and Republish Delay to 0.</b><br><br>"
+                myText += "<b>Oversize Tiles:</b> Tiles over 1,024 bytes can either be stored in Hubitat File Manager or published to a Hubitat Cloud Endpoint<br>"
+                myText += "Tiles stored to the Hubitat File Manager are only accessible from the local LAN or when using a VPN.<br>"
+                myText += "Tiles stored to a Hubitat Cloud Endpoint are accessible from the local LAN or the cloud via the Hubitat App but does require the internet to be operational in order to display.<br>"
+                myText += "Storing oversize tiles in File Manager is the faster of the two options and is the default operation. Only use cloud endpoints when you have an explicit need for the information to be availble via the internet.<br>"
+                myText += "<b>Important: If you wish to use cloud endpoints you must go to the Apps / Code for this module and enable OAuth using the default Auto-Generated values.</b><br>"
+                if (state.cloudEndpoint != null ) myText += "The Hubitat Cloud Endpoint for this Tile Builder table is: ${state.cloudEndpoint}"
+                paragraph summary("Publishing Notes", myText)																																																																														 
                 paragraph line(1)
             
                 if ( state.HTMLsizes.Final < 4096 && settings.myTile != null && myTileName != null ) {
@@ -1071,6 +1085,8 @@ def getDeviceMapActMon(){
         if (mySearchText1 != null  && mySearchText1 != "?") deviceName = deviceName.replace(mySearchText1, myReplaceText1)
         if (mySearchText2 != null  && mySearchText2 != "?") deviceName = deviceName.replace(mySearchText2, myReplaceText2)
         if (mySearchText3 != null  && mySearchText3 != "?") deviceName = deviceName.replace(mySearchText3, myReplaceText3)
+        if (mySearchText4 != null  && mySearchText4 != "?") deviceName = deviceName.replace(mySearchText4, myReplaceText4)
+        if (mySearchText5 != null  && mySearchText5 != "?") deviceName = deviceName.replace(mySearchText5, myReplaceText5)
         if (isAbbreviations == true) deviceName = abbreviate(deviceName)
         
         def diff
@@ -1151,11 +1167,15 @@ def getDeviceMapAttrMon(){
         if (myReplaceText1 == null || myReplaceText1 == "?" ) myReplaceText1 = ""
         if (myReplaceText2 == null || myReplaceText2 == "?" ) myReplaceText2 = ""
         if (myReplaceText3 == null || myReplaceText3 == "?" ) myReplaceText3 = ""
+        if (myReplaceText4 == null || myReplaceText4 == "?" ) myReplaceText4 = ""
+        if (myReplaceText5 == null || myReplaceText5 == "?" ) myReplaceText5 = ""
         
         //Replaces any undesireable characters in the devicename - Case Sensitive
         if (mySearchText1 != null  && mySearchText1 != "?") deviceName = deviceName.replace(mySearchText1, myReplaceText1)
         if (mySearchText2 != null  && mySearchText2 != "?") deviceName = deviceName.replace(mySearchText2, myReplaceText2)
         if (mySearchText3 != null  && mySearchText3 != "?") deviceName = deviceName.replace(mySearchText3, myReplaceText3)
+        if (mySearchText4 != null  && mySearchText4 != "?") deviceName = deviceName.replace(mySearchText4, myReplaceText4)
+        if (mySearchText5 != null  && mySearchText5 != "?") deviceName = deviceName.replace(mySearchText5, myReplaceText5)
         if (isAbbreviations == true) deviceName = abbreviate(deviceName)
         
         myVal = it."current${deviceType}"
@@ -1683,7 +1703,7 @@ void publishSubscribe(){
     if (isLogEvents) log.info("createSubscription: Creating subscriptions for Tile: $myTile with description: $myTileName.")
     //Remove all existing subscriptions.
     unsubscribe()
-    
+	
     //Setup a subscription to the currently selected device list and the attribute type relevant to that list.
     capabilities = capabilitiesInteger.clone() + capabilitiesFloat.clone() + capabilitiesString.clone()
     deviceType = capabilities.get(myCapability)
@@ -1692,6 +1712,12 @@ void publishSubscribe(){
         //Populate the Initial Table based on the present state.
         publishTable()
     }
+}
+
+//This function handles the calls to the endpoint.
+def getTile(){
+    if (isLogDebug) log.debug "getTile called: $params source: ${request.requestSource}"
+    render contentType: "text/html;charset=UTF-8", data:state.HTML, status:200
 }
 
 //This should get executed whenever any of the subscribed devices receive an update to the monitored attribute.
@@ -1727,6 +1753,10 @@ def handler(evt) {
 void publishTable(){
     if (isLogEvents) log.trace("publishTable: Entering publishTable.")
     
+    //Get the Access Token and cloud endpoint.
+    if( !state.accessToken ) createAccessToken()
+    state.cloudEndpoint = getFullApiServerUrl() + "/tb?access_token=" + state.accessToken
+    
     //Refresh the table with the new data and then save the HTML to the driver variable.
     refreshTable()
     if (isLogEvents) log.debug("publishTable: Tile $myTile ($myTileName) is being refreshed.")
@@ -1740,37 +1770,52 @@ void publishTable(){
     if (isLogEvents) log.info ("Size is: ${state.HTML.size()}")
     state.publish.lastPublished = now()
     
-	//If the tile is less than 1024 we just publish to the attribute. If it's more than 1,024 then we publish it as a file then update the attribute to cause it to reload the file.
+	//If the tile is less than 1024 we just publish to the attribute. If it's more than 1,024 then we publish it as a file or endpoint then update the attribute to cause it to reload the data.
     if (state.HTML.size() < 1024 ) {
         myStorageDevice.createTile(settings.myTile, state.HTML, settings.myTileName)
+        return
         }
-    else {
-        def prefix = parent.getStorageShortName()
-        def fileName = prefix + "_Tile_" + myTile.toString() + ".html"
-        if (isLogEvents) log.debug ("filename is: ${fileName}")
-        def myBytes = state.HTML.getBytes("UTF-8")
-        //Now try and upload the file to the hub. There is no return value so we must do try catch
-        try {
-            def myIP = location.hub.localIP
-            uploadHubFile("${fileName}", myBytes)
-            //Put in a slight delay to allow the file upload to complete.
-            pauseExecution (250)
-            def src = "http://" + myIP + "/local/" + fileName
-            //Add the current time in milliseconds to a comment field. This ensures that every update is unique and causes the file to be reloaded.
-            def stubHTML = "<!--Generated:" + now() + "-->" + """<div style='height:100%; width:100%; scrolling:no; overflow:hidden;'><iframe src=""" + src + """ style='height: 100%; width:100%; border: none; scrolling:no; overflow: hidden;'></iframe><div>"""
-            if (isLogEvents) log.debug ("stub is : ${unHTML(stubHTML)}")
-        
-            //Then we will update the Storage Device attribute which will cause the file to be reloaded into the dashboard.
-            myStorageDevice.createTile(settings.myTile, stubHTML, settings.myTileName)
-            }
-        catch (Exception e){
-            if ( isLogError ) log.error ("Exception ${e} in publishTable. Probably an error uploading file to hub.") 
-            //Then we will update the Storage Device attribute to indicate there was a problem.
-            def myTime = new Date().format('E @ HH:mm a')
-            myStorageDevice.createTile(settings.myTile, "The tile did not upload\\update correctly. Check the logs. ${myTime}", settings.myTileName)
-            }
-        }
-    }
+    
+    //If the Tile is >= 1024 the code from here forward will be evaluated\executed.
+    if (oversizeTileHandling == "Cloud Endpoint") {
+		//Now create the link to the Endpoint and save it as an attribute
+		def src = state.cloudEndpoint
+		//Add the current time in milliseconds to a comment field. This ensures that every update is unique and causes the file to be reloaded.
+		def stubHTML = "<!--Generated:" + now() + "-->" + """<div style='height:100%; width:100%; scrolling:no; overflow:hidden;'><iframe src=""" + src + """ style='height: 100%; width:100%; border: none; scrolling:no; overflow: hidden;'></iframe><div>"""
+		if (isLogEvents) log.debug ("stub is : ${unHTML(stubHTML)}")
+		
+		//Then we will update the Storage Device attribute which will cause the file to be reloaded into the dashboard.
+		myStorageDevice.createTile(settings.myTile, stubHTML, settings.myTileName)
+        return
+		}
+    
+    //Default behaviour is oversizeTileHandling == "File Manager"
+	def prefix = parent.getStorageShortName()
+	def fileName = prefix + "_Tile_" + myTile.toString() + ".html"
+	if (isLogEvents) log.debug ("filename is: ${fileName}")
+	def myBytes = state.HTML.getBytes("UTF-8")
+	
+	//Now try and upload the file to the hub. There is no return value so we must do try catch
+	try {
+		def myIP = location.hub.localIP
+		uploadHubFile("${fileName}", myBytes)
+		//Put in a slight delay to allow the file upload to complete.
+		pauseExecution (250)
+		def src = "http://" + myIP + "/local/" + fileName
+		//Add the current time in milliseconds to a comment field. This ensures that every update is unique and causes the file to be reloaded.
+		def stubHTML = "<!--Generated:" + now() + "-->" + """<div style='height:100%; width:100%; scrolling:no; overflow:hidden;'><iframe src=""" + src + """ style='height: 100%; width:100%; border: none; scrolling:no; overflow: hidden;'></iframe><div>"""
+		if (isLogEvents) log.debug ("stub is : ${unHTML(stubHTML)}")
+	
+		//Then we will update the Storage Device attribute which will cause the file to be reloaded into the dashboard.
+		myStorageDevice.createTile(settings.myTile, stubHTML, settings.myTileName)
+		}
+	catch (Exception e){
+		if ( isLogError ) log.error ("Exception ${e} in publishTable. Probably an error uploading file to hub.") 
+		//Then we will update the Storage Device attribute to indicate there was a problem.
+		def myTime = new Date().format('E @ HH:mm a')
+		myStorageDevice.createTile(settings.myTile, "The tile did not upload\\update correctly. Check the logs. ${myTime}", settings.myTileName)
+		}
+}
 
 //Save the current HTML to the variable and configure the refresh.
 //Only used by Activity Monitor but retained for ease of maintenance.
@@ -2273,20 +2318,30 @@ def initialize(){
     app.updateSetting("isOverrides", false)
     app.updateSetting("overrides", [value: "?", type:"textarea"])
     
-    //Other
-    app.updateSetting("mySelectedTile", "")
+    //Device Name Modification
     app.updateSetting("myReplaceText1", "")
     app.updateSetting("myReplaceText2", "")
     app.updateSetting("myReplaceText3", "")
+    app.updateSetting("myReplaceText4", "")
+    app.updateSetting("myReplaceText5", "")
     app.updateSetting("mySearchText1", "?")
     app.updateSetting("mySearchText2", "?")
     app.updateSetting("mySearchText3", "?")
+    app.updateSetting("mySearchText4", "?")
+    app.updateSetting("mySearchText5", "?")
+    
+    //Publishing
+    app.updateSetting("mySelectedTile", "")
     app.updateSetting("publishInterval", [value:"1", type:"enum"])
     app.updateSetting("republishDelay", [value:"0", type:"enum"])
-    app.updateSetting("isCompactDisplay", false)
-    
+    app.updateSetting("oversizeTileHandling", [value:"File Manager", type:"enum"])
+        
+    //Overrides
     app.updateSetting("overrideHelperCategory", [value:"Animation", type:"text"])
     app.updateSetting("overridesHelperSelection", [value:"Fade: Fades in an object on refresh.", type:"text"])
+    
+    //Other
+    app.updateSetting("isCompactDisplay", false)
         
     //Set initial Log settings
     app.updateSetting('isLogDebug', false)
@@ -2421,6 +2476,18 @@ def updateVariables() {
         if ( state.publish == null ) state.publish = [:]
         if ( state.publish.lastPublished == null ) state.publish.lastPublished = 0
         state.variablesVersion = 149
+    }
+    
+    //Update variables from version 1.4.9 to 1.5.2
+    if (state.variablesVersion < 152 ) {
+        log.info ("Updating Variables to Version 1.5.2")
+        //Add the newly created variables.
+        //Initialize the new settings if they are null.
+        if (mySearchText4 == null ) app.updateSetting("mySearchText4", [value:"", type:"string"]) 
+        if (mySearchText5 == null ) app.updateSetting("mySearchText5", [value:"", type:"string"]) 
+        if (myReplaceText4 == null ) app.updateSetting("myReplaceText4", [value:"?", type:"string"]) 
+        if (myReplaceText5 == null ) app.updateSetting("myReplaceText5", [value:"?", type:"string"]) 
+        state.variablesVersion = 152
     }
 }
 
