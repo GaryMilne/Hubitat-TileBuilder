@@ -59,6 +59,7 @@
 *  Version 1.5.0 - Bugfix: Added error handling when the device has a Null value for a monitored attribute.
 *  Version 1.5.1 - Feature: Expanded the Device Name Modification from 3 to 5 values. - No External Release
 *  Version 1.5.2 - Feature: Added Cloud Endpoints as a publishing option for output > 1,024 bytes.
+*  Version 1.5.3 - Bugfix: Handle errors that are caused by OAuth not being enabled on the app. Cloud Endpoints only active as needed.
 *
 *  Gary Milne - July 15th, 2024
 *
@@ -84,8 +85,8 @@ import groovy.transform.Field
 //Cloud Endpoint Mapping
 mappings { path("/tb") { action: [GET: "getTile"] } }
 
-@Field static final codeDescription = "<b>Tile Builder Activity Monitor v1.5.2 (7/15/24)</b>"
-@Field static final codeVersion = 152
+@Field static final codeDescription = "<b>Tile Builder Activity Monitor v1.5.3 (7/15/24)</b>"
+@Field static final codeVersion = 153
 @Field static final moduleName = "Activity Monitor"
 //@Field static final moduleName = "Attribute Monitor"
 
@@ -1717,7 +1718,10 @@ void publishSubscribe(){
 //This function handles the calls to the endpoint.
 def getTile(){
     if (isLogDebug) log.debug "getTile called: $params source: ${request.requestSource}"
-    render contentType: "text/html;charset=UTF-8", data:state.HTML, status:200
+    if (oversizeTileHandling == "Cloud Endpoint") {    
+        render contentType: "text/html;charset=UTF-8", data:state.HTML, status:200
+    }
+    else { render contentType: "text/html;charset=UTF-8", data:"<H1>Tile Builder</H1><H2>Cloud Endpoint Inactive</H2>Check your <b>Oversize Tile Handling</b> configuration for <b>${myTileName}</b>.", status:200 }
 }
 
 //This should get executed whenever any of the subscribed devices receive an update to the monitored attribute.
@@ -1753,9 +1757,16 @@ def handler(evt) {
 void publishTable(){
     if (isLogEvents) log.trace("publishTable: Entering publishTable.")
     
-    //Get the Access Token and cloud endpoint.
-    if( !state.accessToken ) createAccessToken()
-    state.cloudEndpoint = getFullApiServerUrl() + "/tb?access_token=" + state.accessToken
+    //Get the Access Token and cloud endpoint if needed
+    if (oversizeTileHandling == "Cloud Endpoint") {
+        try {
+            if( !state.accessToken ) createAccessToken()
+            state.cloudEndpoint = getFullApiServerUrl() + "/tb?access_token=" + state.accessToken
+        }
+        catch (Exception e){
+            log.error("This app is not OAuth Enabled.  Go to: <b>Developer Tools</b> / <b>Apps Code</b> and open the code for this app.  Click on <b>OAuth</b> and then <b>Enable OAuth in App</b> and leave it athe default values.")
+        }
+    }
     
     //Refresh the table with the new data and then save the HTML to the driver variable.
     refreshTable()
@@ -2367,8 +2378,8 @@ def initialize(){
 def updateVariables() {
     
     if (state.variablesVersion == null) { 
-        log.info ("Initializing variablesVersion to: 146")
-        state.variablesVersion = 140 
+        log.info ("Initializing variablesVersion to: 1.5.2")
+        state.variablesVersion = 152 
     }
     
     //This will be called with release of version 1.3.0 which added search and replace within device names. Previously only myReplacementText1 and myReplacementText2 should have existed.
