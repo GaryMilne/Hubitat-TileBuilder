@@ -39,15 +39,16 @@
 *                  Fixed documentation link to point to Tile Builder Multi-Attribute Monitor Help instead of main Tile Builder Help file.
 * Version 1.2.2 -  Cosmetic code and grammar fixes.
 * Version 1.3.1 -  Feature: Adds support for Cloud Endpoints as a publishing option.
+* Version 1.3.2 -  Bug Fix: HTML outputs < 1,024 bytes were getting save to files.
 *
-*  Gary Milne - July 16th, 2024 7:33 PM
+*  Gary Milne - July 18th, 2024 3:48 PM
 *
 *  This code is Multi-Attribute Monitor which is largely derived from Attribute Monitor but is still substantially different.
 *
 **/
 
 import groovy.transform.Field
-@Field static final Version = "<b>Tile Builder Multi Attribute Monitor v1.3.1 (7/16/24)</b>"
+@Field static final Version = "<b>Tile Builder Multi Attribute Monitor v1.3.2 (7/18/24)</b>"
 def rules() { return ["None", "All Keywords","All Thresholds", "Threshold 1","Threshold 2", "Threshold 3", "Threshold 4", "Threshold 5", "Format Rule 1", "Format Rule 2", "Format Rule 3","Replace Chars"] }
 
 //Cloud Endpoint Mapping
@@ -1493,7 +1494,7 @@ def handler(evt) {
     runInMillis(eventTimeout.toInteger(), publishTable, [overwrite: true])
 }
 
-//Save the current HTML to the variable. This is the function that is called by the scheduler.
+//Save the current HTML to the Variable\File\Endpoint. This is the function that is called by the scheduler.
 void publishTable(){
     if (isLogEvents) log.trace("publishTable: Entering publishTable.")
     
@@ -1521,50 +1522,50 @@ void publishTable(){
     }
     
     if (isLogEvents) log.info ("Size is: ${state.HTML.size()}")
-    //If the tile is less than 1024 we just publish to the attribute. If it's more than 1,024 then we publish it as a file then update the attribute to cause it to reload the file.
-    if (state.HTML.size() < 1024 ) {
-        myStorageDevice.createTile(settings.myTile, state.HTML, settings.myTileName)
-        }
-        
-    //If the Tile is >= 1024 the code from here forward will be evaluated\executed.
-    if (oversizeTileHandling == "Cloud Endpoint") {
-		//Now create the link to the Endpoint and save it as an attribute
-		def src = state.cloudEndpoint
-		//Add the current time in milliseconds to a comment field. This ensures that every update is unique and causes the file to be reloaded.
-		def stubHTML = "<!--Generated:" + now() + "-->" + """<div style='height:100%; width:100%; scrolling:no; overflow:hidden;'><iframe src=""" + src + """ style='height: 100%; width:100%; border: none; scrolling:no; overflow: hidden;'></iframe><div>"""
-		if (isLogEvents) log.debug ("stub is : ${unHTML(stubHTML)}")
-		
-		//Then we will update the Storage Device attribute which will cause the file to be reloaded into the dashboard.
-		myStorageDevice.createTile(settings.myTile, stubHTML, settings.myTileName)
-        return
-		}
     
-    //Default behaviour is oversizeTileHandling == "File Manager"
-	def prefix = parent.getStorageShortName()
-	def fileName = prefix + "_Tile_" + myTile.toString() + ".html"
-	if (isLogEvents) log.debug ("filename is: ${fileName}")
-	def myBytes = state.HTML.getBytes("UTF-8")
+    //If the tile is less than 1024 we just publish to the attribute. If it's more than 1,024 then we publish it as a file then update the attribute to cause it to reload the file.
+    if (state.HTML.size() < 1024 ) { myStorageDevice.createTile(settings.myTile, state.HTML, settings.myTileName) }
+    else { //The Tile is >= 1024 the code from here forward will be evaluated\executed.
+        if (oversizeTileHandling == "Cloud Endpoint") {
+		    //Now create the link to the Endpoint and save it as an attribute
+		    def src = state.cloudEndpoint
+		    //Add the current time in milliseconds to a comment field. This ensures that every update is unique and causes the file to be reloaded.
+		    def stubHTML = "<!--Generated:" + now() + "-->" + """<div style='height:100%; width:100%; scrolling:no; overflow:hidden;'><iframe src=""" + src + """ style='height: 100%; width:100%; border: none; scrolling:no; overflow: hidden;'></iframe><div>"""
+		    if (isLogEvents) log.debug ("stub is : ${unHTML(stubHTML)}")
+		
+		    //Then we will update the Storage Device attribute which will cause the file to be reloaded into the dashboard.
+		    myStorageDevice.createTile(settings.myTile, stubHTML, settings.myTileName)
+		    }
+    
+        if (oversizeTileHandling == "File Manager" || oversizeTileHandling == null) {
+            //Default behaviour is oversizeTileHandling == "File Manager"
+	        def prefix = parent.getStorageShortName()
+	        def fileName = prefix + "_Tile_" + myTile.toString() + ".html"
+    	    if (isLogEvents) log.debug ("filename is: ${fileName}")
+	        def myBytes = state.HTML.getBytes("UTF-8")
 	
-	//Now try and upload the file to the hub. There is no return value so we must do try catch
-	try {
-		def myIP = location.hub.localIP
-		uploadHubFile("${fileName}", myBytes)
-		//Put in a slight delay to allow the file upload to complete.
-		pauseExecution (250)
-		def src = "http://" + myIP + "/local/" + fileName
-		//Add the current time in milliseconds to a comment field. This ensures that every update is unique and causes the file to be reloaded.
-		def stubHTML = "<!--Generated:" + now() + "-->" + """<div style='height:100%; width:100%; scrolling:no; overflow:hidden;'><iframe src=""" + src + """ style='height: 100%; width:100%; border: none; scrolling:no; overflow: hidden;'></iframe><div>"""
-		if (isLogEvents) log.debug ("stub is : ${unHTML(stubHTML)}")
-	
-		//Then we will update the Storage Device attribute which will cause the file to be reloaded into the dashboard.
-		myStorageDevice.createTile(settings.myTile, stubHTML, settings.myTileName)
-		}
-	catch (Exception e){
-		if ( isLogError ) log.error ("Exception ${e} in publishTable. Probably an error uploading file to hub.") 
-		//Then we will update the Storage Device attribute to indicate there was a problem.
-		def myTime = new Date().format('E @ HH:mm a')
-		myStorageDevice.createTile(settings.myTile, "The tile did not upload\\update correctly. Check the logs. ${myTime}", settings.myTileName)
-		}
+    	    //Now try and upload the file to the hub. There is no return value so we must do try catch
+	        try {
+		        def myIP = location.hub.localIP
+		        uploadHubFile("${fileName}", myBytes)
+    		    //Put in a slight delay to allow the file upload to complete.
+	    	    pauseExecution (250)
+		        def src = "http://" + myIP + "/local/" + fileName
+		        //Add the current time in milliseconds to a comment field. This ensures that every update is unique and causes the file to be reloaded.
+    		    def stubHTML = "<!--Generated:" + now() + "-->" + """<div style='height:100%; width:100%; scrolling:no; overflow:hidden;'><iframe src=""" + src + """ style='height: 100%; width:100%; border: none; scrolling:no; overflow: hidden;'></iframe><div>"""
+	    	    if (isLogEvents) log.debug ("stub is : ${unHTML(stubHTML)}")
+	    
+		        //Then we will update the Storage Device attribute which will cause the file to be reloaded into the dashboard.
+		        myStorageDevice.createTile(settings.myTile, stubHTML, settings.myTileName)
+		        }
+	        catch (Exception e){
+		        if ( isLogError ) log.error ("Exception ${e} in publishTable. Probably an error uploading file to hub.") 
+    		    //Then we will update the Storage Device attribute to indicate there was a problem.
+	    	    def myTime = new Date().format('E @ HH:mm a')
+		        myStorageDevice.createTile(settings.myTile, "The tile did not upload\\update correctly. Check the logs. ${myTime}", settings.myTileName)
+		        }
+        }
+    }
 }
 
 //Warn the user that clicking on the button is doing nothing.
