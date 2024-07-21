@@ -43,7 +43,8 @@
  *  Version 2.0.1 - Bugfix: Spurious characters causing errors.
  *  Version 2.0.2 - Bugfix: Missing controls under certain null conditions.
  *  Version 2.1.0 - Feature: Added Cloud Endpoints as a publishing option for output > 1,024 bytes.
- *  Gary Milne - July 16th, 2024 2:18 PM
+ *  Version 2.1.1 - Bugfix: Corrected issue with tables < 1,024 bytes being sent to a file. Couple of minor tweaks.
+ *  Gary Milne - July 21st, 2024 4:04 PM
  *
  **/
 //file:noinspection GroovyVariableNotAssigned
@@ -78,9 +79,9 @@ static def capabilities() {
 //Cloud Endpoint Mapping
 mappings { path("/tb") { action: [GET: "getTile"] } }
 
-static def codeDescription() { return ("<b>Tile Builder Grid v2.1.0 (7/16/24)</b>") }
+static def codeDescription() { return ("<b>Tile Builder Grid v2.1.1 (7/21/24)</b>") }
 
-static def codeVersion() { return (210) }
+static def codeVersion() { return (212) }
 
 static def cleanups() {
     return ["None", "Capitalize", "Capitalize All", "Commas", "0 Decimal Places", "1 Decimal Place", "Upper Case", "OW Code to Emoji", "OW Code to PNG", "Image URL", "Remove Tags [] <>"]
@@ -242,17 +243,18 @@ def mainPage() {
             } else paragraph buttonLink('EnhancedView', largeText("⏮️ Tile Builder Grid <b>𝄜</b>"), 0) + "<style>h3.pre{display:none !important;}</style>"
         }
         //Allows the user to select the mode of operation.
+        
         if (isLogAppPerformance) log.info("Start of Layout Mode Section: " + (now() - state.refresh) / 1000 + " seconds")
         section(hideable: true, hidden: state.hidden.LayoutMode, title: buttonLink('btnHideLayoutMode', getSectionTitle("Layout Mode"), 20)) {
             //paragraph buttonLink ("test", "test", 0)
             input(name: "layoutMode", title: red("<b>Layout Mode</b>"), type: "enum", options: ["Device Group", "Free Form"], submitOnChange: true, defaultValue: "Device Group", style: "width:10%")
+            paragraph "<mark>" + red("<b>Important!!!</b> If you switch between modes the current configuration is wiped and you start over. !!!") + "</mark>"
             myString = "<b>Tile Builder Grid</b> has two modes of operation:<br>"
             myString += "<b>1) Device Group:</b> A Device Group is a set of devices with at least one common attribute such as temperature, switch or contact for example. You fill out a one line template and the table is filled using that template for each device.<br>"
             myString += "Device Groups are used for showing the status of a list of devices. For example: A Lights table could show the On/Off status, the Bulb Color and the Dimmer setting for each of the bulbs.<br>"
             myString += "<b>2) Free Form:</b> In Free Form you determine the exact size of the table and configure a template for each cell. The template is filled with the actual values at run-time.<br>"
             myString += "Free Form mode is suited for showing a lot of mixed attribute data, often from a single device, such as Hub Info, Weather etc or mixed data such as Security or HVAC.<br>"
             myString += "In both cases the template is filled out using %variable% to represent an attribute and the can be accompanied by other text such us HTML tags or units. Example: Conditions are [b]%temperature%°F[/b] & [b]%humidity%%RH.[/b]<br>"
-            myString += "<mark>" + red("<b>Important!!!</b> When you switch between modes the current configuration is wiped and you start over. !!!") + "</mark>."
             paragraph summary("Layout Mode", myString)
         }
 
@@ -873,6 +875,8 @@ def checkNulls() {
     if (myColumns == null) app.updateSetting("myColumns", [value: "1", type: "enum"])
     if (varColumns == null) app.updateSetting("varColumns", [value: "1", type: "enum"])
     if (eventTimeout == null) app.updateSetting("eventTimeout", "2000")
+    if (eventTimeout == null) app.updateSetting("eventTimeout", "2000")
+    if (scrubHTMLlevel == null) app.updateSetting("scrubHTMLlevel", [value: "1", type: "enum"] )
 }
 
 //Returns a formatted title for a section header based on whether the section is visible or not.
@@ -2562,53 +2566,54 @@ void publishTable() {
 
     if (isLogPublish) log.info("publishTable: Size is: ${state.HTML.size()}")
     
-    //If the tile is less than 1024 we just publish to the attribute. If it's more than 1,024 then we publish it as a file or endpoint then update the attribute to cause it to reload the data.
+    //If the tile is less than 1024 we just publish to the attribute. 
     if (state.HTML.size() < 1024) {
         myStorageDevice.createTile(settings.myTile, state.HTML, settings.myTileName)
         state.publish.lastPublished = now()
         if (isLogTrace || isLogPublish) log.info("<b style='color:orange;font-size:medium'>publishTable: Tile size < 1,024 bytes. Published to attribute: $settings.myTile</b>")
     }
-    
-    //If the Tile is >= 1024 the code from here forward will be evaluated\executed.
-    if (oversizeTileHandling == "Cloud Endpoint") {
-		//Now create the link to the Endpoint and save it as an attribute
-		def src = state.cloudEndpoint
-		//Add the current time in milliseconds to a comment field. This ensures that every update is unique and causes the file to be reloaded.
-		def stubHTML = "<!--Generated:" + now() + "-->" + """<div style='height:100%; width:100%; scrolling:no; overflow:hidden;'><iframe src=""" + src + """ style='height: 100%; width:100%; border: none; scrolling:no; overflow: hidden;'></iframe><div>"""
-		if (isLogEvents) log.debug ("stub is : ${unHTML(stubHTML)}")
+	//If it's >= 1,024 then we publish it as a file or endpoint then update the attribute to cause it to reload the data.
+    else { 
+		if (oversizeTileHandling == "Cloud Endpoint") {
+			//Now create the link to the Endpoint and save it as an attribute
+			def src = state.cloudEndpoint
+			//Add the current time in milliseconds to a comment field. This ensures that every update is unique and causes the file to be reloaded.
+			def stubHTML = "<!--Generated:" + now() + "-->" + """<div style='height:100%; width:100%; scrolling:no; overflow:hidden;'><iframe src=""" + src + """ style='height: 100%; width:100%; border: none; scrolling:no; overflow: hidden;'></iframe><div>"""
+			if (isLogEvents) log.debug ("stub is : ${unHTML(stubHTML)}")
+			
+			//Then we will update the Storage Device attribute which will cause the file to be reloaded into the dashboard.
+			myStorageDevice.createTile(settings.myTile, stubHTML, settings.myTileName)
+			return
+			}
 		
-		//Then we will update the Storage Device attribute which will cause the file to be reloaded into the dashboard.
-		myStorageDevice.createTile(settings.myTile, stubHTML, settings.myTileName)
-        return
-		}
-    
-    //Default behaviour is oversizeTileHandling == "File Manager"
-	def prefix = parent.getStorageShortName()
-	def fileName = prefix + "_Tile_" + myTile.toString() + ".html"
-	if (isLogEvents) log.debug ("filename is: ${fileName}")
-	def myBytes = state.HTML.getBytes("UTF-8")
-	
-	//Now try and upload the file to the hub. There is no return value so we must do try catch
-	try {
-		def myIP = location.hub.localIP
-		uploadHubFile("${fileName}", myBytes)
-		//Put in a slight delay to allow the file upload to complete.
-		pauseExecution (250)
-		def src = "http://" + myIP + "/local/" + fileName
-		//Add the current time in milliseconds to a comment field. This ensures that every update is unique and causes the file to be reloaded.
-		def stubHTML = "<!--Generated:" + now() + "-->" + """<div style='height:100%; width:100%; scrolling:no; overflow:hidden;'><iframe src=""" + src + """ style='height: 100%; width:100%; border: none; scrolling:no; overflow: hidden;'></iframe><div>"""
-		if (isLogEvents) log.debug ("stub is : ${unHTML(stubHTML)}")
-	
-		//Then we will update the Storage Device attribute which will cause the file to be reloaded into the dashboard.
-		myStorageDevice.createTile(settings.myTile, stubHTML, settings.myTileName)
-		}
-	catch (Exception e){
-		if ( isLogError ) log.error ("Exception ${e} in publishTable. Probably an error uploading file to hub.") 
-		//Then we will update the Storage Device attribute to indicate there was a problem.
-		def myTime = new Date().format('E @ HH:mm a')
-		myStorageDevice.createTile(settings.myTile, "The tile did not upload\\update correctly. Check the logs. ${myTime}", settings.myTileName)
-        if (isLogTrace || isLogPublish) log.info("<b style='color:red;font-size:medium'>publishTable: The tile did not upload or update correctly. Check the logs.</b>")
-		}
+		//Default behaviour is oversizeTileHandling == "File Manager"
+		def prefix = parent.getStorageShortName()
+		def fileName = prefix + "_Tile_" + myTile.toString() + ".html"
+		if (isLogEvents) log.debug ("filename is: ${fileName}")
+		def myBytes = state.HTML.getBytes("UTF-8")
+		
+		//Now try and upload the file to the hub. There is no return value so we must do try catch
+		try {
+			def myIP = location.hub.localIP
+			uploadHubFile("${fileName}", myBytes)
+			//Put in a slight delay to allow the file upload to complete.
+			pauseExecution (250)
+			def src = "http://" + myIP + "/local/" + fileName
+			//Add the current time in milliseconds to a comment field. This ensures that every update is unique and causes the file to be reloaded.
+			def stubHTML = "<!--Generated:" + now() + "-->" + """<div style='height:100%; width:100%; scrolling:no; overflow:hidden;'><iframe src=""" + src + """ style='height: 100%; width:100%; border: none; scrolling:no; overflow: hidden;'></iframe><div>"""
+			if (isLogEvents) log.debug ("stub is : ${unHTML(stubHTML)}")
+		
+			//Then we will update the Storage Device attribute which will cause the file to be reloaded into the dashboard.
+			myStorageDevice.createTile(settings.myTile, stubHTML, settings.myTileName)
+			}
+		catch (Exception e){
+			if ( isLogError ) log.error ("Exception ${e} in publishTable. Probably an error uploading file to hub.") 
+			//Then we will update the Storage Device attribute to indicate there was a problem.
+			def myTime = new Date().format('E @ HH:mm a')
+			myStorageDevice.createTile(settings.myTile, "The tile did not upload\\update correctly. Check the logs. ${myTime}", settings.myTileName)
+			if (isLogTrace || isLogPublish) log.info("<b style='color:red;font-size:medium'>publishTable: The tile did not upload or update correctly. Check the logs.</b>")
+			}
+	}
 }
 
 //Warn the user that clicking on the button is doing nothing.
