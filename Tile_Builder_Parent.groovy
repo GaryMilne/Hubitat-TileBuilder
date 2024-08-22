@@ -61,12 +61,14 @@
 *  Version 1.4.9 - Minor text additions to highlightNotes and textFieldNotes in support of Active links.
 *  Version 1.5.0 - Added significant help for Tile Builder Grid upgrade.
 *  Version 1.5.1 - Added support for Tile Builder Thermostat module. Donation minimum increased by $1 to $9 for additional module - Thermostat.
+*  Version 1.5.2 - Fixed checkLicense function to track which Hub the software was activated on.
+*  Version 1.5.3 - Added information regarding Remote Builder licensing.
 *
-*  Gary Milne - June 17th, 2024 @ 7:17 PM
+*  Gary Milne - August 21st, 2024 @ 8:56 PM
 *
 **/
 import groovy.transform.Field
-@Field static final Version = "<b>Tile Builder Parent v1.5.1 (6/17/24 @ 7:17 PM)</b>"
+@Field static final Version = "<b>Tile Builder Parent v1.5.3 (8/21/24)</b>"
 
 //These are the data for the pickers used on the child forms.
 def elementSize() { return ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '30', '40', '50', '75', '100'] }
@@ -180,13 +182,15 @@ def mainPage() {
                     myString += "Adds Filters, Highlights, Styles and a range of powerful customizations options for Activity Monitor, Attribute Monitor and Multi-Attribute Monitor. " + link1 + " <br>"
                     myString += "Adds Rooms which supports up to 10 devices plus 2 Icon Bars per room. " + link2 + " <br>"
                     myString += "Adds Grid which allows complex tables of up to 5 columns and free placement of data. " + link3 + " <br>"
-                    myString += "Adds Thermostat which provides an attractive and functional replacement to the Hubitat thermostat tile. " + link4 + " <br><br>"
+                    myString += "Adds Thermostat which provides an attractive and functional replacement to the Hubitat thermostat tile. " + link4 + " <br>"
+					paragraph myString
             
+					paragraph titleise("Tile Builder is bundled with Remote Builder and uses the same licensing keys. If you already have Remote Builder Advanced you can use those keys to activate Tile Builder Advanced.")
                     myString = myString + "To purchase the license for <b>Tile Builder Advanced</b> you must do the following:<br>"
-                    //New link: $7 page. https://www.paypal.com/donate/?business=YEAFRPFHJCTFA&no_recurring=0&item_name=A+donation+of+%247+or+more+grants+you+a+license+to+Tile+Builder+Advanced.+Please+leave+your+Hubitat+Community+ID.&currency_code=USD
-                    //New link: $8 page. https://www.paypal.com/donate/?business=YEAFRPFHJCTFA&no_recurring=1&item_name=A+donation+of+%248+or+more+grants+you+a+license+to+Tile+Builder+Advanced.+Please+leave+your+Hubitat+Community+ID.&currency_code=USD
-                    //New link: $9 page. https://www.paypal.com/donate/?business=YEAFRPFHJCTFA&no_recurring=1&item_name=A+donation+of+%249+or+more+grants+you+a+license+to+Tile+Builder+Advanced.+Please+leave+your+Hubitat+Community+ID.&currency_code=USD
-                    myString += '<b>1)</b> Donate at least <b>\$9</b> to ongoing development via PayPal using this <a href="https://www.paypal.com/donate/?business=YEAFRPFHJCTFA&no_recurring=1&item_name=A+donation+of+%249+or+more+grants+you+a+license+to+Tile+Builder+Advanced.+Please+leave+your+Hubitat+Community+ID.&currency_code=USD" target="_blank">link.</a></br>'			
+																																																														   
+																																																														   
+																																																														   
+                    myString += '<b>1)</b> Donate at least <b>\$12</b> to ongoing development of Tile Builder \\ Remote Builder via PayPal using this <a href="https://www.paypal.com/donate/?business=YEAFRPFHJCTFA&no_recurring=1&item_name=A+donation+of+%2412+or+more+grants+a+license+to+Remote+Builder+and+Tile+Builder+Advanced.+Leave+your+Hubitat+Community+ID&currency_code=USD" target="_blank">link.</a></br>'			
                     myString += "<b>2)</b> Forward the paypal eMail receipt along with your ID (<b>" + getID() + "</b>) to <b>TileBuilderApp@gmail.com</b>. Please include your Hubitat community ID for future notifications.<br>"
                     myString += "<b>3)</b> Wait for license key eMail notification (usually within 24 hours).<br>"
                     myString += "<b>4)</b> Apply license key using the input box below.<br>"
@@ -688,11 +692,6 @@ def deleteTile() {
 	}
 }
 
-def checkLicense() {
-	return state.isAdvancedLicense
-}
-
-
 //************************************************************************************************************************************************************************************************************************
 //************************************************************************************************************************************************************************************************************************
 //************************************************************************************************************************************************************************************************************************
@@ -985,6 +984,7 @@ String obfuscateStrings(String str1, String str2) {
 
 def activateLicense(){
     String hubUID = getHubUID()
+	
     def P1 = (hubUID.substring(0, 8)).toUpperCase()
     def P2 = (hubUID.substring(Math.max(hubUID.length() - 8, 0))).toUpperCase()
     
@@ -996,6 +996,7 @@ def activateLicense(){
     def key = firstHalf.toUpperCase() + "-" + secondHalf.toUpperCase()
     
     if (key == licenseKey) {
+		state.activatedHubID
         state.isAdvancedLicense = true
         return true
         }
@@ -1009,6 +1010,23 @@ def getID(){
     def P2 = (hubUID.substring(Math.max(hubUID.length() - 8, 0))).toUpperCase()
     return ("${P1}-${P2}")
 }
+
+
+def checkLicense() {
+	//If it's not initialzed do so for this hub
+	if ( state.activatedHubID == null ) state.activatedHubID = getHubUID()
+	
+	//Check to see if it is initialized for this hub
+	if (state.activatedHubID == getHubUID() ) {
+		return state.isAdvancedLicense 
+	}
+	else {
+		log.error("This Tile Builder license is for Hub " + state.activatedHubID + " but this Hub has ID " + getHubUID() + "  You are running Tile Builder Standard." )
+		return false
+	}
+}
+
+
 
 
 //************************************************************************************************************************************************************************************************************************

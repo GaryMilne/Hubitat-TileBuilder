@@ -1,10 +1,10 @@
 {
   "packageName": "Tile Builder",
   "author": "Gary J. Milne",
-  "version": "171",
+  "version": "173",
   "minimumHEVersion": "2.3.4.132",
-  "dateReleased": "2024-07-21",
-  "releaseNotes": "Package-172: Fixes same bug in #171 but for TB Grid.\nPackage-171: Fixes bug in MAM not honoring the 1,024 byte limit and generating iFrames. Adds support for Cloud Endpoints to TB Grid.\nPackage-170: Adds support for Cloud Endpoints to Multi-Attribute Monitor.\nPackage-168: Better handling of Cloud Endpoint errors in ActMon and AttrMon.\nPackage-167: Update Activity and Attribute Monitor to make use of cloud endpoints.\nPackage-166: Updates TB Thermostat to 1.0.2.\nPackage-165: Update Activity and Attribute Monitor to V1.5.0 to handle devices with null attributes.\nPackage-164: Update to Activity and Attribute Monitor V1.4.9 for better Null handling\n\n",
+  "dateReleased": "2024-08-21",
+  "releaseNotes": "Package-173: Adds information about Tile Builder and Remote Builder using a common key.\nPackage-172: Fixes same bug in #171 but for TB Grid.\nPackage-171: Fixes bug in MAM not honoring the 1,024 byte limit and generating iFrames. Adds support for Cloud Endpoints to TB Grid.\nPackage-170: Adds support for Cloud Endpoints to Multi-Attribute Monitor.\nPackage-168: Better handling of Cloud Endpoint errors in ActMon and AttrMon.\nPackage-167: Update Activity and Attribute Monitor to make use of cloud endpoints.\nPackage-166: Updates TB Thermostat to 1.0.2.\n",
   "documentationLink": "https://github.com/GaryMilne/Hubitat-TileBuilder/tree/main",
   "communityLink": "https://community.hubitat.com/t/release-tile-builder-build-beautiful-dashboards/118822",
   "payPalURL": "https://bit.ly/3TIffQa",
@@ -17,7 +17,7 @@
       "required": true,
       "oauth": false,
       "primary": false,
-      "version": "1.5.1"
+      "version": "1.5.3"
     },
     {
       "id": "ad995bcd-c6a8-4c48-b683-4f280aeff4f6",
