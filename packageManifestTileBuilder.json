@@ -1,10 +1,10 @@
 {
   "packageName": "Tile Builder",
   "author": "Gary J. Milne",
-  "version": "175",
+  "version": "176",
   "minimumHEVersion": "2.3.4.132",
   "dateReleased": "2024-12-30",
-  "releaseNotes": "Package-175: Expands date and time variables available in AM.\nPackage-174: Cosmetic change to Thermostat logging.\nPackage-173: Adds information about Tile Builder and Remote Builder using a common key.\nPackage-172: Fixes same bug in #171 but for TB Grid.\nPackage-171: Fixes bug in MAM not honoring the 1,024 byte limit and generating iFrames. Adds support for Cloud Endpoints to TB Grid.\nPackage-170: Adds support for Cloud Endpoints to Multi-Attribute Monitor.",
+  "releaseNotes": "Packages-176: Grid improvements including device name modification.\nPackage-175: Expands date and time variables available in AM.\nPackage-174: Cosmetic change to Thermostat logging.\nPackage-173: Adds information about Tile Builder and Remote Builder using a common key.\nPackage-172: Fixes same bug in #171 but for TB Grid.\nPackage-171: Fixes bug in MAM not honoring the 1,024 byte limit and generating iFrames. Adds support for Cloud Endpoints to TB Grid.\nPackage-170: Adds support for Cloud Endpoints to Multi-Attribute Monitor.",
   "documentationLink": "https://github.com/GaryMilne/Hubitat-TileBuilder/tree/main",
   "communityLink": "https://community.hubitat.com/t/release-tile-builder-build-beautiful-dashboards/118822",
   "payPalURL": "https://bit.ly/3TIffQa",
@@ -68,7 +68,7 @@
       "required": false,
       "oauth": false,
       "primary": false,
-      "version": "2.1.1"
+      "version": "2.2.0"
     },
 	{
       "id": "c6c7a891-b248-441b-8f3b-ac7a57e30e5c",

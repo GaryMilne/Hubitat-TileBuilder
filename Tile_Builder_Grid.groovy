@@ -44,7 +44,9 @@
  *  Version 2.0.2 - Bugfix: Missing controls under certain null conditions.
  *  Version 2.1.0 - Feature: Added Cloud Endpoints as a publishing option for output > 1,024 bytes.
  *  Version 2.1.1 - Bugfix: Corrected issue with tables < 1,024 bytes being sent to a file. Couple of minor tweaks.
- *  Gary Milne - July 21st, 2024 4:04 PM
+ *  Version 2.2.0 - Feature: Restores Footer Class. Adds device rename in Device Group mode. Added built-in variable %count% for number of rows.
+ *
+ *  Gary Milne - December 30th, 2024 7:03 AM
  *
  **/
 //file:noinspection GroovyVariableNotAssigned
@@ -79,9 +81,9 @@ static def capabilities() {
 //Cloud Endpoint Mapping
 mappings { path("/tb") { action: [GET: "getTile"] } }
 
-static def codeDescription() { return ("<b>Tile Builder Grid v2.1.1 (7/21/24)</b>") }
+static def codeDescription() { return ("<b>Tile Builder Grid v2.2.0 (12/30/24)</b>") }
 
-static def codeVersion() { return (212) }
+static def codeVersion() { return (220) }
 
 static def cleanups() {
     return ["None", "Capitalize", "Capitalize All", "Commas", "0 Decimal Places", "1 Decimal Place", "Upper Case", "OW Code to Emoji", "OW Code to PNG", "Image URL", "Remove Tags [] <>"]
@@ -287,6 +289,22 @@ def mainPage() {
                     myAttr = settings["myAttribute$i"].toString()
                     app.updateSetting("name$i", [value: myAttr + i, type: "string"])
                 }
+				
+				//Allow users to rename devices that fit certain patterns
+				input (name: "isShowDeviceNameModification", type: "bool", title: "<b>Show Device Name Modification</b>", required: false, multiple: false, defaultValue: false, submitOnChange: true, width: 3, newLine:true )    
+				if (isShowDeviceNameModification == true) {
+					input (name: "mySearchText1", title: "<b>Search Device Text #1</b>", type: "string", submitOnChange:true, width:2, defaultValue: "?", newLine:true)
+					input (name: "myReplaceText1", title: "<b>Replace Device Text #1</b>", type: "string", submitOnChange:true, width:2, defaultValue: "")
+					input (name: "mySearchText2", title: "<b>Search Device Text #2</b>", type: "string", submitOnChange:true, width:2, defaultValue: "?", newLine:true)
+					input (name: "myReplaceText2", title: "<b>Replace Device Text #2</b>", type: "string", submitOnChange:true, width:2, defaultValue: "")
+					input (name: "mySearchText3", title: "<b>Search Device Text #3</b>", type: "string", submitOnChange:true, width:2, defaultValue: "?", newLine:true)
+					input (name: "myReplaceText3", title: "<b>Replace Device Text #3</b>", type: "string", submitOnChange:true, width:2, defaultValue: "")
+					input (name: "mySearchText4", title: "<b>Search Device Text #4</b>", type: "string", submitOnChange:true, width:2, defaultValue: "?", newLine:true)
+					input (name: "myReplaceText4", title: "<b>Replace Device Text #4</b>", type: "string", submitOnChange:true, width:2, defaultValue: "")
+					input (name: "mySearchText5", title: "<b>Search Device Text #5</b>", type: "string", submitOnChange:true, width:2, defaultValue: "?", newLine:true)
+					input (name: "myReplaceText5", title: "<b>Replace Device Text #5</b>", type: "string", submitOnChange:true, width:2, defaultValue: "")
+				}
+				paragraph line(1)
                 paragraph summary("Cleanup and Rules Help", parent.textCleanupsRules())
 
                 paragraph line(1)
@@ -301,6 +319,7 @@ def mainPage() {
                     if (j == 1) input "Template${j}", "string", title: "<b>Template Column ${j}</b>", submitOnChange: true, defaultValue: "%deviceLabel%", newLine: false, width: myColumnWidth.toInteger()
                     else input "Template${j}", "string", title: "<b>Template Column ${j}</b>", submitOnChange: true, defaultValue: "%variable%", newLine: false, width: myColumnWidth.toInteger()
                 }
+				
                 paragraph summary("Text Fields and Variables Help", parent.textFieldNotesGrid())
 
                 //Assemble all the variables into strings and display them if at least 1 variable has been defined.
@@ -875,7 +894,6 @@ def checkNulls() {
     if (myColumns == null) app.updateSetting("myColumns", [value: "1", type: "enum"])
     if (varColumns == null) app.updateSetting("varColumns", [value: "1", type: "enum"])
     if (eventTimeout == null) app.updateSetting("eventTimeout", "2000")
-    if (eventTimeout == null) app.updateSetting("eventTimeout", "2000")
     if (scrubHTMLlevel == null) app.updateSetting("scrubHTMLlevel", [value: "1", type: "enum"] )
 }
 
@@ -1062,7 +1080,7 @@ def getVariablesDeviceGroup() {
                     state.vars."$value$i" = resultMap.value
                     //log.info ("<b>state.vars.$value$i = " + resultMap.value + "</b>")
                 }
-
+				
                 //Note: getDurationDeviceGroup calculates BOTH the LastOnDuration and lastOffDuration etc when the lastOn and lastOff values are present. write those value to state.vars.lastXXXDuration$i and state.vars.lastZZZDuration$i
                 if (state.vars."lastOn$i" != null && state.vars."lastOff$i") {
                     getDurationDeviceGroup("lastOnDuration", i)
@@ -1083,7 +1101,9 @@ def getVariablesDeviceGroup() {
                 //Go through the unique list of attributes the user has selected and if the attribute exists on the device then get it and save it to state.
                 attributeList.each { attributeName ->
                     myValue = it.currentValue(attributeName)?.toString() ?: invalidAttribute.toString()
-                    varName = "$attributeName" + i
+					
+					if (attributeName == "deviceLabel") log.info ("It's a device label")
+					varName = "$attributeName" + i
                     state.vars."$varName" = (myValue.toString() ?: "")
                     if (isLogVariables && isLogDetails) log.info("getVariablesDeviceGroup: Attribute: $myAttr ($myValue) saved to state.vars.$varName")
                 }
@@ -1286,6 +1306,29 @@ def getDeviceDetailMap(searchTerm) {
 
     myMap = mapOfMapsB[searchTerm]
     if (myMap != null) return myMap
+}
+
+//Perform any Device Renaming requested using the Device Name Modification Fields
+def getShortName(myDevice){
+	//log.info("Receiving: $myDevice")
+	if (layoutMode.toString() != "Device Group") return myDevice
+	def shortName = myDevice
+		
+	//Handle any null values.
+	if (myReplaceText1 == null || myReplaceText1 == "?" ) myReplaceText1 = ""
+	if (myReplaceText2 == null || myReplaceText2 == "?" ) myReplaceText2 = ""
+	if (myReplaceText3 == null || myReplaceText3 == "?" ) myReplaceText3 = ""
+	if (myReplaceText4 == null || myReplaceText4 == "?" ) myReplaceText4 = ""
+	if (myReplaceText5 == null || myReplaceText5 == "?" ) myReplaceText5 = ""
+        
+	//Replaces any undesireable characters in the devicename - Case Sensitive
+	if (mySearchText1 != null  && mySearchText1 != "?") shortName = shortName.replace(mySearchText1, myReplaceText1)
+	if (mySearchText2 != null  && mySearchText2 != "?") shortName = shortName.replace(mySearchText2, myReplaceText2)
+	if (mySearchText3 != null  && mySearchText3 != "?") shortName = shortName.replace(mySearchText3, myReplaceText3)
+	if (mySearchText4 != null  && mySearchText4 != "?") shortName = shortName.replace(mySearchText4, myReplaceText4)
+	if (mySearchText5 != null  && mySearchText5 != "?") shortName = shortName.replace(mySearchText5, myReplaceText5)
+	//log.info("returning shortName: $shortName")
+	return shortName
 }
 
 //Retrieves device specifics such as lastActivity, room and event info. deviceDetailName is something like 'lastActivity, roomName etc.'  Device is a handle to a device. i is the index to use.
@@ -2056,6 +2099,7 @@ void makeTable() {
     String HTMLGRID = generateTableRows(rows.toInteger(), myColumns.toInteger())         //Table Grid - Always included.
     String HTMLTABLEEND = "</table>"                    //Table End - Always included.
     String HTMLFOOTER = "<ft#id#>#ft#</ft#id#>"        //Footer - May be omitted
+    //String HTMLFOOTER = "<style>ft#id#{display:block;text-align:#fa#;font-size:#fs#%;color:#fc#;#footer#</style><ft#id#>#ft#</ft#id#>"        //Footer Style and Footer - May be omitted
     String HTMLDIVEND = "</div>"
     String HTMLEND = "</body>"
 
@@ -2121,13 +2165,20 @@ void makeTable() {
     }
 
     //Now replace the variables with their values. This loop is run twice to handle any variables that are embedded within Keywords or Format Rules
+	//log.info("<hr><br>")
     for (int i = 0; i < 2; i++) {
         state.vars.each { varName, value ->
-            if (isLogHTML && isLogDetails) log.info("makeTable: Loop(i) - Replacing var: $varName with: $value")
+			if (isLogHTML && isLogDetails) log.info("makeTable: Loop(i) - Replacing var: $varName with: $value")
             varName = varName.toLowerCase()
+						
             //Insert here a function to check the content of the string to see if it contains any of the gatherDeviceDetails variables.
             //If it does then replace it with the numbered version using the suffix from the varName
             myValue = checkContentsforVariables(varName, value.toString())
+			
+			//Check to see if we need to modify any deviceNames or deviceLabels.
+			if (varName.contains("devicelabel")) { myValue = getShortName(myValue) }
+			if (varName.contains("devicename")) { myValue = getShortName(myValue) }
+						
             interimHTML = interimHTML.replaceAll("(?i)%${varName}%", myValue)
         }
     }
@@ -2137,7 +2188,10 @@ void makeTable() {
 
     //Now update and %day%, %time% style strings with the actual values.
     interimHTML = replaceDateTimeVariables(interimHTML)
-
+		
+	//Update any other Built-In variable values
+	interimHTML = interimHTML.replaceAll("(?i)%count%", rows.toString())
+	
     //Replace any embedded tags using [] with <>
     interimHTML = toHTML(interimHTML)
 
