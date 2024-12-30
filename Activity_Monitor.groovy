@@ -60,8 +60,9 @@
 *  Version 1.5.1 - Feature: Expanded the Device Name Modification from 3 to 5 values. - No External Release
 *  Version 1.5.2 - Feature: Added Cloud Endpoints as a publishing option for output > 1,024 bytes.
 *  Version 1.5.3 - Bugfix: Handle errors that are caused by OAuth not being enabled on the app. Cloud Endpoints only active as needed.
+*  Version 1.5.4 - Feature: Added all Built-In variables from Grid to AM long with inline help.
 *
-*  Gary Milne - July 15th, 2024
+*  Gary Milne - December 30th, 2024
 *
 *  This code is Activity Monitor and Attribute Monitor combined.
 *  The personality is dictated by @Field static moduleName a few lines ahead of this.
@@ -85,8 +86,8 @@ import groovy.transform.Field
 //Cloud Endpoint Mapping
 mappings { path("/tb") { action: [GET: "getTile"] } }
 
-@Field static final codeDescription = "<b>Tile Builder Activity Monitor v1.5.3 (7/15/24)</b>"
-@Field static final codeVersion = 153
+@Field static final codeDescription = "<b>Tile Builder Activity Monitor v1.5.4 (12/30/24)</b>"
+@Field static final codeVersion = 154
 @Field static final moduleName = "Activity Monitor"
 //@Field static final moduleName = "Attribute Monitor"
 
@@ -219,6 +220,26 @@ def mainPage() {
                 myText += "<b>Units:</b> You can append units to the data in the table. Unit options with a leading '_' places a space between the numeric value and the unit.<br>"
                 myText += "<b>Replace Device Text:</b> Allows you to strip\\replace unwanted strings from the device name, such as ' on Office' for meshed hubs or a ' -' after truncating at the second space for a hyphenated name."
                 paragraph summary("Report Notes", myText)    
+			
+				myTitle = dodgerBlue("Built-In Variables<br>")
+				myText = "<b>These can be placed in any text field and will be expanded into their correct values at runtime.</b>"
+				myText = "<ul><li>%day% - Day of week in form: Fri</li>"
+				myText += "<li>%date% - Date in form: 22-12</li>"
+				myText += "<li>%date1% - Date in form: Dec-22</li>"
+				myText += "<li>%sunrise% - Time in form: 06:47 AM</li>"
+				myText += "<li>%sunrise1% - Time in form: 06:47</li>"
+				myText += "<li>%sunrise2% - Time in form: 6:47 AM</li>"
+				myText += "<li>%sunset% - Time in form: 21:47 PM</li>"
+				myText += "<li>%sunset1% - Time in form: 21:47</li>"
+				myText += "<li>%sunset2% - Time in form: 9:47 PM</li>"
+				myText += "<li>%time% - Time in form: 23:35 PM</li>"
+				myText += "<li>%time1% - Time in form: 23:35</li>"
+				myText += "<li>%time2% - Time in form: 11:35 PM</li>"
+				myText += "<li>%today% - Current day as day of week in form: Friday</li>"
+				myText += "<li>%tomorrow% - Tomorrow as day of week in form: Saturday</li>"
+				myText += "<li>%dayAfterTomorrow% - Day after tomorrow as day of week in form: Sunday</li>"
+				myText += "<li><b>ALL Built-In Variables are instantaneous and are ONLY calculated when the table is refreshed.</b></li></ul>"
+				paragraph summary(myTitle, myText)    
         }
         else input(name: 'btnShowReport', type: 'button', title: 'Select Report Options ▶', backgroundColor: 'dodgerBlue', textColor: 'white', submitOnChange: true, width: 3)  //▼ ◀ ▶ ▲
         paragraph line(2)
@@ -633,6 +654,26 @@ def mainPage() {
                 myString = myString.replace("YYY", "${settings.customHeight}")
                 paragraph myString
             }
+			
+			myTitle = dodgerBlue("Built-In Variables<br>")
+			myText = "<b>Built-In variables can be placed in any text field and will be expanded into their final values at runtime.</b>"
+			myText += "<ul><li>%day% - Day of week in form: Fri</li>"
+			myText += "<li>%date% - Date in form: 22-12</li>"
+			myText += "<li>%date1% - Date in form: Dec-22</li>"
+			myText += "<li>%sunrise% - Time in form: 06:47 AM</li>"
+			myText += "<li>%sunrise1% - Time in form: 06:47</li>"
+			myText += "<li>%sunrise2% - Time in form: 6:47 AM</li>"
+			myText += "<li>%sunset% - Time in form: 21:47 PM</li>"
+			myText += "<li>%sunset1% - Time in form: 21:47</li>"
+			myText += "<li>%sunset2% - Time in form: 9:47 PM</li>"
+			myText += "<li>%time% - Time in form: 23:35 PM</li>"
+			myText += "<li>%time1% - Time in form: 23:35</li>"
+			myText += "<li>%time2% - Time in form: 11:35 PM</li>"
+			myText += "<li>%today% - Current day as day of week in form: Friday</li>"
+			myText += "<li>%tomorrow% - Tomorrow as day of week in form: Saturday</li>"
+			myText += "<li>%dayAfterTomorrow% - Day after tomorrow as day of week in form: Sunday</li>"
+			myText += "<li><b>ALL Built-In Variables are instantaneous and are ONLY calculated when the table is refreshed.</b></li></ul>"
+			paragraph summary(myTitle, myText) 
             
             if (state.HTMLsizes.Final < 4096 ){
                 if (isCompactDisplay == false) paragraph "<div style='color:#17202A;text-align:left; margin-top:0em; margin-bottom:0em ; font-size:18px'>Current HTML size is: <font color = 'green'><b>${state.HTMLsizes.Final}</b></font color = '#17202A'> bytes. Maximum size for dashboard tiles is <b>4,096</b> bytes.</div>"
@@ -1525,18 +1566,11 @@ void makeHTML(data, int myRows){
     //Get the units we are using and correct the formatting.
     if (myUnits == null || myUnits == "None") myUnit = ""
     else myUnit = myUnits.replace("_"," ")
-    //Set an appropriate format for day and time.
-    def myTime = new Date().format('HH:mm a')
-    def myTime1 = new Date().format('HH:MM')
-    def myTime2 = new Date().format('h:mm a')
-    def myDay = new Date().format('E')
-    
-    //Replace macro values regardless of case.
-    interimHTML = interimHTML.replaceAll("(?i)%day%", myDay)
-    interimHTML = interimHTML.replaceAll("(?i)%time%", myTime)
-    interimHTML = interimHTML.replaceAll("(?i)%time1%", myTime1)
-    interimHTML = interimHTML.replaceAll("(?i)%time2%", myTime2)
-    interimHTML = interimHTML.replaceAll("(?i)%units%", myUnit)
+		
+	//Now update and %day%, %time% style strings with the actual values.
+    interimHTML = replaceDateTimeVariables(interimHTML)
+	
+	//Update the recordCount
     interimHTML = interimHTML.replaceAll("(?i)%count%", state.recordCount.toString())
     
     //Replace any embedded tags using [] with <>
@@ -1561,6 +1595,49 @@ void makeHTML(data, int myRows){
         state.HTML = "<b>HTML length exceeded 4,096 bytes for '${myTileName}' (${state.HTMLsizes.Final}).</b>"
         if (isLogDebug) log.debug("makeHTML: HTML final size is > 4,096 bytes.")
     }
+}
+
+
+//Replaces and %day%, %time% style strings with the actual values. This function is called from makeTable()
+def replaceDateTimeVariables(interimHTML) {
+    //Set an appropriate format for day and time.
+    def myDay = new Date().format('E')
+    def myDate = new Date().format('dd-MM')
+    def myDate1 = new Date().format('MMM-dd')
+    def myTime = new Date().format('HH:mm a')
+    def myTime1 = new Date().format('HH:MM')
+    def myTime2 = new Date().format('h:mm a')
+    def today = java.time.LocalDate.now().dayOfWeek.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.getDefault())
+    def tomorrow = java.time.LocalDate.now().plusDays(1).dayOfWeek.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.default).toString()
+    def dayAfterTomorrow = java.time.LocalDate.now().plusDays(2).dayOfWeek.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.default).toString()
+
+    def sunrise = getTodaysSunrise()
+    def mySunrise = sunrise.format('HH:mm a')
+    def mySunrise1 = sunrise.format('HH:MM')
+    def mySunrise2 = sunrise.format('h:mm a')
+
+    def sunset = getTodaysSunset()
+    def mySunset = sunset.format('HH:mm a')
+    def mySunset1 = sunset.format('HH:MM')
+    def mySunset2 = sunset.format('h:mm a')
+
+    //Replace macro values regardless of case.
+    interimHTML = interimHTML.replaceAll("(?i)%day%", myDay)
+    interimHTML = interimHTML.replaceAll("(?i)%date%", myDate)
+    interimHTML = interimHTML.replaceAll("(?i)%date1%", myDate1)
+    interimHTML = interimHTML.replaceAll("(?i)%time%", myTime)
+    interimHTML = interimHTML.replaceAll("(?i)%time1%", myTime1)
+    interimHTML = interimHTML.replaceAll("(?i)%time2%", myTime2)
+    interimHTML = interimHTML.replaceAll("(?i)%today%", today)
+    interimHTML = interimHTML.replaceAll("(?i)%tomorrow%", tomorrow)
+    interimHTML = interimHTML.replaceAll("(?i)%dayAfterTomorrow%", dayAfterTomorrow)
+    interimHTML = interimHTML.replaceAll("(?i)%sunrise%", mySunrise)
+    interimHTML = interimHTML.replaceAll("(?i)%sunrise1%", mySunrise1)
+    interimHTML = interimHTML.replaceAll("(?i)%sunrise2%", mySunrise2)
+    interimHTML = interimHTML.replaceAll("(?i)%sunset%", mySunset)
+    interimHTML = interimHTML.replaceAll("(?i)%sunset1%", mySunset1)
+    interimHTML = interimHTML.replaceAll("(?i)%sunset2%", mySunset2)
+    return interimHTML
 }
 
 //Looks at a provided attributeValue and compares it to those values provided by keywords and thresholds.
@@ -1753,7 +1830,7 @@ def handler(evt) {
     }
 }
 
-//Save the current HTML to the variable. This is the function that is called by the scheduler.
+//Save the current HTML to the Variable\File\Endpoint. This is the function that is called by the scheduler.
 void publishTable(){
     if (isLogEvents) log.trace("publishTable: Entering publishTable.")
     
@@ -1764,9 +1841,11 @@ void publishTable(){
             state.cloudEndpoint = getFullApiServerUrl() + "/tb?access_token=" + state.accessToken
         }
         catch (Exception e){
-            log.error("This app is not OAuth Enabled.  Go to: <b>Developer Tools</b> / <b>Apps Code</b> and open the code for this app.  Click on <b>OAuth</b> and then <b>Enable OAuth in App</b> and leave it athe default values.")
+            log.error("This app is not OAuth Enabled.  Go to: <b>Developer Tools</b> / <b>Apps Code</b> and open the code for this app.  Click on <b>OAuth</b> and then <b>Enable OAuth in App</b> and leave it at the default values.")
         }
     }
+    //Handles the initialization of new variables added after the original release.
+    updateVariables()
     
     //Refresh the table with the new data and then save the HTML to the driver variable.
     refreshTable()
@@ -1779,53 +1858,50 @@ void publishTable(){
     }
     
     if (isLogEvents) log.info ("Size is: ${state.HTML.size()}")
-    state.publish.lastPublished = now()
     
-	//If the tile is less than 1024 we just publish to the attribute. If it's more than 1,024 then we publish it as a file or endpoint then update the attribute to cause it to reload the data.
-    if (state.HTML.size() < 1024 ) {
-        myStorageDevice.createTile(settings.myTile, state.HTML, settings.myTileName)
-        return
-        }
-    
-    //If the Tile is >= 1024 the code from here forward will be evaluated\executed.
-    if (oversizeTileHandling == "Cloud Endpoint") {
-		//Now create the link to the Endpoint and save it as an attribute
-		def src = state.cloudEndpoint
-		//Add the current time in milliseconds to a comment field. This ensures that every update is unique and causes the file to be reloaded.
-		def stubHTML = "<!--Generated:" + now() + "-->" + """<div style='height:100%; width:100%; scrolling:no; overflow:hidden;'><iframe src=""" + src + """ style='height: 100%; width:100%; border: none; scrolling:no; overflow: hidden;'></iframe><div>"""
-		if (isLogEvents) log.debug ("stub is : ${unHTML(stubHTML)}")
+    //If the tile is less than 1024 we just publish to the attribute. If it's more than 1,024 then we publish it as a file then update the attribute to cause it to reload the file.
+    if (state.HTML.size() < 1024 ) { myStorageDevice.createTile(settings.myTile, state.HTML, settings.myTileName) }
+    else { //The Tile is >= 1024 the code from here forward will be evaluated\executed.
+        if (oversizeTileHandling == "Cloud Endpoint") {
+		    //Now create the link to the Endpoint and save it as an attribute
+		    def src = state.cloudEndpoint
+		    //Add the current time in milliseconds to a comment field. This ensures that every update is unique and causes the file to be reloaded.
+		    def stubHTML = "<!--Generated:" + now() + "-->" + """<div style='height:100%; width:100%; scrolling:no; overflow:hidden;'><iframe src=""" + src + """ style='height: 100%; width:100%; border: none; scrolling:no; overflow: hidden;'></iframe><div>"""
+		    if (isLogEvents) log.debug ("stub is : ${unHTML(stubHTML)}")
 		
-		//Then we will update the Storage Device attribute which will cause the file to be reloaded into the dashboard.
-		myStorageDevice.createTile(settings.myTile, stubHTML, settings.myTileName)
-        return
-		}
+		    //Then we will update the Storage Device attribute which will cause the file to be reloaded into the dashboard.
+		    myStorageDevice.createTile(settings.myTile, stubHTML, settings.myTileName)
+		    }
     
-    //Default behaviour is oversizeTileHandling == "File Manager"
-	def prefix = parent.getStorageShortName()
-	def fileName = prefix + "_Tile_" + myTile.toString() + ".html"
-	if (isLogEvents) log.debug ("filename is: ${fileName}")
-	def myBytes = state.HTML.getBytes("UTF-8")
+        if (oversizeTileHandling == "File Manager" || oversizeTileHandling == null) {
+            //Default behaviour is oversizeTileHandling == "File Manager"
+	        def prefix = parent.getStorageShortName()
+	        def fileName = prefix + "_Tile_" + myTile.toString() + ".html"
+    	    if (isLogEvents) log.debug ("filename is: ${fileName}")
+	        def myBytes = state.HTML.getBytes("UTF-8")
 	
-	//Now try and upload the file to the hub. There is no return value so we must do try catch
-	try {
-		def myIP = location.hub.localIP
-		uploadHubFile("${fileName}", myBytes)
-		//Put in a slight delay to allow the file upload to complete.
-		pauseExecution (250)
-		def src = "http://" + myIP + "/local/" + fileName
-		//Add the current time in milliseconds to a comment field. This ensures that every update is unique and causes the file to be reloaded.
-		def stubHTML = "<!--Generated:" + now() + "-->" + """<div style='height:100%; width:100%; scrolling:no; overflow:hidden;'><iframe src=""" + src + """ style='height: 100%; width:100%; border: none; scrolling:no; overflow: hidden;'></iframe><div>"""
-		if (isLogEvents) log.debug ("stub is : ${unHTML(stubHTML)}")
-	
-		//Then we will update the Storage Device attribute which will cause the file to be reloaded into the dashboard.
-		myStorageDevice.createTile(settings.myTile, stubHTML, settings.myTileName)
-		}
-	catch (Exception e){
-		if ( isLogError ) log.error ("Exception ${e} in publishTable. Probably an error uploading file to hub.") 
-		//Then we will update the Storage Device attribute to indicate there was a problem.
-		def myTime = new Date().format('E @ HH:mm a')
-		myStorageDevice.createTile(settings.myTile, "The tile did not upload\\update correctly. Check the logs. ${myTime}", settings.myTileName)
-		}
+    	    //Now try and upload the file to the hub. There is no return value so we must do try catch
+	        try {
+		        def myIP = location.hub.localIP
+		        uploadHubFile("${fileName}", myBytes)
+    		    //Put in a slight delay to allow the file upload to complete.
+	    	    pauseExecution (250)
+		        def src = "http://" + myIP + "/local/" + fileName
+		        //Add the current time in milliseconds to a comment field. This ensures that every update is unique and causes the file to be reloaded.
+    		    def stubHTML = "<!--Generated:" + now() + "-->" + """<div style='height:100%; width:100%; scrolling:no; overflow:hidden;'><iframe src=""" + src + """ style='height: 100%; width:100%; border: none; scrolling:no; overflow: hidden;'></iframe><div>"""
+	    	    if (isLogEvents) log.debug ("stub is : ${unHTML(stubHTML)}")
+	    
+		        //Then we will update the Storage Device attribute which will cause the file to be reloaded into the dashboard.
+		        myStorageDevice.createTile(settings.myTile, stubHTML, settings.myTileName)
+		        }
+	        catch (Exception e){
+		        if ( isLogError ) log.error ("Exception ${e} in publishTable. Probably an error uploading file to hub.") 
+    		    //Then we will update the Storage Device attribute to indicate there was a problem.
+	    	    def myTime = new Date().format('E @ HH:mm a')
+		        myStorageDevice.createTile(settings.myTile, "The tile did not upload\\update correctly. Check the logs. ${myTime}", settings.myTileName)
+		        }
+        }
+    }
 }
 
 //Save the current HTML to the variable and configure the refresh.
