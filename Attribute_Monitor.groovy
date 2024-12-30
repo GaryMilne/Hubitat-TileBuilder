@@ -219,27 +219,7 @@ def mainPage() {
                 myText += "<b>Decimal Places:</b> Allows you to format floating point data. Saves space and has neater presentation. This value does not affect any of the comparisons performed in filtering or highlighting.<br>"
                 myText += "<b>Units:</b> You can append units to the data in the table. Unit options with a leading '_' places a space between the numeric value and the unit.<br>"
                 myText += "<b>Replace Device Text:</b> Allows you to strip\\replace unwanted strings from the device name, such as ' on Office' for meshed hubs or a ' -' after truncating at the second space for a hyphenated name."
-                paragraph summary("Report Notes", myText)    
-			
-				myTitle = dodgerBlue("Built-In Variables<br>")
-				myText = "<b>These can be placed in any text field and will be expanded into their correct values at runtime.</b>"
-				myText = "<ul><li>%day% - Day of week in form: Fri</li>"
-				myText += "<li>%date% - Date in form: 22-12</li>"
-				myText += "<li>%date1% - Date in form: Dec-22</li>"
-				myText += "<li>%sunrise% - Time in form: 06:47 AM</li>"
-				myText += "<li>%sunrise1% - Time in form: 06:47</li>"
-				myText += "<li>%sunrise2% - Time in form: 6:47 AM</li>"
-				myText += "<li>%sunset% - Time in form: 21:47 PM</li>"
-				myText += "<li>%sunset1% - Time in form: 21:47</li>"
-				myText += "<li>%sunset2% - Time in form: 9:47 PM</li>"
-				myText += "<li>%time% - Time in form: 23:35 PM</li>"
-				myText += "<li>%time1% - Time in form: 23:35</li>"
-				myText += "<li>%time2% - Time in form: 11:35 PM</li>"
-				myText += "<li>%today% - Current day as day of week in form: Friday</li>"
-				myText += "<li>%tomorrow% - Tomorrow as day of week in form: Saturday</li>"
-				myText += "<li>%dayAfterTomorrow% - Day after tomorrow as day of week in form: Sunday</li>"
-				myText += "<li><b>ALL Built-In Variables are instantaneous and are ONLY calculated when the table is refreshed.</b></li></ul>"
-				paragraph summary(myTitle, myText)    
+                paragraph summary("Report Notes", myText)       
         }
         else input(name: 'btnShowReport', type: 'button', title: 'Select Report Options ▶', backgroundColor: 'dodgerBlue', textColor: 'white', submitOnChange: true, width: 3)  //▼ ◀ ▶ ▲
         paragraph line(2)
