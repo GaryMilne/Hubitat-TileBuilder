@@ -29,15 +29,16 @@
  *  Version 1.0.0 - Initial Public Release
  *  Version 1.0.1 - Added Horizontal and Vertical adjustments for the Temperature (It renders a bit off on Safari on an iPad.)  Fix some errant text carried over from the module origins.
  *  Version 1.0.2 - Added fault handling logic for Thermostats that do not have a coolingSetpoint or heatingSetpoint. An error will be logged and a default value used.
+ *  Version 1.0.3 - Correct error where a publishing event was going to the log although it should have been limited.
  *
- *  Gary Milne - July 15th, 2024 11:15 AM
+ *  Gary Milne - December 29th, 2024 7:18 PM
  *
  **/
 
 import groovy.transform.Field
 
-static def codeDescription() { return ("<b>Tile Builder Thermostat v1.0.2 (7/15/24)</b>") }
-static def codeVersion() { return (100) }
+static def codeDescription() { return ("<b>Tile Builder Thermostat v1.0.3 (12/29/24)</b>") }
+static def codeVersion() { return (103) }
 static def baseFontSizeList() { return ['Default', '14', '15', '16', '17', '18', '19', '20'] }
 static def allTileList() { return [1: 'tile1', 2: 'tile2', 3: 'tile3', 4: 'tile4', 5: 'tile5', 6: 'tile6', 7: 'tile7', 8: 'tile8', 9: 'tile9', 10: 'tile10', 11: 'tile11', 12: 'tile12', 13: 'tile13', 14: 'tile14', 15: 'tile15', 16: 'tile16', 17: 'tile17', 18: 'tile18', 19: 'tile19', 20: 'tile20', 21: 'tile21', 22: 'tile22', 23: 'tile23', 24: 'tile24', 25: 'tile25'] }
 static def gradient() { return ['0', '.1', '.2', '.3', '.4', '.5', '.6', '.7', '.8', '.9', '1'] }
@@ -708,7 +709,7 @@ def handler(evt) {
 
 //Save the current HTML to the variable. This is the function that is called by the scheduler.
 void publishThermostat(){
-    log.trace("publishRoom: Entering publishRoom.")
+    if (isLogTrace) log.trace("publishRoom: Entering publishRoom.")
     
     //Refresh the table with the new data and then save the HTML to the driver variable.
     makeThermostat()
