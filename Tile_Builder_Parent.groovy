@@ -57,18 +57,20 @@
 *  Version 1.4.5 - Added some new examples for use with Format Rules and MAM 2.0 to the Highlight Notes Section. Removed redundant settings in the Styles section.
 *  Version 1.4.6 - Minor text additions in preparation for the release of TB Grid. Added textFieldNotes() function. Added ability to Show\Hide modules. (Unreleased version)
 *  Version 1.4.7 - Donation minimum increased by $1 to $8 for additional module - Grid.
-*  Version 1.4.8 - BugFix: Correct issue with the Multi-Attribute Monitor modiule name. Added notations for %lastEventValue% added to Grid.
+*  Version 1.4.8 - BugFix: Correct issue with the Multi-Attribute Monitor module name. Added notations for %lastEventValue% added to Grid.
 *  Version 1.4.9 - Minor text additions to highlightNotes and textFieldNotes in support of Active links.
 *  Version 1.5.0 - Added significant help for Tile Builder Grid upgrade.
 *  Version 1.5.1 - Added support for Tile Builder Thermostat module. Donation minimum increased by $1 to $9 for additional module - Thermostat.
 *  Version 1.5.2 - Fixed checkLicense function to track which Hub the software was activated on.
 *  Version 1.5.3 - Added information regarding Remote Builder licensing.
+*  Version 1.5.4 - Spelling Fixes
+*  Version 1.5.5 - Corrected error with re-activating on a new key on a Hub that had been previously activated.
 *
-*  Gary Milne - August 21st, 2024 @ 8:56 PM
+*  Gary Milne - January 4th, 2025 @ 3:25 AM
 *
 **/
 import groovy.transform.Field
-@Field static final Version = "<b>Tile Builder Parent v1.5.3 (8/21/24)</b>"
+@Field static final Version = "<b>Tile Builder Parent v1.5.5 (1/5/25)</b>"
 
 //These are the data for the pickers used on the child forms.
 def elementSize() { return ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '30', '40', '50', '75', '100'] }
@@ -187,9 +189,9 @@ def mainPage() {
             
 					paragraph titleise("Tile Builder is bundled with Remote Builder and uses the same licensing keys. If you already have Remote Builder Advanced you can use those keys to activate Tile Builder Advanced.")
                     myString = myString + "To purchase the license for <b>Tile Builder Advanced</b> you must do the following:<br>"
-																																																														   
-																																																														   
-																																																														   
+																 
+																 
+																 
                     myString += '<b>1)</b> Donate at least <b>\$12</b> to ongoing development of Tile Builder \\ Remote Builder via PayPal using this <a href="https://www.paypal.com/donate/?business=YEAFRPFHJCTFA&no_recurring=1&item_name=A+donation+of+%2412+or+more+grants+a+license+to+Remote+Builder+and+Tile+Builder+Advanced.+Leave+your+Hubitat+Community+ID&currency_code=USD" target="_blank">link.</a></br>'			
                     myString += "<b>2)</b> Forward the paypal eMail receipt along with your ID (<b>" + getID() + "</b>) to <b>TileBuilderApp@gmail.com</b>. Please include your Hubitat community ID for future notifications.<br>"
                     myString += "<b>3)</b> Wait for license key eMail notification (usually within 24 hours).<br>"
@@ -996,7 +998,7 @@ def activateLicense(){
     def key = firstHalf.toUpperCase() + "-" + secondHalf.toUpperCase()
     
     if (key == licenseKey) {
-		state.activatedHubID
+		state.activatedHubID = hubUID
         state.isAdvancedLicense = true
         return true
         }
@@ -1098,7 +1100,7 @@ def getOverrideCellOperationsList(){
 
 def getOverrideFontList(){
     return [
-        "Specify a local font not available in the menu system. Loads the Impact font (device dependant) to use as the default font for the entire table.": "#tff#='Impact'",
+        "Specify a local font not available in the menu system. Loads the Impact font (device dependent) to use as the default font for the entire table.": "#tff#='Impact'",
         "Load a Google Font and use as default. Loads the Google font Tangerine using the #head# tag from the web and uses it as the default font for the entire table." : "#head#=[link rel=stylesheet href='https://fonts.googleapis.com/css?family=Tangerine'] |#tff#='Tangerine'",
         "Specify a different font weight and size. Sets the base font weight to 700 and size to 36px. Use of % sizes will be relative to this base value." : "#table#=font-weight:400 ; font-size:24px",
         "Use a Google font for the just the Data column. Loads the Google font Orbitron and applies it only to the data column." : "#head#=[link rel=stylesheet href='https://fonts.googleapis.com/css?family=Orbitron'] |#class1#=td:nth-child(2) {font-family:Orbitron}",
@@ -1192,7 +1194,7 @@ def getOverrideTextList(){
 	'Text - Decoration: Sets decorative elements for text such as underlining.' : '#Header#=text-decoration: underline wavy #C34E4E;',
 	'Text - Letter Spacing: Change the letter spacing of text.' : '#Data#=letter-spacing:5px',
 	'Text - Shadow: Sets a diffuse shadow effect of one or more specified colors around text.' : '#Data#=text-shadow: 5px 5px 10px #F33E25, 0px 0px 16px #EAA838;',
-    'Text - Transform: Sets the afffected text to Capitalized, Lower Case or Upper Case.' : 'text-transform: uppercase;',
+    'Text - Transform: Sets the affected text to Capitalized, Lower Case or Upper Case.' : 'text-transform: uppercase;',
 	'Text - Word Spacing: Sets the spacing between words in pixels.' : '#Data#=word-spacing: 20px;' 
     ]
 }
@@ -1535,7 +1537,7 @@ def textCleanupsRules() {
     group1 = "<details><summary>" + myTitle + "</summary>" + myText + "</details>"
     
     myTitle = dodgerBlue("Rules<br>")
-    myText = "Rules are a way to modify data based upon its value to give it a modified value or appearance. An example of this would be to display temperatures in different colors dependant on their value.<br>" + separator
+    myText = "Rules are a way to modify data based upon its value to give it a modified value or appearance. An example of this would be to display temperatures in different colors dependent on their value.<br>" + separator
     myText += "<ul><li>None: The default value of no processing.</li>"
     myText += "<li>All Keywords: Will process all of the keywords specified in the Highlights\\Keywords section to find a match. If a match is found matched the data value is substitued with the replacement value and formatting. Keywords are used for string comparisons.</li>"
     myText += "<li>Threshold 1-5: Will compare the value of numeric data using the operator and value specified in the corresponding Highlights\\Threshold. If a comparison is successful the data value is substitued with the replacement value and formatting. Thresholds are used for numeric data comparisons.</li>"
@@ -1590,7 +1592,7 @@ def displayTips() {
     myText += "will determine these settings when the tiles are published. To make the tile background transparent you can add a line like this to your Hubitat Dashboard CSS <b><i>'#tile-XX {background: rgba(128,128,128,0.0) !important;}'</i></b> where XX is your <b>Hubitat Dashboard tile number.</b> "
     myText += ' (This is not the same as the Tile Builder tile number you assigned during publishing.)<br>'
     myText += '<b>Dashboard Background:</b> You can use the dropper tool within the Dashboard Color dialog to get an exact match for your dashboard background to make selecting your color palette easier. Once placed on a dashboard the <b>tiles will automatically be centered vertically</b>.<br>'
-    myText += '<b>Use Custom Preview Size:</b> If you use a Hubitat dashboard tile size other than the default of 200 x 190 you can match that by enabling this setting and entering your preferred grid size. Preview is still an approximation dependant on Hubitat dashboard padding.'
+    myText += '<b>Use Custom Preview Size:</b> If you use a Hubitat dashboard tile size other than the default of 200 x 190 you can match that by enabling this setting and entering your preferred grid size. Preview is still an approximation dependent on Hubitat dashboard padding.'
     return myText
 }
 
