@@ -45,8 +45,9 @@
  *  Version 2.1.0 - Feature: Added Cloud Endpoints as a publishing option for output > 1,024 bytes.
  *  Version 2.1.1 - Bugfix: Corrected issue with tables < 1,024 bytes being sent to a file. Couple of minor tweaks.
  *  Version 2.2.0 - Feature: Restores Footer Class. Adds device rename in Device Group mode. Added built-in variable %count% for number of rows.
+ *  Version 2.2.1 - Bugfix: Corrects issue with negative number being handled as strings when doing a compare.
  *
- *  Gary Milne - December 30th, 2024 7:03 AM
+ *  Gary Milne - January 5th, 2024 9:20 PM
  *
  **/
 //file:noinspection GroovyVariableNotAssigned
@@ -2152,7 +2153,7 @@ void makeTable() {
         for (j = 1; j <= myColumns.toInteger(); j++) {
             def cell = "R${i}C${j}"
             def myText = settings["$cell"]
-            if (isLogHTML == true) log.info("Row is: $i   Column is: $j  Cell is: $cell  and value is: $myText")
+            if (isLogHTML == true) log.info("Row is: $i  Column is: $j  Cell is: $cell  and value is: $myText")
             if (myText != "?" && myText != null) interimHTML = interimHTML.replace("#${cell}#", myText)
             else interimHTML = interimHTML.replace("#${cell}#", "")
         }
@@ -3427,48 +3428,54 @@ def isValidInstant(String value) {
 
 //Receives a value which is the original DataType. Determines the best dataType based on the actual contents. Main exceptions are strings which can include numbers, date or an instant in Hubitat.
 def getDataType(myOriginalVal) {
-
     String myOldType = getObjectClassName(myOriginalVal)
     if (isLogVariables) log.info("getDataType: Received value: $myOriginalVal with type is: $myOldType")
 
-    //Now force everything to a string
-    myVal = myOriginalVal.toString()
+    // Now force everything to a string
+    def myVal = myOriginalVal?.toString()
 
     if (myVal == null || myVal == "null") {
-        if (isLogVariables) log.info("getDataType returning 'null'"); return "null"
+        if (isLogVariables) log.info("getDataType returning 'null'")
+        return "null"
     }
 
-    //Test for a boolean. If true return type Boolean
+    // Test for a boolean. If true return type Boolean
     if (myVal.toLowerCase() == "true" || myVal.toLowerCase() == "false") {
-        if (isLogVariables) log.info("getDataType returning 'Boolean"); return "Boolean"
+        if (isLogVariables) log.info("getDataType returning 'Boolean'")
+        return "Boolean"
     }
 
     def resultMap = isValidInstant(myVal)
 
-    //log.info "Value is a valid instant: ${resultMap.valid}, Date: ${resultMap.date ?: 'N/A'}"
+    // log.info "Value is a valid instant: ${resultMap.valid}, Date: ${resultMap.date ?: 'N/A'}"
     if (resultMap.valid == true) {
-        if (isLogVariables) log.info("getDataType returning 'Instant"); return "Instant"
+        if (isLogVariables) log.info("getDataType returning 'Instant'")
+        return "Instant"
     }
-    //else log.info ("It's not an Instant")
+    // else log.info ("It's not an Instant")
 
     if (isValidDate(myVal)) {
-        if (isLogVariables) log.info("getDataType returning 'Date"); return "Date"
+        if (isLogVariables) log.info("getDataType returning 'Date'")
+        return "Date"
     }
 
-    //If myVal only contains 0-9 AND a . then it must be a float. We can't use toFloat() because an Integer can be converted to a float.
-    if (myVal ==~ /^[0-9]+(\.[0-9]+)$/) {
-        if (isLogVariables) log.info("getDataType returning 'Float"); return "Float"
+    // If myVal only contains digits with an optional negative sign AND a dot, then it must be a float.
+    if (myVal ==~ /^-?[0-9]+(\.[0-9]+)$/) {
+        if (isLogVariables) log.info("getDataType returning 'Float'")
+        return "Float"
     }
 
-    //If myVal contains only the values 0-9 then consider it must be an Integer
-    if (myVal ==~ /^[0-9]+$/) {
-        if (isLogVariables) log.info("getDataType returning 'Integer"); return "Integer"
+    // If myVal only contains digits with an optional negative sign, consider it an Integer
+    if (myVal ==~ /^-?[0-9]+$/) {
+        if (isLogVariables) log.info("getDataType returning 'Integer'")
+        return "Integer"
     }
 
-    //If everything else has failed return type String
-    if (isLogVariables) log.info("getDataType returning 'String")
+    // If everything else has failed return type String
+    if (isLogVariables) log.info("getDataType returning 'String'")
     return "String"
 }
+
 
 //Extracts the String between two known string values
 def extractValueBetweenStrings(String input, String startString, String endString) {
