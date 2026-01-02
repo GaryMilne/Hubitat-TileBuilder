@@ -40,15 +40,16 @@
 * Version 1.2.2 -  Cosmetic code and grammar fixes.
 * Version 1.3.1 -  Feature: Adds support for Cloud Endpoints as a publishing option.
 * Version 1.3.2 -  Bug Fix: HTML outputs < 1,024 bytes were getting save to files.
+* Version 1.3.3 -  Bug Fix: Device attributes 13 - 15 were not being correctly referenced and using the attribute for device12.
 *
-*  Gary Milne - July 18th, 2024 3:48 PM
+*  Gary Milne - January 2nd, 2026 @ 12:33 PM
 *
 *  This code is Multi-Attribute Monitor which is largely derived from Attribute Monitor but is still substantially different.
 *
 **/
 
 import groovy.transform.Field
-@Field static final Version = "<b>Tile Builder Multi Attribute Monitor v1.3.2 (7/18/24)</b>"
+@Field static final Version = "<b>Tile Builder Multi Attribute Monitor v1.3.3 (1/2/26)</b>"
 def rules() { return ["None", "All Keywords","All Thresholds", "Threshold 1","Threshold 2", "Threshold 3", "Threshold 4", "Threshold 5", "Format Rule 1", "Format Rule 2", "Format Rule 3","Replace Chars"] }
 
 //Cloud Endpoint Mapping
@@ -215,7 +216,7 @@ def mainPage() {
                     input "myDevice13", "capability.*", title: "<b>Device 13</b>" , multiple: false, required: false, submitOnChange: true, width: 2, newLine: true
                     input "name13", "string", title: "<b>Item Name</b>", submitOnChange:true, width:3, defaultValue: "?", newLine:false
                     input "prepend13", "string", title: "<b>Prepend</b>", submitOnChange:true, width:1, defaultValue: "", newLine:false
-                    input "myAttribute13", "enum", title: "&nbsp<b>Attribute</b>", options: getAttributeList(myDevice12), multiple:false, submitOnChange:true, width: 2, required: true, newLine: false
+                    input "myAttribute13", "enum", title: "&nbsp<b>Attribute</b>", options: getAttributeList(myDevice13), multiple:false, submitOnChange:true, width: 2, required: true, newLine: false
                     input "append13", "string", title: "<b>Append</b>", submitOnChange:true, width:1, defaultValue: "", newLine:false
                     input "actionA13", "enum", title: "<b>Cleanup</b>",  options: parent.cleanups(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
                     if (parent.checkLicense() == true) input "actionB13", "enum", title: "<b>Rules</b>",  options: rules(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
@@ -224,7 +225,7 @@ def mainPage() {
                     input "myDevice14", "capability.*", title: "<b>Device 14</b>" , multiple: false, required: false, submitOnChange: true, width: 2, newLine: true
                     input "name14", "string", title: "<b>Item Name</b>", submitOnChange:true, width:3, defaultValue: "?", newLine:false
                     input "prepend14", "string", title: "<b>Prepend</b>", submitOnChange:true, width:1, defaultValue: "", newLine:false
-                    input "myAttribute14", "enum", title: "&nbsp<b>Attribute</b>", options: getAttributeList(myDevice12), multiple:false, submitOnChange:true, width: 2, required: true, newLine: false
+                    input "myAttribute14", "enum", title: "&nbsp<b>Attribute</b>", options: getAttributeList(myDevice14), multiple:false, submitOnChange:true, width: 2, required: true, newLine: false
                     input "append14", "string", title: "<b>Append</b>", submitOnChange:true, width:1, defaultValue: "", newLine:false
                     input "actionA14", "enum", title: "<b>Cleanup</b>",  options: parent.cleanups(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
                     if (parent.checkLicense() == true) input "actionB14", "enum", title: "<b>Rules</b>",  options: rules(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
@@ -233,7 +234,7 @@ def mainPage() {
                     input "myDevice15", "capability.*", title: "<b>Device 15</b>" , multiple: false, required: false, submitOnChange: true, width: 2, newLine: true
                     input "name15", "string", title: "<b>Item Name</b>", submitOnChange:true, width:3, defaultValue: "?", newLine:false
                     input "prepend15", "string", title: "<b>Prepend</b>", submitOnChange:true, width:1, defaultValue: "", newLine:false
-                    input "myAttribute15", "enum", title: "&nbsp<b>Attribute</b>", options: getAttributeList(myDevice12), multiple:false, submitOnChange:true, width: 2, required: true, newLine: false
+                    input "myAttribute15", "enum", title: "&nbsp<b>Attribute</b>", options: getAttributeList(myDevice15), multiple:false, submitOnChange:true, width: 2, required: true, newLine: false
                     input "append15", "string", title: "<b>Append</b>", submitOnChange:true, width:1, defaultValue: "", newLine:false
                     input "actionA15", "enum", title: "<b>Cleanup</b>",  options: parent.cleanups(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false
                     if (parent.checkLicense() == true) input "actionB15", "enum", title: "<b>Rules</b>",  options: rules(), defaultValue: "None", required:false, submitOnChange:true, width:1, newLine: false

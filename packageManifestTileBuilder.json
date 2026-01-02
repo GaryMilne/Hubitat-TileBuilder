@@ -1,10 +1,10 @@
 {
   "packageName": "Tile Builder",
   "author": "Gary J. Milne",
-  "version": "178",
+  "version": "179",
   "minimumHEVersion": "2.3.4.132",
-  "dateReleased": "2025-1-7",
-  "releaseNotes": "Package-178: Bug fix for negative temp handling in Grid.\nPackage-177: Fixed issue with reactivating a migrated Hub with a new key.\nPackages-176: Grid improvements including device name modification.\nPackage-175: Expands date and time variables available in AM.\nPackage-174: Cosmetic change to Thermostat logging.\nPackage-173: Adds information about Tile Builder and Remote Builder using a common key.\nPackage-172: Fixes same bug in #171 but for TB Grid.\nPackage-171: Fixes bug in MAM not honoring the 1,024 byte limit and generating iFrames. Adds support for Cloud Endpoints to TB Grid.\nPackage-170: Adds support for Cloud Endpoints to Multi-Attribute Monitor.",
+  "dateReleased": "2026-1-2",
+  "releaseNotes": "Package-179: Fixed device mapping issue in MAM.\bPackage-178: Bug fix for negative temp handling in Grid.\nPackage-177: Fixed issue with reactivating a migrated Hub with a new key.\nPackages-176: Grid improvements including device name modification.\nPackage-175: Expands date and time variables available in AM.\nPackage-174: Cosmetic change to Thermostat logging.\nPackage-173: Adds information about Tile Builder and Remote Builder using a common key.\nPackage-172: Fixes same bug in #171 but for TB Grid.\nPackage-171: Fixes bug in MAM not honoring the 1,024 byte limit and generating iFrames. Adds support for Cloud Endpoints to TB Grid.\nPackage-170: Adds support for Cloud Endpoints to Multi-Attribute Monitor.",
   "documentationLink": "https://github.com/GaryMilne/Hubitat-TileBuilder/tree/main",
   "communityLink": "https://community.hubitat.com/t/release-tile-builder-build-beautiful-dashboards/118822",
   "payPalURL": "https://bit.ly/3TIffQa",
@@ -47,7 +47,7 @@
       "required": false,
       "oauth": false,
       "primary": false,
-      "version": "1.3.2"
+      "version": "1.3.3"
     },
     {
       "id": "8c7a37d4-7e2a-405a-86e9-79c42fbbfaf8",
