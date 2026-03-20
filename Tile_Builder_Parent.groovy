@@ -65,12 +65,14 @@
 *  Version 1.5.3 - Added information regarding Remote Builder licensing.
 *  Version 1.5.4 - Spelling Fixes
 *  Version 1.5.5 - Corrected error with re-activating on a new key on a Hub that had been previously activated.
+*  Version 1.5.6 - Added logic to the checkLicense section to only report an error if rinning in Advanced mode.
+*  Version 1.5.7 - Corrected bug in listStyles that was causing styles not to work in child modules. 
 *
-*  Gary Milne - January 4th, 2025 @ 3:25 AM
+*  Gary Milne - March 20th, 2026 @ 1:02 PM
 *
 **/
 import groovy.transform.Field
-@Field static final Version = "<b>Tile Builder Parent v1.5.5 (1/5/25)</b>"
+@Field static final Version = "<b>Tile Builder Parent v1.5.7 (2/20/26)</b>"
 
 //These are the data for the pickers used on the child forms.
 def elementSize() { return ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '30', '40', '50', '75', '100'] }
@@ -189,9 +191,6 @@ def mainPage() {
             
 					paragraph titleise("Tile Builder is bundled with Remote Builder and uses the same licensing keys. If you already have Remote Builder Advanced you can use those keys to activate Tile Builder Advanced.")
                     myString = myString + "To purchase the license for <b>Tile Builder Advanced</b> you must do the following:<br>"
-																 
-																 
-																 
                     myString += '<b>1)</b> Donate at least <b>\$12</b> to ongoing development of Tile Builder \\ Remote Builder via PayPal using this <a href="https://www.paypal.com/donate/?business=YEAFRPFHJCTFA&no_recurring=1&item_name=A+donation+of+%2412+or+more+grants+a+license+to+Remote+Builder+and+Tile+Builder+Advanced.+Leave+your+Hubitat+Community+ID&currency_code=USD" target="_blank">link.</a></br>'			
                     myString += "<b>2)</b> Forward the paypal eMail receipt along with your ID (<b>" + getID() + "</b>) to <b>TileBuilderApp@gmail.com</b>. Please include your Hubitat community ID for future notifications.<br>"
                     myString += "<b>3)</b> Wait for license key eMail notification (usually within 24 hours).<br>"
@@ -905,14 +904,11 @@ def deleteStyle(String deleteStyle) {
 
 //Returns a list of state key names that begin with the word "Style-"
 def listStyles() {
-    if (isLogTrace) log.trace ('listStyles: Entering listStyles')
+    if (isLogTrace) log.trace('listStyles: Entering listStyles')
     def myList = []
     state.each {
-        //Only process those with a matching name.
-        if ( it.toString().indexOf('Style-AM') == 0  || it.toString().indexOf('*Style-AM') == 0 ) {
-            data = it.toString().tokenize('=')
-            myVal = data[0].toString()
-            myList.add(myVal)
+        if (it.key.startsWith('Style-AM') || it.key.startsWith('*Style-AM')) {
+            myList.add(it.key)
         }
     }
     return myList.sort()
@@ -1023,7 +1019,7 @@ def checkLicense() {
 		return state.isAdvancedLicense 
 	}
 	else {
-		log.error("This Tile Builder license is for Hub " + state.activatedHubID + " but this Hub has ID " + getHubUID() + "  You are running Tile Builder Standard." )
+        if (state.isAdvancedLicense == true ) log.error("This Tile Builder license is for Hub " + state.activatedHubID + " but this Hub has ID " + getHubUID() + "  You are running Tile Builder Standard." )
 		return false
 	}
 }
