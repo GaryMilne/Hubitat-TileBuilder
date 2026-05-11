@@ -1,10 +1,10 @@
 {
   "packageName": "Tile Builder",
   "author": "Gary J. Milne",
-  "version": "180",
+  "version": "181",
   "minimumHEVersion": "2.3.4.132",
-  "dateReleased": "2026-1-2",
-  "releaseNotes": "Package-180: Fixed bug that prevented child apps from accessing Styles.\nPackage-179: Fixed device mapping issue in MAM.\nPackage-178: Bug fix for negative temp handling in Grid.\nPackage-177: Fixed issue with reactivating a migrated Hub with a new key.\nPackages-176: Grid improvements including device name modification.\nPackage-175: Expands date and time variables available in AM.\nPackage-174: Cosmetic change to Thermostat logging.\nPackage-173: Adds information about Tile Builder and Remote Builder using a common key.",
+  "dateReleased": "2026-5-11",
+  "releaseNotes": "Package-181: Fixed a few minor bugs in Grid.\nPackage-180: Fixed bug that prevented child apps from accessing Styles.\nPackage-179: Fixed device mapping issue in MAM.\nPackage-178: Bug fix for negative temp handling in Grid.\nPackage-177: Fixed issue with reactivating a migrated Hub with a new key.\nPackages-176: Grid improvements including device name modification.\nPackage-175: Expands date and time variables available in AM.\nPackage-174: Cosmetic change to Thermostat logging.\nPackage-173: Adds information about Tile Builder and Remote Builder using a common key.",
   "documentationLink": "https://github.com/GaryMilne/Hubitat-TileBuilder/tree/main",
   "communityLink": "https://community.hubitat.com/t/release-tile-builder-build-beautiful-dashboards/118822",
   "payPalURL": "https://bit.ly/3TIffQa",
@@ -68,7 +68,7 @@
       "required": false,
       "oauth": false,
       "primary": false,
-      "version": "2.2.1"
+      "version": "2.2.3"
     },
 	{
       "id": "c6c7a891-b248-441b-8f3b-ac7a57e30e5c",

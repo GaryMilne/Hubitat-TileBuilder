@@ -1,10 +1,3 @@
-// hubitat start
-// hub: 192.168.0.200  <- this is hub's IP address
-// type: app          <- valid values here are "app" and "device"
-// id: 1084           <- this is app or driver's id
-// hubitat end
-//This only works of the destination Hub is running the appropriate Beta version of the Hubitat firmware.
-
 /**  Authors Notes:
  *  For more information on Tile Builder Grid check out these resources.
  *  Original posting on Hubitat Community forum: https://community.hubitat.com/t/release-tile-builder-build-beautiful-tiles-of-tabular-data-for-your-dashboard/118822
@@ -46,14 +39,14 @@
  *  Version 2.1.1 - Bugfix: Corrected issue with tables < 1,024 bytes being sent to a file. Couple of minor tweaks.
  *  Version 2.2.0 - Feature: Restores Footer Class. Adds device rename in Device Group mode. Added built-in variable %count% for number of rows.
  *  Version 2.2.1 - Bugfix: Corrects issue with negative number being handled as strings when doing a compare.
+ *  Version 2.2.2 - Bugfix: Changed logic in the handler to eliminate the possibility of a non positive number.
+ *					Enhancement: Added Alt Image URL as a cleanup option. This gets the weather images from the gitHub server instead.
+ *  Version 2.2.3 - Bugfix: Improved handling of device names with restricted characters. Added all Opacity value to the checkNulls() function.
  *
- *  Gary Milne - January 5th, 2024 9:20 PM
+ *  Gary Milne - May 11th, 2026 9:10 AM
  *
  **/
-//file:noinspection GroovyVariableNotAssigned
-//file:noinspection GroovyVariableNotAssigned
-//file:noinspection GroovyAssignabilityCheck
-//file:noinspection GrEqualsBetweenInconvertibleTypes
+
 import groovy.transform.Field
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -61,6 +54,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.text.ParseException
 import java.util.regex.Pattern
+import java.util.regex.Matcher
 
 //These are supported capabilities. Layout is "device.selector":["attribute","attribute2"].
 static def capabilities() {
@@ -82,12 +76,12 @@ static def capabilities() {
 //Cloud Endpoint Mapping
 mappings { path("/tb") { action: [GET: "getTile"] } }
 
-static def codeDescription() { return ("<b>Tile Builder Grid v2.2.0 (12/30/24)</b>") }
+static def codeDescription() { return ("<b>Tile Builder Grid v2.2.3 (5/11/2026)</b>") }
 
-static def codeVersion() { return (220) }
+static def codeVersion() { return (223) }
 
 static def cleanups() {
-    return ["None", "Capitalize", "Capitalize All", "Commas", "0 Decimal Places", "1 Decimal Place", "Upper Case", "OW Code to Emoji", "OW Code to PNG", "Image URL", "Remove Tags [] <>"]
+    return ["None", "Capitalize", "Capitalize All", "Commas", "0 Decimal Places", "1 Decimal Place", "Upper Case", "OW Code to Emoji", "OW Code to PNG", "Image URL", "Alt Image URL", "Remove Tags [] <>"]
 }
 
 static def dateFormatsMap() {
@@ -896,6 +890,12 @@ def checkNulls() {
     if (varColumns == null) app.updateSetting("varColumns", [value: "1", type: "enum"])
     if (eventTimeout == null) app.updateSetting("eventTimeout", "2000")
     if (scrubHTMLlevel == null) app.updateSetting("scrubHTMLlevel", [value: "1", type: "enum"] )
+    if (tbo == null) app.updateSetting("tbo", [value: "1", type: "enum"] )
+    if (to == null) app.updateSetting("to", [value: "1", type: "enum"] )
+    if (hto == null) app.updateSetting("hto", [value: "1", type: "enum"] )
+    if (bo == null) app.updateSetting("bo", [value: "1", type: "enum"] )
+    if (rto == null) app.updateSetting("rto", [value: "1", type: "enum"] )
+    if (rbo == null) app.updateSetting("rbo", [value: "1", type: "enum"] )
 }
 
 //Returns a formatted title for a section header based on whether the section is visible or not.
@@ -1238,6 +1238,9 @@ def cleanupCore(dataType, myName, myValue, i) {
                 break
             case "Image URL":
                 newMap[myName] = getImageURL(myValue.toString())
+                break
+            case "Alt Image URL":
+                newMap[myName] = getAltImageURL(myValue.toString())
                 break
             case "Remove Tags [] <>":
                 newMap[myName] = clearHTML(myValue.toString())
@@ -2179,8 +2182,7 @@ void makeTable() {
 			//Check to see if we need to modify any deviceNames or deviceLabels.
 			if (varName.contains("devicelabel")) { myValue = getShortName(myValue) }
 			if (varName.contains("devicename")) { myValue = getShortName(myValue) }
-						
-            interimHTML = interimHTML.replaceAll("(?i)%${varName}%", myValue)
+            interimHTML = interimHTML.replaceAll( "(?i)" + Pattern.quote("%${varName}%"), Matcher.quoteReplacement(myValue)	)
         }
     }
 
@@ -2461,10 +2463,25 @@ String getOpenWeatherEmoji(weatherCode) {
 
 //Get the Image URL
 def getImageURL(myString) {
-    if (isLogTrace && isLogDetails) log.trace("<b>getImageURL: Entering with $string.</b>")
+    if (isLogTrace && isLogDetails) log.trace("<b>getImageURL: Entering with $myString.</b>")
     url = myString
     url = "<img src=" + url + ">"
     if (isLogCleanups) log.info("getImageURL: url: " + unHTML(url) + " ")
+    return url
+}
+
+//Generate the URL for the proper image on github.
+def getAltImageURL(myString) {
+    if (isLogTrace && isLogDetails) log.trace("<b>getAltImageURL: Entering with $myString.</b>")
+    
+    // Extract just the filename from the end of the URL (e.g. "39.png")
+    def fileName = myString.tokenize('/').last()
+    
+    // Build new URL using GitHub raw content
+    def newURL = "https://raw.githubusercontent.com/HubitatCommunity/WeatherIcons/master/" + fileName
+    
+    def url = "<img src=" + newURL + ">"
+    if (isLogCleanups) log.info("getAltImageURL: url: " + unHTML(url) + " ")
     return url
 }
 
@@ -2561,28 +2578,32 @@ void subscribeAttribute(device, attribute, handler) {
 def handler(evt) {
     //Handles the initialization of new variables added after the original release.
     if (state.variablesVersion == null || state.variablesVersion < codeVersion()) updateVariables()
-
-    def nextPublicationTime
-
+    
+    def currentTime = now()
+    
     if (isLogTrace) log.trace("<b>handler: Entering with $evt</b>")
     if (isLogPublish) log.info("handler: Event received from Device:${evt.device}  -  Attribute:${evt.name}  -  Value:${evt.value}")
-
+    
     //Test to see if we have met the minimum republishing delay.
     def lastPublicationTime = state.publish.lastPublished ?: 0
+    def nextPublicationTime
+    
     if (republishDelay.toInteger() > 0) {
         nextPublicationTime = (republishDelay.toInteger() * 60 * 1000) + lastPublicationTime
-    } else nextPublicationTime = now()
-
-    if (isLogPublish) log.info("republishDelay is: $republishDelay mins. LastPub:$lastPublicationTime  NextPub:$nextPublicationTime")
-
-    // This schedules a call to publishTable() X milliseconds into the future which optimizes for scenarios with multiple simultaneous attribute updates on the same device. Reduces multiple calls to a single publishTable() event.
-    if (nextPublicationTime >= now()) {
-        runInMillis(nextPublicationTime - now(), publishTable, [overwrite: true])
-        if (isLogPublish) log.info("handler: republishDelay of $republishDelay minutes has not been met. Publication deferred. (" + (nextPublicationTime - now()) / 1000 + " seconds)")
+    } else {
+        nextPublicationTime = currentTime
     }
-
-    //If we are past the publicationDelay period we can publish right away, pending
-    if (nextPublicationTime < now()) {
+    
+    if (isLogPublish) log.info("republishDelay is: $republishDelay mins. LastPub:$lastPublicationTime  NextPub:$nextPublicationTime")
+    
+    // This schedules a call to publishTable() X milliseconds into the future which optimizes for scenarios with multiple simultaneous attribute updates on the same device. Reduces multiple calls to a single publishTable() event.
+    def delay = nextPublicationTime - currentTime
+    
+    if (delay > 0) {
+        runInMillis(delay, publishTable, [overwrite: true])
+        if (isLogPublish) log.info("handler: republishDelay of $republishDelay minutes has not been met. Publication deferred. (" + delay / 1000 + " seconds)")
+    } else {
+        //If we are past the publicationDelay period we can publish right away, pending eventTimeout
         runInMillis(eventTimeout.toInteger(), publishTable, [overwrite: true])
     }
 }
