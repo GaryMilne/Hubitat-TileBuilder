@@ -42,8 +42,9 @@
  *  Version 2.2.2 - Bugfix: Changed logic in the handler to eliminate the possibility of a non positive number.
  *					Enhancement: Added Alt Image URL as a cleanup option. This gets the weather images from the gitHub server instead.
  *  Version 2.2.3 - Bugfix: Improved handling of device names with restricted characters. Added all Opacity value to the checkNulls() function.
+ *  Version 2.2.4 - Enhancement: Added two new rules options Threshold 1 & 2 and Threshold 3 & 4. This allows greater formatting control when two different attributes use similar numeric ranges like blin position and battery.
  *
- *  Gary Milne - May 11th, 2026 9:10 AM
+ *  Gary Milne - July 30th, 2026 8:27 AM
  *
  **/
 
@@ -76,9 +77,9 @@ static def capabilities() {
 //Cloud Endpoint Mapping
 mappings { path("/tb") { action: [GET: "getTile"] } }
 
-static def codeDescription() { return ("<b>Tile Builder Grid v2.2.3 (5/11/2026)</b>") }
+static def codeDescription() { return ("<b>Tile Builder Grid v2.2.4 (7/29/2026)</b>") }
 
-static def codeVersion() { return (223) }
+static def codeVersion() { return (224) }
 
 static def cleanups() {
     return ["None", "Capitalize", "Capitalize All", "Commas", "0 Decimal Places", "1 Decimal Place", "Upper Case", "OW Code to Emoji", "OW Code to PNG", "Image URL", "Alt Image URL", "Remove Tags [] <>"]
@@ -106,7 +107,7 @@ static def hubProperties() {
 }
 
 static def rules() {
-    return ["None", "All Keywords", "All Thresholds", "Threshold 1", "Threshold 2", "Threshold 3", "Threshold 4", "Threshold 5", "Format Rule 1", "Format Rule 2", "Format Rule 3", "Replace Chars"]
+    return ["None", "All Keywords", "All Thresholds", "Threshold 1", "Threshold 2", "Threshold 3", "Threshold 4", "Threshold 5", "Threshold 1 & 2", "Threshold 3 & 4", "Format Rule 1", "Format Rule 2", "Format Rule 3", "Replace Chars"]
 }
 
 static def invalidAttributeStrings() { return ["N/A", "n/a", " ", "-", "--", "?", "??"] }
@@ -207,13 +208,14 @@ preferences { page(name: "mainPage") }
 
 def mainPage() {
     if (isLogAppPerformance) log.info("Start of Main Page: " + (now() - state.refresh) / 1000 + " seconds")
+    
+    //Handles the initialization of new variables added after the original release.
+    def currentVersion = state.variablesVersion?.toString()?.isInteger() ? state.variablesVersion.toString().toInteger() : 0
+	if (currentVersion < codeVersion()) updateVariables()
 
     //Basic initialization for the initial release
     if (state.initialized == null) initialize()
     checkNulls()
-
-    //Handles the initialization of new variables added after the original release.
-    if (state.variablesVersion == null || state.variablesVersion < codeVersion()) updateVariables()
 
     //Checks to see if there are any messages for this child app. This is used to recover broken child apps from certain error conditions
     myMessage = parent.messageForTile(app.label)
@@ -598,7 +600,7 @@ def mainPage() {
                         for (int i = 6; i <= 10; i++) {
                             if (myThresholdCount.toInteger() >= i - 5) {
                                 myColor = settings["hc$i"]
-                                input(name: "top${i}", type: "enum", title: bold("Operator #${i}"), required: false, options: comparators(), displayDuringSetup: true, defaultValue: 0, submitOnChange: true, width: 1, newLine: true)
+                                input(name: "top${i}", type: "enum", title: bold("Threshold ${i - 5} (Op. #${i})"), required: false, options: comparators(), displayDuringSetup: true, defaultValue: 0, submitOnChange: true, width: 2, newLine: true)
                                 input(name: "tcv${i}", type: "number", title: bold("Comparison Value #${i}"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2)
                                 input(name: "ttr${i}", type: "text", title: bold("Replacement Text #${i}"), required: false, displayDuringSetup: true, defaultValue: "?", submitOnChange: true, width: 2)
                                 input(name: "hc${i}", type: "color", title: bold2(("Highlight ${i} Color"), settings["hc$i"]), required: false, submitOnChange: true, width: 2)
@@ -930,7 +932,6 @@ def getSelectedAttributes() {
     return attributeList
 }
 
-
 //*******************************************************************************************************************************************************************************************
 //**************
 //**************  Free Form Related Functions
@@ -943,14 +944,6 @@ def getVariablesFreeForm() {
     def varString1 = ""
     def varString2 = ""
     def varName
-
-    //Wipe out the existing settings
-    state.vars = [:]
-    //Clear the old device if no longer required
-    if (settings["variableSource$i"].toString() != "Device Attribute" && settings["myDevice$i"] != null) {
-        //log.info ("Running Remove Setting")
-        app.removeSetting("myDevice$i")
-    }
 
     //Loop through each of the Variables and generate it's content.
     for (int i = 1; i <= myVariableCount.toInteger(); i++) {
@@ -1102,8 +1095,6 @@ def getVariablesDeviceGroup() {
                 //Go through the unique list of attributes the user has selected and if the attribute exists on the device then get it and save it to state.
                 attributeList.each { attributeName ->
                     myValue = it.currentValue(attributeName)?.toString() ?: invalidAttribute.toString()
-					
-					if (attributeName == "deviceLabel") log.info ("It's a device label")
 					varName = "$attributeName" + i
                     state.vars."$varName" = (myValue.toString() ?: "")
                     if (isLogVariables && isLogDetails) log.info("getVariablesDeviceGroup: Attribute: $myAttr ($myValue) saved to state.vars.$varName")
@@ -2305,81 +2296,71 @@ def isStringMatch(matchType, keyword, attributeValue) {
 }
 
 //Looks at a provided attributeValue and compares it to those values provided by keywords and thresholds. If any are a match it uses the chosen CSS style to highlight it. If tableTags == true then the [td] [/td] tags are added.
+//Looks at a provided attributeValue and compares it to those values provided by keywords and thresholds. If any are a match it uses the chosen CSS style to highlight it.
 def highlightValue(attributeValue, myIndex) {
     if (isLogTrace && isLogDetail || isLogHighlights) log.trace("<b>highlightValue: Entering with $attributeValue  $myIndex")
     def originalValue = attributeValue.toString()
     def returnValue
-
     dataType = getDataType(attributeValue)
     if (isLogHighlights && isLogDetails) log.info("highlightValue: Received attributeValue: ${attributeValue} with index: $myIndex and DataType is: $dataType")
     //Take care of any character replacements first.
     if (dataType == "String" && settings["actionB$myIndex"] == "Replace Chars") {
         def oldCharacters = settings["oc1"] ?: ""
         def newCharacters = settings["nc1"] ?: ""
-        //Replace the old character(s) with the new character(s) if found.
         if (oldCharacters != "?" && newCharacters != "?") attributeValue = attributeValue.replace(oldCharacters, newCharacters)
     }
-
     if (settings["actionB$myIndex"] == "Format Rule 1") {
         returnValue = (settings["fr1"] + "").replace("%value%", attributeValue.toString())
         if (isLogHighlights && isLogDetails) log.info("highlightValue: Processed Format Rule 1, returning: " + unHTML(returnValue))
-        //log.info ("returnValue is: " + unHTML(returnValue ) )
         return returnValue
     }
-
     if (settings["actionB$myIndex"] == "Format Rule 2") {
         returnValue = (settings["fr2"] + "").replace("%value%", attributeValue.toString())
         if (isLogHighlights && isLogDetails) log.info("highlightValue: Processed Format Rule 2, returning: " + unHTML(returnValue))
         return returnValue
     }
-
     if (settings["actionB$myIndex"] == "Format Rule 3") {
         returnValue = (settings["fr3"] + "").replace("%value%", attributeValue.toString())
         if (isLogHighlights && isLogDetails) log.info("highlightValue: Processed Format Rule 3, returning: " + unHTML(returnValue))
         return returnValue
     }
-
-    //This does full string comparisons and only works for an exact full keyword match
-    if ((dataType == "String" || dataType == "Boolean") && settings["actionB$myIndex"] == "All Keywords") {
+    // Keywords now evaluate all data types including Integer and Float
+    if (settings["actionB$myIndex"] == "All Keywords") {
         for (i = 1; i <= myKeywordCount.toInteger(); i++) {
             def keyword = settings["k$i"]
             def keywordTr = settings["ktr$i"]
             if (isLogHighlights) log.info("highlightValue: Attribute is: ${attributeValue} Keyword is: $keyword and Search is:" + settings["kop$i"].toString())
-            //Test the keyword and attributeValue to see if we have a hit per the properties of kop$i (Keyword Operator).
             result = isStringMatch(settings["kop$i"].toString(), keyword, attributeValue)
             if (result == true) {
                 if (isLogHighlights && isLogDetails) log.info("highlightValue: Keyword ${attributeValue} meets conditions for Keyword$i.")
                 if (keywordTr && keywordTr.size() > 0) {
-                    returnValue = keywordTr.replace("%value%", attributeValue)
+                    returnValue = keywordTr.replace("%value%", attributeValue.toString())
                     returnValue = "[hqq$i]" + returnValue + "[/hqq$i]"
                     if (isLogHighlights && isLogDetails) log.info("highlightValue: Returning: " + unHTML(returnValue))
                     return returnValue
                 }
             }
         }
-        // It's a string but does not match a keyword.
+        // No keyword matched
         returnValue = attributeValue
         if (isLogHighlights) log.info("highlightValue: Returning: " + unHTML(returnValue))
         return returnValue
     }
-
     //If it gets this far it must be a number.
     returnValue = attributeValue.toString()
-
-    //Use a flag to remember the highest threshold with a match
     def lastThreshold = 0
-    //i is the loop counter. It starts at 6 because the threshold controls are numbered 6 thru 10.
     i = 6
     while (i <= myThresholdCount.toInteger() + 5) {
-        //log.info ("Processing threshold i is: $i.")
         myVal1 = settings["tcv$i"]
         myVal2 = settings["top$i"]
         myThresholdText = "Threshold " + (i - 5).toString()
-
         if (isLogHighlights) log.info("i is: $i.  tcv$i is: $myVal1  top$i is: $myVal2  dataType is $dataType  Threshold is: $myThresholdText originalValue is: $originalValue")
-        if (settings["tcv$i"] != null && settings["tcv$i"] != "" && settings["tcv$i"] != "None" && ((settings["actionB$myIndex"] == "All Thresholds") || settings["actionB$myIndex"] == myThresholdText) && (dataType == "Integer" || dataType == "Float")) {
-
-            //This looks like the ideal place for a switch statement but using a break within switch causes it to exit the while loop also.
+        if (settings["tcv$i"] != null && settings["tcv$i"] != "" && settings["tcv$i"] != "None" &&
+            ((settings["actionB$myIndex"] == "All Thresholds") ||
+             settings["actionB$myIndex"] == myThresholdText ||
+             (settings["actionB$myIndex"] == "Threshold 1 & 2"    && (i == 6 || i == 7))  ||
+             (settings["actionB$myIndex"] == "Threshold 3 & 4" && (i == 8 || i == 9))) &&
+            (dataType == "Integer" || dataType == "Float")) {
             if ((settings["top$i"] == "1" || settings["top$i"] == "<=") && originalValue.toFloat() <= settings["tcv$i"].toFloat()) {
                 if (isLogHighlights && isLogDetails) log.info("highlightValue: A <= than condition was met.")
                 if ((settings["ttr$i"] != null && settings["ttr$i"] != " ") && settings["ttr$i"] != "?") {
@@ -2387,7 +2368,6 @@ def highlightValue(attributeValue, myIndex) {
                 }
                 lastThreshold = i
             }
-
             if ((settings["top$i"] == "2" || settings["top$i"] == "==") && originalValue.toFloat() == settings["tcv$i"].toFloat()) {
                 if (isLogHighlights && isLogDetails) log.info("highlightValue: An == than condition was met.")
                 if (settings["ttr$i"] != null && settings["ttr$i"] != " " && settings["ttr$i"] != "?") {
@@ -2395,7 +2375,6 @@ def highlightValue(attributeValue, myIndex) {
                 }
                 lastThreshold = i
             }
-
             if ((settings["top$i"] == "3" || settings["top$i"] == ">=") && originalValue.toFloat() >= settings["tcv$i"].toFloat()) {
                 if (isLogHighlights && isLogDetails) log.info("highlightValue: A >= than condition was met.")
                 if (settings["ttr$i"] != null && settings["ttr$i"] != " " && settings["ttr$i"] != "?") {
@@ -2406,19 +2385,16 @@ def highlightValue(attributeValue, myIndex) {
         }
         i = i + 1
     }
-
     if (lastThreshold == 0) {
-        //Does not match any threshold
         returnValue = attributeValue
         if (isLogHighlights) log.info("highlightValue: Threshold NOT matched, returning: " + returnValue)
         return returnValue
     } else {
-        returnValue = returnValue.replace("%value%", attributeValue.toString())
+        returnValue = returnValue.toString().replace("%value%", attributeValue.toString())
         returnValue = "[hqq$lastThreshold]" + returnValue + "[/hqq$lastThreshold]"
         if (isLogHighlights) log.info("highlightValue: Threshold MATCHED, returning: " + returnValue)
         return returnValue
     }
-
 } //End of function
 
 //Generate the proper table header based on the number of columns configured.
@@ -2577,7 +2553,8 @@ void subscribeAttribute(device, attribute, handler) {
 //Delays may occur if the eventTimeout or republishDelay is > 0
 def handler(evt) {
     //Handles the initialization of new variables added after the original release.
-    if (state.variablesVersion == null || state.variablesVersion < codeVersion()) updateVariables()
+    def currentVersion = state.variablesVersion?.toString()?.isInteger() ? state.variablesVersion.toString().toInteger() : 0
+	if (currentVersion < codeVersion()) updateVariables()
     
     def currentTime = now()
     
@@ -3174,10 +3151,10 @@ def isMyCapabilityChanged() {
 //Handles the initialization of any variables created after the original creation of the child instance. These are susceptible to change with each rev or feature add.
 def updateAppVariables() {
     if (isLogTrace) log.trace("<b>updateAppVariables: Entering.</b>")
-    //This is called with each successive upgrade if new variables have been introduced.
-    if (state.variablesVersion == null || state.variablesVersion < 200) {
-        log.info("Updating Variables to Version 2.0.1")
-        state.variablesVersion = 201
+    def currentVersion = state.variablesVersion?.toString()?.isInteger() ? state.variablesVersion.toString().toInteger() : 0
+    if (currentVersion < codeVersion()) {
+        log.info("Updating Variables to Version ${codeVersion()}")
+        state.variablesVersion = codeVersion().toString()
     }
 }
 
@@ -3371,15 +3348,16 @@ static def countBetween(String searchString, String match1, String match2) {
 
 //Convert <HTML> tags to [HTML] for storage.
 def unHTML(HTML) {
-    myHTML = HTML.replace("<", "[")
+    myHTML = HTML.toString().replace("<", "[")
     myHTML = myHTML.replace(">", "]")
     return myHTML
 }
 
+
 //Convert [HTML] tags to <HTML> for display.
 def toHTML(HTML) {
     if (HTML == null) return ""
-    myHTML = HTML.replace("[", "<")
+    myHTML = HTML.toString().replace("[", "<")
     myHTML = myHTML.replace("]", ">")
     return myHTML
 }
@@ -3515,32 +3493,31 @@ def updateVariables() {
     if (republishDelay == null) {
         app.updateSetting("republishDelay", [value: "0", type: "enum"])
     }
-    if (state.variablesVersion == null) {
+    def currentVersion = state.variablesVersion?.toString()?.isInteger() ? state.variablesVersion.toString().toInteger() : 0
+    if (currentVersion == 0) {
         log.info("Initializing variablesVersion to: 108")
-        state.variablesVersion = 108
+        state.variablesVersion = "108"
+        currentVersion = 108
     }
-
-    //This will be called with release of version 2.0.0.
-    if (state.variablesVersion == null || state.variablesVersion < 200) {
+    if (currentVersion < 200) {
         log.info("Updating Variables to Version 2.0.0")
-        //Add the newly created variables.
         app.updateSetting("republishDelay", [value: "0", type: "enum"])
         if (state.publish == null) state.publish = [:]
         state.publish.lastPublished = 0
-
-        //Add the new log settings
         app.updateSetting('isLogStyles', false)
         app.updateSetting('isLogDateTime', false)
         app.updateSetting('isLogDeviceInfo', false)
         app.updateSetting('isLogAppPerformance', false)
         app.updateSetting('isLogDetails', false)
-
-        //Add miscellaneous new settings
         app.updateSetting("gatherDeviceDetails", [value: ["deviceLabel", "deviceName", "lastActivity"], type: "enum"])
         app.updateSetting("defaultDateTimeFormat", [value: "3", type: "enum"])
         app.updateSetting("invalidAttribute", [value: "N/A", type: "enum"])
-
-        state.variablesVersion = 200
+        state.variablesVersion = "200"
+        currentVersion = 200
+    }
+    // Always bring version up to current at the end
+    if (currentVersion < codeVersion()) {
+        state.variablesVersion = codeVersion().toString()
     }
 }
 
