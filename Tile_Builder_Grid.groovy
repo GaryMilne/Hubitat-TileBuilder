@@ -44,8 +44,9 @@
  *  Version 2.2.3 - Bugfix: Improved handling of device names with restricted characters. Added all Opacity value to the checkNulls() function.
  *  Version 2.2.4 - Enhancement: Added two new rules options Threshold 1 & 2 and Threshold 3 & 4. This allows greater formatting control when two different attributes use similar numeric ranges like blin position and battery.
  *  Version 2.2.5 - Bugfix: Bad declaration with state.vars = [] but should be state.vars = [:] around line 1766
+ *  Version 2.2.6 - Bugfix: Displayed variables not refreshing correctly whe number of variables changes.
  *
- *  Gary Milne - August 9th, 2026 9:14 PM
+ *  Gary Milne - August 14th, 2026 6:08 PM
  *
  **/
 
@@ -78,9 +79,9 @@ static def capabilities() {
 //Cloud Endpoint Mapping
 mappings { path("/tb") { action: [GET: "getTile"] } }
 
-static def codeDescription() { return ("<b>Tile Builder Grid v2.2.5 (8/9/2026)</b>") }
+static def codeDescription() { return ("<b>Tile Builder Grid v2.2.6 (8/14/2026)</b>") }
 
-static def codeVersion() { return (225) }
+static def codeVersion() { return (226) }
 
 static def cleanups() {
     return ["None", "Capitalize", "Capitalize All", "Commas", "0 Decimal Places", "1 Decimal Place", "Upper Case", "OW Code to Emoji", "OW Code to PNG", "Image URL", "Alt Image URL", "Remove Tags [] <>"]
@@ -945,6 +946,7 @@ def getVariablesFreeForm() {
     def varString1 = ""
     def varString2 = ""
     def varName
+    state.vars = [:]
 
     //Loop through each of the Variables and generate it's content.
     for (int i = 1; i <= myVariableCount.toInteger(); i++) {
